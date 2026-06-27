@@ -796,8 +796,7 @@ def check_high_current_trace_width(design: Design, _kb: KnowledgeBase, _result: 
                         rule_id="DRC-012",
                         severity=DRCSeverity.ERROR,
                         message=(
-                            f"High-current net '{net.name}' trace width {w:.3f}mm "
-                            f"below IPC-2152 minimum {min_w:.3f}mm"
+                            f"High-current net '{net.name}' trace width {w:.3f}mm below IPC-2152 minimum {min_w:.3f}mm"
                         ),
                         net_id=net_id,
                     )
@@ -820,7 +819,7 @@ def check_hole_to_hole_clearance(design: Design, _kb: KnowledgeBase, _result: DR
     _IPC_MIN_WALL_MM = 0.25
     vias = [(seg, seg.x1, seg.y1, seg.via_hole) for seg in routing.traces if seg.via_hole]
     for i, (s1, x1, y1, d1) in enumerate(vias):
-        for s2, x2, y2, d2 in vias[i + 1:]:
+        for s2, x2, y2, d2 in vias[i + 1 :]:
             dist = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
             wall_clearance = dist - (d1 + d2) / 2.0
             if wall_clearance < _IPC_MIN_WALL_MM - 0.001:

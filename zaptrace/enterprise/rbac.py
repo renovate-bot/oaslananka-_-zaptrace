@@ -103,7 +103,7 @@ class TeamMember:
     display_name: str
     role: Role
     # Resource-scoped permission overrides: {resource_id: {+Permission} | {-Permission}}
-    grants: set[Permission] = field(default_factory=set)   # extra permissions
+    grants: set[Permission] = field(default_factory=set)  # extra permissions
     revocations: set[Permission] = field(default_factory=set)  # explicitly denied
 
     @property
@@ -193,7 +193,4 @@ def check_permission(
 
 def role_permissions_table() -> dict[str, list[str]]:
     """Return a human-readable table of roles and their effective permissions."""
-    return {
-        role.value: sorted(p.value for p in _effective_permissions(role))
-        for role in _ROLE_ORDER
-    }
+    return {role.value: sorted(p.value for p in _effective_permissions(role)) for role in _ROLE_ORDER}

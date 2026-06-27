@@ -2706,8 +2706,7 @@ def call_tool(name: str, /, **kwargs: Any) -> Any:
             if findings:
                 patterns = [f["pattern"] for f in findings]
                 raise ValueError(
-                    f"Prompt injection detected in parameter '{param_key}' "
-                    f"(patterns: {patterns}). Tool call blocked."
+                    f"Prompt injection detected in parameter '{param_key}' (patterns: {patterns}). Tool call blocked."
                 )
 
     # ---- 3. Classify action risk ----
@@ -2727,8 +2726,11 @@ def call_tool(name: str, /, **kwargs: Any) -> Any:
         # Record failed call too
         elapsed = (time.perf_counter() - t0) * 1000
         record_tool_call(
-            session_id, name, safe_params,
-            result={"error": str(exc)}, duration_ms=elapsed,
+            session_id,
+            name,
+            safe_params,
+            result={"error": str(exc)},
+            duration_ms=elapsed,
             risk=risk.value,
         )
         raise
@@ -2737,8 +2739,11 @@ def call_tool(name: str, /, **kwargs: Any) -> Any:
 
     # ---- 6. Record to replay log ----
     record_tool_call(
-        session_id, name, safe_params,
-        result=result, duration_ms=elapsed,
+        session_id,
+        name,
+        safe_params,
+        result=result,
+        duration_ms=elapsed,
         risk=risk.value,
     )
 

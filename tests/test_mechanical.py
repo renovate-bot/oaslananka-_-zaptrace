@@ -75,12 +75,8 @@ def _design_with_components() -> Design:
         meta=DesignMeta(name="McadBoard"),
         board_def=BoardDefinition(width=100, height=80, mounting_holes=[]),
     )
-    d.components["r1"] = Component(
-        id="r1", ref="R1", type="resistor", value="10k", footprint="Resistor_SMD:R_0603"
-    )
-    d.components["c1"] = Component(
-        id="c1", ref="C1", type="capacitor", value="100nF", footprint="Capacitor_SMD:C_0603"
-    )
+    d.components["r1"] = Component(id="r1", ref="R1", type="resistor", value="10k", footprint="Resistor_SMD:R_0603")
+    d.components["c1"] = Component(id="c1", ref="C1", type="capacitor", value="100nF", footprint="Capacitor_SMD:C_0603")
     return d
 
 

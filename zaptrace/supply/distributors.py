@@ -174,4 +174,5 @@ def create_provider_from_env() -> BomIntelligenceProvider:
         return MultiDistributorProvider()
     # Default to LCSC
     from zaptrace.supply.client import LcscBomProvider
+
     return LcscBomProvider()

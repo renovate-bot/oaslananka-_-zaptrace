@@ -85,8 +85,7 @@ class Pin(BaseModel):
     )
     current_domain: str | None = Field(
         default=None,
-        description="Current domain label (e.g. 'POWER_IN', 'POWER_OUT', 'SIGNAL'); "
-        "drives current-budget checks",
+        description="Current domain label (e.g. 'POWER_IN', 'POWER_OUT', 'SIGNAL'); drives current-budget checks",
     )
 
 
@@ -189,9 +188,7 @@ class Component(BaseModel):
         default_factory=dict,
         description="Distributor name → part URL or SKU (e.g. {'Digi-Key': 'RMCF0402FT10K0CT-ND'})",
     )
-    price_usd: float | None = Field(
-        default=None, description="Unit price in USD at last supply-chain refresh"
-    )
+    price_usd: float | None = Field(default=None, description="Unit price in USD at last supply-chain refresh")
     supply_fetched_at: str | None = Field(
         default=None,
         description="ISO-8601 timestamp of the last supply-chain data refresh",
@@ -543,9 +540,7 @@ class ProvRecord(BaseModel):
         default="",
         description="Human-readable one-line summary of what the tool decided or produced",
     )
-    timestamp: str | None = Field(
-        default=None, description="ISO-8601 timestamp when this step was executed"
-    )
+    timestamp: str | None = Field(default=None, description="ISO-8601 timestamp when this step was executed")
     human_approval: str | None = Field(
         default=None,
         description="Identifier of the human approver (e.g. e-mail) if this step was signed off",
@@ -565,9 +560,7 @@ class ImportLossRecord(BaseModel):
     field_path: str = Field(
         description="Dotted path to the field or record that was affected (e.g. 'nets[2].constraints.creepage')"
     )
-    behavior: str = Field(
-        description="Import behavior for this record: 'preserve', 'warn', 'degrade', or 'reject'"
-    )
+    behavior: str = Field(description="Import behavior for this record: 'preserve', 'warn', 'degrade', or 'reject'")
     original_value: str | None = Field(
         default=None, description="String representation of the original source value before degradation"
     )

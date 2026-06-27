@@ -124,12 +124,18 @@ def test_emc_fast_edge_spi_net_detected() -> None:
     d = Design(meta=DesignMeta(name="emc_spi"))
     d.components["u1"] = Component(id="u1", ref="U1", type="mcu", value="STM32")
     d.components["u2"] = Component(id="u2", ref="U2", type="spi_flash", value="W25Q")
-    d.nets["sck"] = Net(id="sck", name="SPI_SCK", type=NetType.SIGNAL,
-                         nodes=[NetNode(component_ref="U1", pin_name="SCK"),
-                                NetNode(component_ref="U2", pin_name="SCK")])
-    d.nets["mosi"] = Net(id="mosi", name="SPI_MOSI", type=NetType.SIGNAL,
-                          nodes=[NetNode(component_ref="U1", pin_name="MOSI"),
-                                 NetNode(component_ref="U2", pin_name="MOSI")])
+    d.nets["sck"] = Net(
+        id="sck",
+        name="SPI_SCK",
+        type=NetType.SIGNAL,
+        nodes=[NetNode(component_ref="U1", pin_name="SCK"), NetNode(component_ref="U2", pin_name="SCK")],
+    )
+    d.nets["mosi"] = Net(
+        id="mosi",
+        name="SPI_MOSI",
+        type=NetType.SIGNAL,
+        nodes=[NetNode(component_ref="U1", pin_name="MOSI"), NetNode(component_ref="U2", pin_name="MOSI")],
+    )
 
     report = generate_electrical_analysis_report(d)
     emc = [f for f in report.findings if f.category == "emc_fast_edge_rate"]
@@ -142,9 +148,13 @@ def test_emc_fast_edge_controlled_impedance_flagged() -> None:
     """A net with an impedance constraint but no interface match is still flagged."""
     d = Design(meta=DesignMeta(name="emc_ctrl_imp"))
     d.components["u1"] = Component(id="u1", ref="U1", type="ic", value="FPGA")
-    d.nets["hs"] = Net(id="hs", name="HS_DATA", type=NetType.SIGNAL,
-                       constraints=NetConstraints(impedance_target=50.0),
-                       nodes=[NetNode(component_ref="U1", pin_name="IO")])
+    d.nets["hs"] = Net(
+        id="hs",
+        name="HS_DATA",
+        type=NetType.SIGNAL,
+        constraints=NetConstraints(impedance_target=50.0),
+        nodes=[NetNode(component_ref="U1", pin_name="IO")],
+    )
 
     report = generate_electrical_analysis_report(d)
     emc = [f for f in report.findings if f.category == "emc_fast_edge_rate"]
@@ -156,17 +166,26 @@ def test_emc_switcher_loop_area_scored() -> None:
     """Switching-regulator components get a loop-area score."""
     d = Design(meta=DesignMeta(name="emc_switcher"))
     d.components["u1"] = Component(
-        id="u1", ref="U1", type="buck", value="3.3V",
+        id="u1",
+        ref="U1",
+        type="buck",
+        value="3.3V",
         footprint="SOT23-6",
         properties={"power_w": 2.0},
     )
     d.components["u2"] = Component(
-        id="u2", ref="U2", type="boost", value="5V",
+        id="u2",
+        ref="U2",
+        type="boost",
+        value="5V",
         footprint="QFN-12",
         properties={"power_w": 3.0},
     )
     d.components["u3"] = Component(
-        id="u3", ref="U3", type="resistor", value="10k",
+        id="u3",
+        ref="U3",
+        type="resistor",
+        value="10k",
     )
 
     scores = _emc_loop_area_scores(d)
@@ -186,7 +205,10 @@ def test_emc_switcher_large_package_high_score() -> None:
     """DIP/through-hole packages get score 4."""
     d = Design(meta=DesignMeta(name="emc_sw_dip"))
     d.components["u1"] = Component(
-        id="u1", ref="U1", type="dc-dc", value="12V",
+        id="u1",
+        ref="U1",
+        type="dc-dc",
+        value="12V",
         footprint="DIP-8",
     )
     scores = _emc_loop_area_scores(d)
@@ -225,9 +247,12 @@ def test_emc_fast_edge_detection_for_usb() -> None:
     d = Design(meta=DesignMeta(name="emc_usb"))
     d.components["u1"] = Component(id="u1", ref="U1", type="usb_controller", value="FT232")
     d.components["j1"] = Component(id="j1", ref="J1", type="USB-B", value="connector")
-    d.nets["dp"] = Net(id="dp", name="USB_D+", type=NetType.DIFFERENTIAL,
-                       nodes=[NetNode(component_ref="U1", pin_name="DP"),
-                              NetNode(component_ref="J1", pin_name="DP")])
+    d.nets["dp"] = Net(
+        id="dp",
+        name="USB_D+",
+        type=NetType.DIFFERENTIAL,
+        nodes=[NetNode(component_ref="U1", pin_name="DP"), NetNode(component_ref="J1", pin_name="DP")],
+    )
 
     fast = _detect_fast_edges(d)
     assert "USB_D+" in fast
@@ -239,9 +264,12 @@ def test_emc_report_includes_emc_category() -> None:
     d = Design(meta=DesignMeta(name="emc_full"))
     d.components["u1"] = Component(id="u1", ref="U1", type="mcu", value="STM32")
     d.components["u2"] = Component(id="u2", ref="U2", type="spi_flash", value="W25Q")
-    d.nets["sck"] = Net(id="sck", name="SPI_SCK", type=NetType.SIGNAL,
-                         nodes=[NetNode(component_ref="U1", pin_name="SCK"),
-                                NetNode(component_ref="U2", pin_name="SCK")])
+    d.nets["sck"] = Net(
+        id="sck",
+        name="SPI_SCK",
+        type=NetType.SIGNAL,
+        nodes=[NetNode(component_ref="U1", pin_name="SCK"), NetNode(component_ref="U2", pin_name="SCK")],
+    )
 
     report = generate_electrical_analysis_report(d)
     cats = report.by_category()

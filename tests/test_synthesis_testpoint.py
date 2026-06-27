@@ -16,12 +16,11 @@ def _minimal_design() -> Design:
         "TX": Pin(name="TX", type=PinType.OUTPUT),
     }
     # Power nets
-    d.nets["3V3"] = Net(id="3V3", name="+3V3", type=NetType.POWER,
-                         nodes=[NetNode(component_ref="U1", pin_name="VCC")])
-    d.nets["GND"] = Net(id="GND", name="GND", type=NetType.GROUND,
-                         nodes=[NetNode(component_ref="U1", pin_name="GND")])
-    d.nets["UART_TX"] = Net(id="UART_TX", name="UART1_TX", type=NetType.SIGNAL,
-                              nodes=[NetNode(component_ref="U1", pin_name="TX")])
+    d.nets["3V3"] = Net(id="3V3", name="+3V3", type=NetType.POWER, nodes=[NetNode(component_ref="U1", pin_name="VCC")])
+    d.nets["GND"] = Net(id="GND", name="GND", type=NetType.GROUND, nodes=[NetNode(component_ref="U1", pin_name="GND")])
+    d.nets["UART_TX"] = Net(
+        id="UART_TX", name="UART1_TX", type=NetType.SIGNAL, nodes=[NetNode(component_ref="U1", pin_name="TX")]
+    )
     return d
 
 
@@ -75,7 +74,10 @@ class TestTestPointInsertion:
         d = _minimal_design()
         # Add an existing TP
         d.components["TP1"] = Component(
-            id="TP1", ref="TP1", type="testpoint", value="",
+            id="TP1",
+            ref="TP1",
+            type="testpoint",
+            value="",
             pins={"1": Pin(name="1", type=PinType.PASSIVE)},
         )
         insert_test_points(d)

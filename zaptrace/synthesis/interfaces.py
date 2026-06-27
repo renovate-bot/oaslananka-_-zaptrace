@@ -82,7 +82,7 @@ def get_interface_profile(name: str) -> InterfaceProfile:
 
 # Speed of light in mm/ps (used to convert stub length to resonant frequency)
 _C_MM_PER_PS = 0.299792458  # mm/ps
-_DEFAULT_ER_PCB = 4.3        # FR-4 effective dielectric constant
+_DEFAULT_ER_PCB = 4.3  # FR-4 effective dielectric constant
 
 
 @dataclass(frozen=True)
@@ -139,7 +139,7 @@ def via_stub_resonance(
     if hasattr(profile, "notes") and "SuperSpeed" in profile.notes:
         max_dr = 10.0  # USB 3.2 Gen 2x1: 10 Gbps
     if interface_name.lower() == "pcie":
-        max_dr = 8.0   # PCIe Gen 3 per lane: 8 GT/s ~ 4 GHz Nyquist
+        max_dr = 8.0  # PCIe Gen 3 per lane: 8 GT/s ~ 4 GHz Nyquist
     if interface_name.lower() in ("usb3",):
         max_dr = 10.0
     if interface_name.lower() in ("usb2",):
@@ -170,6 +170,7 @@ def via_stub_resonance(
 # ---------------------------------------------------------------------------
 # BGA breakout rules (#124)
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class BgaBreakoutRule:
@@ -238,7 +239,5 @@ def bga_breakout_rules(pitch_mm: float) -> BgaBreakoutRule:
     # Find the largest key that is <= pitch_mm
     candidates = [p for p in sorted(_BGA_BREAKOUT_RULES) if p <= pitch_mm]
     if not candidates:
-        raise ValueError(
-            f"No breakout rule for pitch {pitch_mm} mm (smallest known: {min(_BGA_BREAKOUT_RULES)} mm)"
-        )
+        raise ValueError(f"No breakout rule for pitch {pitch_mm} mm (smallest known: {min(_BGA_BREAKOUT_RULES)} mm)")
     return _BGA_BREAKOUT_RULES[candidates[-1]]

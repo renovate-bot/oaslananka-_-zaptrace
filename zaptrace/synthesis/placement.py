@@ -92,9 +92,7 @@ def _glob_match(pattern: str, value: str) -> bool:
 def _comp_ids_for_glob(design: Design, pattern: str) -> list[str]:
     """Return component IDs whose ref or id matches *pattern*."""
     return [
-        cid
-        for cid, comp in design.components.items()
-        if _glob_match(pattern, comp.ref) or _glob_match(pattern, cid)
+        cid for cid, comp in design.components.items() if _glob_match(pattern, comp.ref) or _glob_match(pattern, cid)
     ]
 
 
@@ -289,10 +287,14 @@ def _check_keepouts(
                 x, y = pos
                 near_edge = False
                 if (
-                    intent.edge == "left" and x < edge_margin
-                    or intent.edge == "right" and x > bw - edge_margin
-                    or intent.edge == "top" and y > bh - edge_margin
-                    or intent.edge == "bottom" and y < edge_margin
+                    intent.edge == "left"
+                    and x < edge_margin
+                    or intent.edge == "right"
+                    and x > bw - edge_margin
+                    or intent.edge == "top"
+                    and y > bh - edge_margin
+                    or intent.edge == "bottom"
+                    and y < edge_margin
                 ):
                     near_edge = True
                 if not near_edge:
@@ -501,10 +503,14 @@ def _score_placement_for_component(
         if intent.edge:
             on_correct_edge = False
             if (
-                intent.edge == "bottom" and y_mm < margin
-                or intent.edge == "top" and y_mm > bh - margin
-                or intent.edge == "left" and x_mm < margin
-                or intent.edge == "right" and x_mm > bw - margin
+                intent.edge == "bottom"
+                and y_mm < margin
+                or intent.edge == "top"
+                and y_mm > bh - margin
+                or intent.edge == "left"
+                and x_mm < margin
+                or intent.edge == "right"
+                and x_mm > bw - margin
             ):
                 on_correct_edge = True
             if on_correct_edge:
@@ -520,13 +526,11 @@ def _score_placement_for_component(
                 min_d = min(_distance_mm((x_mm, y_mm), tp) for tp in target_positions)
                 if min_d <= intent.max_distance_mm:
                     constraint_score += 0.05
-                    reasons.append(
-                        f"within {intent.max_distance_mm:.1f} mm of {intent.near} ({min_d:.1f} mm)"
-                    )
+                    reasons.append(f"within {intent.max_distance_mm:.1f} mm of {intent.near} ({min_d:.1f} mm)")
                 else:
                     constraint_score -= 0.03
 
-    score -= (0.3 - constraint_score)
+    score -= 0.3 - constraint_score
 
     # --- Proximity to connected components (0.3) ---
     connected_comps: set[str] = set()

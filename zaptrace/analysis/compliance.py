@@ -226,7 +226,5 @@ def product_class_profile(product_class: str) -> ProductClassProfile:
     """
     key = product_class.lower().strip()
     if key not in _PRODUCT_CLASS_PROFILES:
-        raise ValueError(
-            f"Unknown product class '{product_class}'. Known: {sorted(_PRODUCT_CLASS_PROFILES)}"
-        )
+        raise ValueError(f"Unknown product class '{product_class}'. Known: {sorted(_PRODUCT_CLASS_PROFILES)}")
     return _PRODUCT_CLASS_PROFILES[key]

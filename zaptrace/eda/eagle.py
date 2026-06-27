@@ -154,15 +154,11 @@ def import_eagle_xml(path: str | Path) -> EagleImportResult:
     # Flag unsupported constructs
     # -------------------------------------------------------------------------
     for _polygon in root.iter("polygon"):
-        result.unsupported.append(
-            EagleUnsupportedRecord("polygon", "Polygon fill not yet imported", "info")
-        )
+        result.unsupported.append(EagleUnsupportedRecord("polygon", "Polygon fill not yet imported", "info"))
         break  # flag once, not per-polygon
 
     for _dr in root.iter("designrules"):
-        result.unsupported.append(
-            EagleUnsupportedRecord("designrules", "Eagle design rules not imported", "info")
-        )
+        result.unsupported.append(EagleUnsupportedRecord("designrules", "Eagle design rules not imported", "info"))
         break
 
     for _lib in root.iter("library"):

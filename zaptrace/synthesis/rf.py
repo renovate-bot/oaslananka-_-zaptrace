@@ -112,7 +112,7 @@ class LNetworkResult:
     load_ohms: float
     q_factor: float
     series_element_ohms: float  # reactance of the series element
-    shunt_element_ohms: float   # reactance of the shunt element
+    shunt_element_ohms: float  # reactance of the shunt element
     note: str
 
     def to_dict(self) -> dict[str, Any]:
@@ -209,8 +209,10 @@ def microstrip_50ohm_width_mm(
     w_over_h = w_over_h_narrow if w_over_h_narrow < 2.0 else w_over_h_wide
     # Account for copper thickness (Hammerstad correction)
     t_mm = copper_thickness_um / 1000.0
-    dw = t_mm / math.pi * math.log(
-        1 + 4 * math.e * substrate_height_mm / (t_mm * (1 / math.tanh(math.sqrt(6.517 * w_over_h))) ** 2)
+    dw = (
+        t_mm
+        / math.pi
+        * math.log(1 + 4 * math.e * substrate_height_mm / (t_mm * (1 / math.tanh(math.sqrt(6.517 * w_over_h))) ** 2))
     )
     w_mm = w_over_h * substrate_height_mm - dw
     return round(max(w_mm, 0.01), 4)

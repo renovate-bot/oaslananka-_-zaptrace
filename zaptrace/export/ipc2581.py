@@ -206,21 +206,29 @@ def _export_stackup(parent: ET.Element, design: Design) -> None:
                 "side": "Top" if i == 0 else "Bottom" if i == len(layers) - 1 else "Inner",
             },
         )
-        _add_sub(layer_el, "etchedLayer", attrib={
-            "conductiveMaterial": "Copper",
-            "layerType": "Conductive",
-            "thickness": f"{layer.thickness:.4f}",
-        })
+        _add_sub(
+            layer_el,
+            "etchedLayer",
+            attrib={
+                "conductiveMaterial": "Copper",
+                "layerType": "Conductive",
+                "thickness": f"{layer.thickness:.4f}",
+            },
+        )
 
     # Board outline / physical dimensions
     bw = design.board.width_mm if hasattr(design.board, "width_mm") else 100.0
     bh = design.board.height_mm if hasattr(design.board, "height_mm") else 80.0
     outline = _add_sub(stackup, "BoardOutline")
 
-    _add_sub(outline, "PolygonOutline", attrib={
-        "width": f"{bw:.4f}",
-        "height": f"{bh:.4f}",
-    })
+    _add_sub(
+        outline,
+        "PolygonOutline",
+        attrib={
+            "width": f"{bw:.4f}",
+            "height": f"{bh:.4f}",
+        },
+    )
 
 
 def _export_components(parent: ET.Element, design: Design) -> None:
@@ -228,11 +236,15 @@ def _export_components(parent: ET.Element, design: Design) -> None:
     lib = _add_sub(parent, "ComponentLibrary")
 
     for cid, comp in design.components.items():
-        comp_el = _add_sub(lib, "Component", attrib={
-            "name": comp.ref or cid,
-            "componentId": cid,
-            "package": comp.footprint or "unknown",
-        })
+        comp_el = _add_sub(
+            lib,
+            "Component",
+            attrib={
+                "name": comp.ref or cid,
+                "componentId": cid,
+                "package": comp.footprint or "unknown",
+            },
+        )
         if comp.value:
             _add_sub(comp_el, "Value", text=comp.value)
         if comp.mpn:
@@ -248,10 +260,14 @@ def _export_nets(parent: ET.Element, design: Design) -> None:
     for net_id, net in design.nets.items():
         net_el = _add_sub(netlist, "Net", attrib={"name": net.name, "netId": net_id})
         for node in net.nodes:
-            _add_sub(net_el, "Pin", attrib={
-                "componentId": node.component_ref,
-                "pin": node.pin_name,
-            })
+            _add_sub(
+                net_el,
+                "Pin",
+                attrib={
+                    "componentId": node.component_ref,
+                    "pin": node.pin_name,
+                },
+            )
 
 
 def _export_placement(parent: ET.Element, design: Design) -> None:
@@ -269,15 +285,19 @@ def _export_placement(parent: ET.Element, design: Design) -> None:
         rotation = pos[2] if len(pos) >= 3 else 0.0
         side = "Top"
 
-        _add_sub(placement, "Place", attrib={
-            "componentId": cid,
-            "refDes": comp_ref,
-            "x": f"{x:.4f}",
-            "y": f"{y:.4f}",
-            "rotation": f"{rotation:.1f}",
-            "side": side,
-            "mountType": "SMT",
-        })
+        _add_sub(
+            placement,
+            "Place",
+            attrib={
+                "componentId": cid,
+                "refDes": comp_ref,
+                "x": f"{x:.4f}",
+                "y": f"{y:.4f}",
+                "rotation": f"{rotation:.1f}",
+                "side": side,
+                "mountType": "SMT",
+            },
+        )
 
 
 def _export_routing(parent: ET.Element, design: Design) -> None:
@@ -291,11 +311,15 @@ def _export_routing(parent: ET.Element, design: Design) -> None:
     for trace in result.traces:
         if trace.via:
             continue  # vias as trace segments are skipped; we emit from result.vias instead
-        wire_el = _add_sub(routing, "Wire", attrib={
-            "layer": trace.layer,
-            "width": f"{trace.width:.4f}",
-            "net": trace.net_id,
-        })
+        wire_el = _add_sub(
+            routing,
+            "Wire",
+            attrib={
+                "layer": trace.layer,
+                "width": f"{trace.width:.4f}",
+                "net": trace.net_id,
+            },
+        )
         # Start point
         _add_sub(wire_el, "Start", attrib={"x": f"{trace.start[0]:.4f}", "y": f"{trace.start[1]:.4f}"})
         # End point
@@ -303,20 +327,28 @@ def _export_routing(parent: ET.Element, design: Design) -> None:
 
     for via in result.vias:
         x, y, diam, hole = via[0], via[1], via[2], via[3]
-        _add_sub(routing, "Via", attrib={
-            "x": f"{x:.4f}",
-            "y": f"{y:.4f}",
-            "diameter": f"{diam:.4f}",
-            "drillDiameter": f"{hole:.4f}",
-        })
+        _add_sub(
+            routing,
+            "Via",
+            attrib={
+                "x": f"{x:.4f}",
+                "y": f"{y:.4f}",
+                "diameter": f"{diam:.4f}",
+                "drillDiameter": f"{hole:.4f}",
+            },
+        )
 
 
 def _export_panel(parent: ET.Element, panel: PanelLayout, design: Design) -> None:
     """Emit panelization data — board array and panel outline."""
-    panel_el = _add_sub(parent, "Panel", attrib={
-        "width": f"{panel.total_width_mm:.4f}",
-        "height": f"{panel.total_height_mm:.4f}",
-    })
+    panel_el = _add_sub(
+        parent,
+        "Panel",
+        attrib={
+            "width": f"{panel.total_width_mm:.4f}",
+            "height": f"{panel.total_height_mm:.4f}",
+        },
+    )
 
     bw = design.board.width_mm if hasattr(design.board, "width_mm") else 100.0
     bh = design.board.height_mm if hasattr(design.board, "height_mm") else 80.0
@@ -325,20 +357,32 @@ def _export_panel(parent: ET.Element, panel: PanelLayout, design: Design) -> Non
         for col in range(panel.cols):
             x = panel.tooling_rail_width_mm + col * (bw + panel.spacing_mm)
             y = panel.tooling_rail_width_mm + row * (bh + panel.spacing_mm)
-            _add_sub(panel_el, "BoardArray", attrib={
-                "col": str(col),
-                "row": str(row),
-                "x": f"{x:.4f}",
-                "y": f"{y:.4f}",
-            })
+            _add_sub(
+                panel_el,
+                "BoardArray",
+                attrib={
+                    "col": str(col),
+                    "row": str(row),
+                    "x": f"{x:.4f}",
+                    "y": f"{y:.4f}",
+                },
+            )
 
-    _add_sub(panel_el, "ArraySpacing", attrib={
-        "x": f"{panel.spacing_mm:.4f}",
-        "y": f"{panel.spacing_mm:.4f}",
-    })
-    _add_sub(panel_el, "ToolingRail", attrib={
-        "width": f"{panel.tooling_rail_width_mm:.4f}",
-    })
+    _add_sub(
+        panel_el,
+        "ArraySpacing",
+        attrib={
+            "x": f"{panel.spacing_mm:.4f}",
+            "y": f"{panel.spacing_mm:.4f}",
+        },
+    )
+    _add_sub(
+        panel_el,
+        "ToolingRail",
+        attrib={
+            "width": f"{panel.tooling_rail_width_mm:.4f}",
+        },
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -411,13 +455,15 @@ class FabCapabilityDb:
                 issues.append(f"layer count {min_layers} > profile max layers")
                 score -= 0.25
 
-            candidates.append({
-                "name": profile.name,
-                "manufacturer": profile.manufacturer,
-                "compatible": not issues,
-                "score": max(0.0, score),
-                "issues": issues,
-            })
+            candidates.append(
+                {
+                    "name": profile.name,
+                    "manufacturer": profile.manufacturer,
+                    "compatible": not issues,
+                    "score": max(0.0, score),
+                    "issues": issues,
+                }
+            )
 
         return sorted(candidates, key=lambda c: c["score"], reverse=True)
 

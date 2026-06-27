@@ -125,8 +125,16 @@ class TestCollectPanels:
     def test_all_panels_returned(self, design: Design) -> None:
         panels = collect_panels(design)
         expected = {
-            "requirements", "erc", "drc", "dfm", "bom",
-            "supply", "manufacturing", "simulation", "proof_pack", "decision_log",
+            "requirements",
+            "erc",
+            "drc",
+            "dfm",
+            "bom",
+            "supply",
+            "manufacturing",
+            "simulation",
+            "proof_pack",
+            "decision_log",
         }
         assert expected.issubset(set(panels.keys()))
 

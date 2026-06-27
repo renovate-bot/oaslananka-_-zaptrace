@@ -48,13 +48,17 @@ _SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 # ---------------------------------------------------------------------------
 
 _INJECTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("system-override", re.compile(
-        r"(?i)(?:ignore|override|disregard)\s+(?:all\s+)?(?:previous|above|system)\s+(?:instructions|prompts|commands)"
-    )),
+    (
+        "system-override",
+        re.compile(
+            r"(?i)(?:ignore|override|disregard)\s+(?:all\s+)?(?:previous|above|system)\s+(?:instructions|prompts|commands)"
+        ),
+    ),
     ("delimiter-confusion", re.compile(r"(?i)(?:forget|ignore|new\s+instruction|system\s+prompt)")),
-    ("role-impersonation", re.compile(
-        r"(?i)(?:you\s+are\s+(?:now|not\s+)|act\s+as\s+(?:if\s+)?you\s+are|from\s+now\s+on\s+you\s+are)"
-    )),
+    (
+        "role-impersonation",
+        re.compile(r"(?i)(?:you\s+are\s+(?:now|not\s+)|act\s+as\s+(?:if\s+)?you\s+are|from\s+now\s+on\s+you\s+are)"),
+    ),
     ("payload-smuggle", re.compile(r"(?i)(?:<\|im_start|im_end\|>|<\|system\|>|<\|user\|>|<\|assistant\|>)")),
     ("jailbreak", re.compile(r"(?i)(?:DAN|do\s+anything\s+now|jailbreak|ignore\s+all\s+rules|no\s+limits)")),
     ("sql-injection", re.compile(r"(?:'.*\s*OR\s*'|'.*\s*--\s*|;\s*DROP\s+TABLE)", re.IGNORECASE)),
@@ -157,9 +161,7 @@ def classify_tool_call(session_id: str, tool_name: str, params: dict[str, Any]) 
 
     # Mass deletion
     if tool_name == "component_remove" and "component_id" in params:
-        recent_removes = sum(
-            1 for h in sb.tool_history[-20:] if h["tool"] == "component_remove"
-        )
+        recent_removes = sum(1 for h in sb.tool_history[-20:] if h["tool"] == "component_remove")
         if recent_removes >= _MASS_DELETE_THRESHOLD:
             sb.dangerous_count += 1
             return ActionRisk.DANGEROUS
@@ -189,11 +191,13 @@ def detect_prompt_injection(text: str) -> list[dict[str, Any]]:
     for pattern_name, regex in _INJECTION_PATTERNS:
         m = regex.search(text)
         if m:
-            findings.append({
-                "pattern": pattern_name,
-                "match": m.group()[:120],
-                "risk": "suspicious",
-            })
+            findings.append(
+                {
+                    "pattern": pattern_name,
+                    "match": m.group()[:120],
+                    "risk": "suspicious",
+                }
+            )
     return findings
 
 

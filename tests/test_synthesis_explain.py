@@ -64,9 +64,9 @@ class TestSynthesisDecisionLog:
 
     def test_markdown_output(self) -> None:
         log = SynthesisDecisionLog()
-        log.record("value", "LED R1", "330 Ω",
-                   rationale="Standard current-limiting resistor",
-                   calculator="led_series_resistor")
+        log.record(
+            "value", "LED R1", "330 Ω", rationale="Standard current-limiting resistor", calculator="led_series_resistor"
+        )
         md = format_decision_log_as_markdown(log)
         assert "Synthesis Decision Log" in md
         assert "LED R1" in md

@@ -263,9 +263,7 @@ def resolve_decision(
     decision_id = _generate_id("decision")
     now = _utc_now_str()
     approval_id = _generate_id("approval") if decision == DecisionType.APPROVE else ""
-    checklist_results = {
-        item_id: item.status for item_id, item in session.checklist.items()
-    }
+    checklist_results = {item_id: item.status for item_id, item in session.checklist.items()}
     rec = ReviewDecision(
         decision_id=decision_id,
         design_name=session.design_name,

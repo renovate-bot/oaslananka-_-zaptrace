@@ -537,6 +537,7 @@ def buck_inductor_capacitor(
 # Pull-up / pull-down resistor sizing
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class PullResistorResult:
     direction: str
@@ -617,6 +618,7 @@ def pull_resistor(
 # ---------------------------------------------------------------------------
 # Boot / reset strap planner
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class StrapPin:
@@ -701,6 +703,7 @@ _MCU_STRAP_TABLE: dict[str, list[dict[str, object]]] = {
 # Boost (step-up) converter inductor + output capacitor (#121)
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class BoostLcResult:
     duty_cycle: float
@@ -779,6 +782,7 @@ def boost_inductor_capacitor(
 # LDO selection guide (#121)
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class LdoSelectionResult:
     dropout_v: float
@@ -820,9 +824,7 @@ def ldo_selection(
         raise ValueError("iout must be positive")
     min_vin = vout + ldo_dropout_v
     if vin < min_vin:
-        raise ValueError(
-            f"vin ({vin}V) is below the minimum ({min_vin}V = vout + dropout); LDO would be in dropout"
-        )
+        raise ValueError(f"vin ({vin}V) is below the minimum ({min_vin}V = vout + dropout); LDO would be in dropout")
     pd = (vin - vout) * iout
     tj = t_ambient_max_c + pd * theta_ja_c_per_w
     # Maximum ambient temperature at which Tj stays below t_junction_max
@@ -846,6 +848,7 @@ def ldo_selection(
 # ---------------------------------------------------------------------------
 # MOSFET safe-operating-area (SOA) check (#121)
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class MosfetSoaResult:
@@ -935,8 +938,7 @@ def boot_reset_strap_plan(mcu_family: str) -> BootResetStrapPlan:
     key = mcu_family.lower().strip()
     table = _MCU_STRAP_TABLE.get(key) or _MCU_STRAP_TABLE["generic"]
     straps = [StrapPin(**{k: v for k, v in entry.items()}) for entry in table]  # type: ignore[arg-type]
-    note = (
-        f"{mcu_family} boot/reset straps: {len(straps)} pin(s) — "
-        + "; ".join(f"{s.signal_name}→{s.rail} ({s.default_state})" for s in straps)
+    note = f"{mcu_family} boot/reset straps: {len(straps)} pin(s) — " + "; ".join(
+        f"{s.signal_name}→{s.rail} ({s.default_state})" for s in straps
     )
     return BootResetStrapPlan(mcu_family=mcu_family, strap_pins=straps, note=note)

@@ -50,19 +50,14 @@ POLICIES: list[NetNamePolicy] = [
         pattern="nRST | /RST | RESET_n | MCU_RESET",
         examples=["nRST", "/RST", "SYS_RESET_n", "MCU_RESET"],
         notes=(
-            "Active-low reset nets use 'n' prefix or '_n' suffix. "
-            "Avoid bare 'RESET' — it is ambiguous about polarity."
+            "Active-low reset nets use 'n' prefix or '_n' suffix. Avoid bare 'RESET' — it is ambiguous about polarity."
         ),
     ),
     NetNamePolicy(
         category="clock",
         pattern="{DOMAIN}_CLK | CLK_{FREQ}",
         examples=["SYS_CLK", "I2C_SCL", "SPI_SCK", "CLK_32K", "CLK_48M"],
-        notes=(
-            "Append the domain or frequency. "
-            "I2C clock is always SCL (not CLK). "
-            "SPI clock is SCK."
-        ),
+        notes=("Append the domain or frequency. I2C clock is always SCL (not CLK). SPI clock is SCK."),
     ),
     NetNamePolicy(
         category="i2c",
@@ -86,19 +81,13 @@ POLICIES: list[NetNamePolicy] = [
         category="uart",
         pattern="UART{N}_TX | UART{N}_RX | UART{N}_RTS | UART{N}_CTS",
         examples=["UART1_TX", "UART1_RX", "UART2_TX", "UART2_RX", "UART1_RTS"],
-        notes=(
-            "TX/RX named from the MCU's perspective. "
-            "Cross the lines at the connector, not in the net name."
-        ),
+        notes=("TX/RX named from the MCU's perspective. Cross the lines at the connector, not in the net name."),
     ),
     NetNamePolicy(
         category="usb",
         pattern="USB_{SPEED}_DP | USB_{SPEED}_DM | VBUS | USB_ID",
         examples=["USB_FS_DP", "USB_FS_DM", "USB_SS_DP0", "USB_SS_DM0", "VBUS", "USB_ID"],
-        notes=(
-            "DP = D+, DM = D−. Add 'FS' (Full-Speed) or 'SS' (SuperSpeed) prefix. "
-            "VBUS is always a power net."
-        ),
+        notes=("DP = D+, DM = D−. Add 'FS' (Full-Speed) or 'SS' (SuperSpeed) prefix. VBUS is always a power net."),
     ),
     NetNamePolicy(
         category="gpio",
@@ -222,9 +211,7 @@ def validate_net_name(name: str) -> list[str]:
         bad = set(_INVALID_CHARS_RE.findall(name))
         problems.append(f"Net name '{name}' contains invalid characters: {sorted(bad)}")
     if name.lower().startswith("net-(") or name.lower().startswith("net_"):
-        problems.append(
-            f"Net name '{name}' looks auto-generated; replace with a functional name"
-        )
+        problems.append(f"Net name '{name}' looks auto-generated; replace with a functional name")
     if len(name) > 64:
         problems.append(f"Net name '{name}' exceeds 64 characters — shorten it")
     return problems

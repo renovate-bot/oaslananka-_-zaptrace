@@ -34,6 +34,7 @@ def _load_bom(path: Path) -> list[dict[str, str]]:
         return json.loads(path.read_text(encoding="utf-8"))
     if path.suffix.lower() == ".csv":
         import csv
+
         with path.open(encoding="utf-8") as f:
             return list(csv.DictReader(f))
     raise ValueError(f"Unsupported BOM format: {path.suffix}. Use .json or .csv")
@@ -70,7 +71,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="BOM risk gate for hardware CI/CD")
     parser.add_argument("bom", help="Path to BOM JSON or CSV file")
     parser.add_argument(
-        "--max-risk", default="medium", choices=_RISK_ORDER,
+        "--max-risk",
+        default="medium",
+        choices=_RISK_ORDER,
         help="Maximum allowed risk level (default: medium)",
     )
     parser.add_argument("--pr-comment", default=None, help="Write a GitHub PR comment markdown to this file on failure")

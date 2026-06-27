@@ -317,30 +317,22 @@ class TestLdoSelection:
 
 class TestMosfetSoa:
     def test_safe_operating_point(self) -> None:
-        result = mosfet_soa_check(
-            20.0, 1.0, vds_max=100.0, id_max=10.0, pd_max_w=50.0
-        )
+        result = mosfet_soa_check(20.0, 1.0, vds_max=100.0, id_max=10.0, pd_max_w=50.0)
         assert result.soa_ok
         assert result.vds_ok
         assert result.id_ok
         assert result.pd_ok
 
     def test_overvoltage_fails(self) -> None:
-        result = mosfet_soa_check(
-            90.0, 0.5, vds_max=100.0, id_max=10.0, pd_max_w=50.0, derating=0.8
-        )
+        result = mosfet_soa_check(90.0, 0.5, vds_max=100.0, id_max=10.0, pd_max_w=50.0, derating=0.8)
         assert not result.vds_ok  # 90 > 100*0.8=80 V
 
     def test_overcurrent_fails(self) -> None:
-        result = mosfet_soa_check(
-            5.0, 9.0, vds_max=100.0, id_max=10.0, pd_max_w=50.0, derating=0.8
-        )
+        result = mosfet_soa_check(5.0, 9.0, vds_max=100.0, id_max=10.0, pd_max_w=50.0, derating=0.8)
         assert not result.id_ok  # 9 > 10*0.8=8 A
 
     def test_margins_are_above_one_when_ok(self) -> None:
-        result = mosfet_soa_check(
-            10.0, 1.0, vds_max=100.0, id_max=10.0, pd_max_w=50.0
-        )
+        result = mosfet_soa_check(10.0, 1.0, vds_max=100.0, id_max=10.0, pd_max_w=50.0)
         assert result.margin_vds > 1.0
         assert result.margin_id > 1.0
         assert result.margin_pd > 1.0

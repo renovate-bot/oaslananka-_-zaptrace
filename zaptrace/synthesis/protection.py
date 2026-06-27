@@ -43,10 +43,7 @@ _POLICIES: dict[str, EsdPolicy] = {
         recommended_parts=["PRTR5V0U2X", "TPD6E002", "CDSOT23-SM712"],
         clamping_voltage_v=5.5,
         max_data_rate_mbps=10000.0,
-        notes=(
-            "Use parts with <0.3 pF line capacitance for SuperSpeed. "
-            "Separate protection on legacy USB 2.0 lines."
-        ),
+        notes=("Use parts with <0.3 pF line capacitance for SuperSpeed. Separate protection on legacy USB 2.0 lines."),
     ),
     "ethernet": EsdPolicy(
         connector_type="ethernet",
@@ -54,10 +51,7 @@ _POLICIES: dict[str, EsdPolicy] = {
         recommended_parts=["SP3012-04JTG", "PRTR5V0U4X", "TPD4S012"],
         clamping_voltage_v=6.0,
         max_data_rate_mbps=1000.0,
-        notes=(
-            "Place common-mode choke between PHY and magjack. "
-            "TVS or rail-to-rail diode array after the choke."
-        ),
+        notes=("Place common-mode choke between PHY and magjack. TVS or rail-to-rail diode array after the choke."),
     ),
     "hdmi": EsdPolicy(
         connector_type="hdmi",
@@ -65,10 +59,7 @@ _POLICIES: dict[str, EsdPolicy] = {
         recommended_parts=["HDMI02W6-P", "PRTR5V0U2X", "SP3004-04JTG"],
         clamping_voltage_v=5.5,
         max_data_rate_mbps=18000.0,
-        notes=(
-            "Use parts with <0.2 pF per line. CEC and HPD lines can use "
-            "higher-capacitance, lower-cost parts."
-        ),
+        notes=("Use parts with <0.2 pF per line. CEC and HPD lines can use higher-capacitance, lower-cost parts."),
     ),
     "rs232": EsdPolicy(
         connector_type="rs232",

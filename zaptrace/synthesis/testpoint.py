@@ -110,7 +110,8 @@ def insert_test_points(design: Design, *, add_debug_tps: bool = True) -> TestPoi
         tp_idx += 1
 
     _total_tps = (
-        tp_idx - _next_tp_index(design)
+        tp_idx
+        - _next_tp_index(design)
         + len(plan.added_power_rail_tps)
         + len(plan.added_debug_signal_tps)
         + len(plan.added_analog_tps)

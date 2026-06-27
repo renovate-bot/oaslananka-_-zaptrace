@@ -887,9 +887,7 @@ class TestWaiverSupport:
 
         v = ERCViolation(rule_id="ERC001", severity=ERCSeverity.ERROR, message="x")
         assert not v.is_waived
-        v2 = ERCViolation(
-            rule_id="ERC001", severity=ERCSeverity.ERROR, message="x", waiver_reason="approved"
-        )
+        v2 = ERCViolation(rule_id="ERC001", severity=ERCSeverity.ERROR, message="x", waiver_reason="approved")
         assert v2.is_waived
 
     def test_coverage_summary_includes_waivers(self) -> None:
@@ -908,9 +906,7 @@ class TestWaiverSupport:
         from zaptrace.erc.models import ERCResult, ERCSeverity, ERCViolation
 
         v_active = ERCViolation(rule_id="ERC001", severity=ERCSeverity.ERROR, message="x")
-        v_waived = ERCViolation(
-            rule_id="ERC002", severity=ERCSeverity.ERROR, message="y", waiver_reason="approved"
-        )
+        v_waived = ERCViolation(rule_id="ERC002", severity=ERCSeverity.ERROR, message="y", waiver_reason="approved")
         result = ERCResult.from_violations([v_active, v_waived], design_name="test")
         assert result.active_violations == [v_active]
         assert result.waived_violations == [v_waived]
@@ -923,16 +919,19 @@ class TestERC027:
         d = _design_with(
             comps=[
                 Component(
-                    id="u1", ref="U1", type="regulator", value="",
-                    pins={"VOUT": Pin(name="VOUT", type="power", net="3V3"),
-                          "VIN": Pin(name="VIN", type="power", net="VIN")},
+                    id="u1",
+                    ref="U1",
+                    type="regulator",
+                    value="",
+                    pins={
+                        "VOUT": Pin(name="VOUT", type="power", net="3V3"),
+                        "VIN": Pin(name="VIN", type="power", net="VIN"),
+                    },
                 ),
             ],
             nets=[
-                Net(id="3V3", name="+3V3", type=NetType.POWER,
-                    nodes=[NetNode(component_ref="U1", pin_name="VOUT")]),
-                Net(id="VIN", name="VIN", type=NetType.POWER,
-                    nodes=[NetNode(component_ref="U1", pin_name="VIN")]),
+                Net(id="3V3", name="+3V3", type=NetType.POWER, nodes=[NetNode(component_ref="U1", pin_name="VOUT")]),
+                Net(id="VIN", name="VIN", type=NetType.POWER, nodes=[NetNode(component_ref="U1", pin_name="VIN")]),
             ],
         )
         vs = rules.rule_ERC027(d)
@@ -942,13 +941,15 @@ class TestERC027:
         d = _design_with(
             comps=[
                 Component(
-                    id="r1", ref="R1", type="resistor", value="10k",
+                    id="r1",
+                    ref="R1",
+                    type="resistor",
+                    value="10k",
                     pins={"1": Pin(name="1", type="passive", net="SIGNAL")},
                 ),
             ],
             nets=[
-                Net(id="3V3", name="+3V3", type=NetType.POWER,
-                    nodes=[NetNode(component_ref="R1", pin_name="1")]),
+                Net(id="3V3", name="+3V3", type=NetType.POWER, nodes=[NetNode(component_ref="R1", pin_name="1")]),
             ],
         )
         vs = rules.rule_ERC027(d)
@@ -971,20 +972,31 @@ class TestERC028:
         d = _design_with(
             comps=[
                 Component(
-                    id="u1", ref="U1", type="buck", value="",
+                    id="u1",
+                    ref="U1",
+                    type="buck",
+                    value="",
                     current_rating=0.5,
-                    pins={"VOUT": Pin(name="VOUT", type="output", net="3V3"),
-                          "VIN": Pin(name="VIN", type="power", net="VIN")},
+                    pins={
+                        "VOUT": Pin(name="VOUT", type="output", net="3V3"),
+                        "VIN": Pin(name="VIN", type="power", net="VIN"),
+                    },
                 ),
                 Component(
-                    id="r1", ref="R1", type="resistor", value="1A",
+                    id="r1",
+                    ref="R1",
+                    type="resistor",
+                    value="1A",
                     pins={"1": Pin(name="1", type="passive", net="3V3")},
                 ),
             ],
             nets=[
-                Net(id="3V3", name="+3V3", type=NetType.POWER,
-                    nodes=[NetNode(component_ref="U1", pin_name="VOUT"),
-                           NetNode(component_ref="R1", pin_name="1")]),
+                Net(
+                    id="3V3",
+                    name="+3V3",
+                    type=NetType.POWER,
+                    nodes=[NetNode(component_ref="U1", pin_name="VOUT"), NetNode(component_ref="R1", pin_name="1")],
+                ),
                 Net(id="VIN", name="VIN", type=NetType.POWER),
             ],
         )
@@ -1006,17 +1018,30 @@ class TestERC029:
     def test_all_decoupling_dnp_warns(self) -> None:
         d = _design_with(
             comps=[
-                Component(id="c1", ref="C1", type="cap", value="100nF", dnp=True,
-                          pins={"1": Pin(name="1", type="passive", net="3V3"),
-                                "2": Pin(name="2", type="passive", net="GND")}),
-                Component(id="c2", ref="C2", type="cap", value="100nF", dnp=True,
-                          pins={"1": Pin(name="1", type="passive", net="3V3"),
-                                "2": Pin(name="2", type="passive", net="GND")}),
+                Component(
+                    id="c1",
+                    ref="C1",
+                    type="cap",
+                    value="100nF",
+                    dnp=True,
+                    pins={"1": Pin(name="1", type="passive", net="3V3"), "2": Pin(name="2", type="passive", net="GND")},
+                ),
+                Component(
+                    id="c2",
+                    ref="C2",
+                    type="cap",
+                    value="100nF",
+                    dnp=True,
+                    pins={"1": Pin(name="1", type="passive", net="3V3"), "2": Pin(name="2", type="passive", net="GND")},
+                ),
             ],
             nets=[
-                Net(id="3V3", name="+3V3", type=NetType.POWER,
-                    nodes=[NetNode(component_ref="C1", pin_name="1"),
-                           NetNode(component_ref="C2", pin_name="1")]),
+                Net(
+                    id="3V3",
+                    name="+3V3",
+                    type=NetType.POWER,
+                    nodes=[NetNode(component_ref="C1", pin_name="1"), NetNode(component_ref="C2", pin_name="1")],
+                ),
                 Net(id="GND", name="GND", type=NetType.GROUND),
             ],
         )
@@ -1028,15 +1053,30 @@ class TestERC029:
     def test_some_caps_populated_no_warning(self) -> None:
         d = _design_with(
             comps=[
-                Component(id="c1", ref="C1", type="cap", value="100nF", dnp=True,
-                          pins={"1": Pin(name="1", type="passive", net="3V3")}),
-                Component(id="c2", ref="C2", type="cap", value="100nF", dnp=False,
-                          pins={"1": Pin(name="1", type="passive", net="3V3")}),
+                Component(
+                    id="c1",
+                    ref="C1",
+                    type="cap",
+                    value="100nF",
+                    dnp=True,
+                    pins={"1": Pin(name="1", type="passive", net="3V3")},
+                ),
+                Component(
+                    id="c2",
+                    ref="C2",
+                    type="cap",
+                    value="100nF",
+                    dnp=False,
+                    pins={"1": Pin(name="1", type="passive", net="3V3")},
+                ),
             ],
             nets=[
-                Net(id="3V3", name="+3V3", type=NetType.POWER,
-                    nodes=[NetNode(component_ref="C1", pin_name="1"),
-                           NetNode(component_ref="C2", pin_name="1")]),
+                Net(
+                    id="3V3",
+                    name="+3V3",
+                    type=NetType.POWER,
+                    nodes=[NetNode(component_ref="C1", pin_name="1"), NetNode(component_ref="C2", pin_name="1")],
+                ),
             ],
         )
         vs = rules.rule_ERC029(d)

@@ -428,11 +428,7 @@ def _emc_findings(design: Design) -> list[AnalysisFinding]:
     loop_scores = _emc_loop_area_scores(design)
     if loop_scores:
         worst = max(loop_scores, key=lambda x: x["score"])
-        severity = (
-            AnalysisSeverity.WARNING
-            if worst["score"] >= 3
-            else AnalysisSeverity.NONBLOCKING
-        )
+        severity = AnalysisSeverity.WARNING if worst["score"] >= 3 else AnalysisSeverity.NONBLOCKING
         findings.append(
             AnalysisFinding(
                 category="emc_switcher_loop_area",
@@ -516,9 +512,7 @@ def _detect_fast_edges(design: Design) -> list[str]:
         # If the net connects to a known-fast component type, flag it
         flagged = False
         for ctype in connected_types:
-            rise = _TYPICAL_RISE_NS.get(ctype) or _TYPICAL_RISE_NS.get(
-                _infer_interface_type(ctype, "", net.name), 10.0
-            )
+            rise = _TYPICAL_RISE_NS.get(ctype) or _TYPICAL_RISE_NS.get(_infer_interface_type(ctype, "", net.name), 10.0)
             if rise <= _FAST_EDGE_THRESHOLD_NS:
                 fast.append(net.name)
                 flagged = True

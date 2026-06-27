@@ -498,8 +498,13 @@ class TestSupplyChainModels:
             boards={"main": "main_board", "display": "display_board", "sensor": "sensor_board"},
             board_to_board_connectors=[
                 BoardToBoardConnector(
-                    id="btb1", name="FPC-12", board_a="main", board_b="display",
-                    connector_on_a="J1", connector_on_b="J2", pin_count=12,
+                    id="btb1",
+                    name="FPC-12",
+                    board_a="main",
+                    board_b="display",
+                    connector_on_a="J1",
+                    connector_on_b="J2",
+                    pin_count=12,
                 ),
             ],
             cable_harnesses=[

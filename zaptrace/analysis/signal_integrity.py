@@ -69,6 +69,7 @@ def delay_for_length_ps(length_mm: float, eff_dielectric: float) -> float:
 # Crosstalk heuristic (#111 — signal classification + crosstalk risk)
 # ---------------------------------------------------------------------------
 
+
 def crosstalk_coupling_fraction(
     aggressor_width_mm: float,
     victim_width_mm: float,

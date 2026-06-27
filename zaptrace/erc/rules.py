@@ -776,8 +776,24 @@ def rule_ERC024(design: Design) -> list[ERCViolation]:
 
 
 _SPI_PERIPHERAL_KEYWORDS = (
-    "adc", "dac", "flash", "eeprom", "sram", "spi", "accel", "gyro", "baro",
-    "temp", "sensor", "display", "lcd", "oled", "eth", "enc28", "w5500", "mcp",
+    "adc",
+    "dac",
+    "flash",
+    "eeprom",
+    "sram",
+    "spi",
+    "accel",
+    "gyro",
+    "baro",
+    "temp",
+    "sensor",
+    "display",
+    "lcd",
+    "oled",
+    "eth",
+    "enc28",
+    "w5500",
+    "mcp",
 )
 
 
@@ -843,8 +859,7 @@ def rule_ERC026(design: Design) -> list[ERCViolation]:
     if not battery_refs:
         return violations
     has_protection = any(
-        any(kw in comp.type.lower() for kw in _LIPO_PROT_KEYWORDS)
-        for comp in design.components.values()
+        any(kw in comp.type.lower() for kw in _LIPO_PROT_KEYWORDS) for comp in design.components.values()
     )
     if not has_protection:
         violations.append(
@@ -870,8 +885,20 @@ def rule_ERC026(design: Design) -> list[ERCViolation]:
 # ---------------------------------------------------------------------------
 
 _REGULATOR_TYPE_KEYWORDS = (
-    "regulator", "ldo", "buck", "boost", "buck-boost", "dc-dc", "dcdc",
-    "tlv", "tps", "max", "lt", "adp", "mic", "mcp",
+    "regulator",
+    "ldo",
+    "buck",
+    "boost",
+    "buck-boost",
+    "dc-dc",
+    "dcdc",
+    "tlv",
+    "tps",
+    "max",
+    "lt",
+    "adp",
+    "mic",
+    "mcp",
 )
 
 
@@ -924,8 +951,7 @@ def rule_ERC027(design: Design) -> list[ERCViolation]:
                     message=f"Power net '{net.name}' has no identified driving source (no regulator, output pin, or connector on this net)",  # noqa: E501
                     net_refs=[net.id],
                     patch_suggestion=(
-                        f"Verify that '{net.name}' is fed by a regulator, "
-                        "power-source output, or external connector"
+                        f"Verify that '{net.name}' is fed by a regulator, power-source output, or external connector"
                     ),
                 )
             )
@@ -992,25 +1018,24 @@ def rule_ERC028(design: Design) -> list[ERCViolation]:
                 input_nets.add(pin.net)
 
         if input_nets and output_nets and comp.voltage_supply:
-                vin = _parse_supply_voltage(comp.voltage_supply)
-                if vin is not None:
-                    for out_net_id in output_nets:
-                        out_net = design.nets.get(out_net_id)
-                        if out_net is None:
-                            continue
-                        if is_buck and vin <= 0.5:
-                            violations.append(
-                                ERCViolation(
-                                    rule_id="ERC028",
-                                    severity=ERCSeverity.WARNING,
-                                    message=f"{comp.ref} buck regulator input ({vin:g}V) may be too low to regulate",
-                                    component_refs=[comp.ref],
-                                    patch_suggestion=(
-                                        f"Verify {comp.ref} input voltage is above "
-                                        "its minimum operating voltage"
-                                    ),
-                                )
+            vin = _parse_supply_voltage(comp.voltage_supply)
+            if vin is not None:
+                for out_net_id in output_nets:
+                    out_net = design.nets.get(out_net_id)
+                    if out_net is None:
+                        continue
+                    if is_buck and vin <= 0.5:
+                        violations.append(
+                            ERCViolation(
+                                rule_id="ERC028",
+                                severity=ERCSeverity.WARNING,
+                                message=f"{comp.ref} buck regulator input ({vin:g}V) may be too low to regulate",
+                                component_refs=[comp.ref],
+                                patch_suggestion=(
+                                    f"Verify {comp.ref} input voltage is above its minimum operating voltage"
+                                ),
                             )
+                        )
 
         # Current budget check
         if comp.current_rating is not None and comp.current_rating > 0:
@@ -1088,8 +1113,7 @@ def rule_ERC029(design: Design) -> list[ERCViolation]:
                     net_refs=[net.id],
                     component_refs=[c.ref for c in caps_on_net],
                     patch_suggestion=(
-                        "Review DNP assignments: at least one decoupling cap "
-                        "per power rail must be populated"
+                        "Review DNP assignments: at least one decoupling cap per power rail must be populated"
                     ),
                 )
             )

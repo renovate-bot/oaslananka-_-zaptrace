@@ -115,10 +115,7 @@ def security_review(design: Design) -> list[SecurityFinding]:
         )
 
     # JTAG lock-out policy
-    has_jtag = any(
-        "jtag" in net.name.lower() or "tck" in net.name.lower()
-        for net in design.nets.values()
-    )
+    has_jtag = any("jtag" in net.name.lower() or "tck" in net.name.lower() for net in design.nets.values())
     if has_jtag:
         findings.append(
             SecurityFinding(
@@ -126,8 +123,7 @@ def security_review(design: Design) -> list[SecurityFinding]:
                 severity="warning",
                 detail="JTAG pins detected — these give physical access to code and memory.",
                 recommendation=(
-                    "Disable or fuse JTAG in production firmware; "
-                    "use JTAG only on debug/engineering builds."
+                    "Disable or fuse JTAG in production firmware; use JTAG only on debug/engineering builds."
                 ),
             )
         )

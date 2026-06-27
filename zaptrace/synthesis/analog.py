@@ -169,7 +169,7 @@ def anti_alias_filter(
         attenuation_db_at_nyquist=atten_db,
         note=(
             f"RC anti-alias: R={r_chosen:g}Ω, C=100nF → fc={_sig(fc):g} Hz; "
-            f"1st-order gives {atten_db:.1f} dB at Nyquist ({nyquist_hz/1e3:.1f} kHz). "
+            f"1st-order gives {atten_db:.1f} dB at Nyquist ({nyquist_hz / 1e3:.1f} kHz). "
             f"For {attenuation_db_at_nyquist:.0f} dB target, use {order}-order filter."
         ),
     )

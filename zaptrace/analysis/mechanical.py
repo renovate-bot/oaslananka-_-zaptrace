@@ -123,11 +123,13 @@ class McadPositionTable:
     board_width_mm: float
     board_height_mm: float
     rows: list[McadComponentRow] = field(default_factory=list)
-    non_claims: list[str] = field(default_factory=lambda: [
-        "ZapTrace does not generate 3-D STEP/IGES bodies; use step_model hints with your MCAD library.",
-        "Component heights and keep-out zones must be verified in the MCAD tool.",
-        "Coordinate origin is assumed to be the lower-left corner of the board outline.",
-    ])
+    non_claims: list[str] = field(
+        default_factory=lambda: [
+            "ZapTrace does not generate 3-D STEP/IGES bodies; use step_model hints with your MCAD library.",
+            "Component heights and keep-out zones must be verified in the MCAD tool.",
+            "Coordinate origin is assumed to be the lower-left corner of the board outline.",
+        ]
+    )
 
     def to_csv(self) -> str:
         """Render the table as a CSV string (compatible with IDF/IPC-7351 centroid format)."""
@@ -135,30 +137,44 @@ class McadPositionTable:
         writer = csv.writer(buf)
         writer.writerow(["Ref", "Value", "Footprint", "PosX(mm)", "PosY(mm)", "Rotation(deg)", "Side", "3D_Model"])
         for row in self.rows:
-            writer.writerow([
-                row.ref, row.value, row.footprint,
-                f"{row.x_mm:.4f}", f"{row.y_mm:.4f}",
-                f"{row.rotation_deg:.2f}", row.side, row.step_model,
-            ])
+            writer.writerow(
+                [
+                    row.ref,
+                    row.value,
+                    row.footprint,
+                    f"{row.x_mm:.4f}",
+                    f"{row.y_mm:.4f}",
+                    f"{row.rotation_deg:.2f}",
+                    row.side,
+                    row.step_model,
+                ]
+            )
         return buf.getvalue()
 
     def to_json(self) -> str:
         """Render as a JSON dict."""
-        return json.dumps({
-            "board_width_mm": self.board_width_mm,
-            "board_height_mm": self.board_height_mm,
-            "component_count": len(self.rows),
-            "rows": [
-                {
-                    "ref": r.ref, "value": r.value, "footprint": r.footprint,
-                    "x_mm": r.x_mm, "y_mm": r.y_mm,
-                    "rotation_deg": r.rotation_deg, "side": r.side,
-                    "step_model": r.step_model,
-                }
-                for r in self.rows
-            ],
-            "non_claims": self.non_claims,
-        }, indent=2)
+        return json.dumps(
+            {
+                "board_width_mm": self.board_width_mm,
+                "board_height_mm": self.board_height_mm,
+                "component_count": len(self.rows),
+                "rows": [
+                    {
+                        "ref": r.ref,
+                        "value": r.value,
+                        "footprint": r.footprint,
+                        "x_mm": r.x_mm,
+                        "y_mm": r.y_mm,
+                        "rotation_deg": r.rotation_deg,
+                        "side": r.side,
+                        "step_model": r.step_model,
+                    }
+                    for r in self.rows
+                ],
+                "non_claims": self.non_claims,
+            },
+            indent=2,
+        )
 
     def to_idf_placement(self) -> str:
         """Render the .PLACE section of an IDF 2.0 board file (text output only).
@@ -170,8 +186,7 @@ class McadPositionTable:
         for row in self.rows:
             side_idf = "TOP" if row.side == "top" else "BOTTOM"
             lines.append(
-                f'"{row.ref}" "{row.footprint}" {row.x_mm:.4f} {row.y_mm:.4f} '
-                f'0.0 {row.rotation_deg:.2f} {side_idf}'
+                f'"{row.ref}" "{row.footprint}" {row.x_mm:.4f} {row.y_mm:.4f} 0.0 {row.rotation_deg:.2f} {side_idf}'
             )
         lines.append(".END_PLACE")
         return "\n".join(lines)
@@ -184,10 +199,16 @@ def _infer_side(comp: Any) -> str:
         return props["side"]
     fp = getattr(comp, "footprint_def", None)
     if fp and hasattr(fp, "pads"):
-        pads_bottom = sum(1 for p in fp.pads if getattr(p, "layer", None) and
-                          getattr(p.layer, "value", str(getattr(p, "layer", ""))) == "bottom")
-        pads_top = sum(1 for p in fp.pads if getattr(p, "layer", None) and
-                       getattr(p.layer, "value", str(getattr(p, "layer", ""))) == "top")
+        pads_bottom = sum(
+            1
+            for p in fp.pads
+            if getattr(p, "layer", None) and getattr(p.layer, "value", str(getattr(p, "layer", ""))) == "bottom"
+        )
+        pads_top = sum(
+            1
+            for p in fp.pads
+            if getattr(p, "layer", None) and getattr(p.layer, "value", str(getattr(p, "layer", ""))) == "top"
+        )
         if pads_bottom > pads_top:
             return "bottom"
     return "top"
@@ -238,15 +259,17 @@ def mcad_component_table(
         if hasattr(comp, "properties") and comp.properties:
             rotation = float(comp.properties.get("rotation", 0.0))
 
-        rows.append(McadComponentRow(
-            ref=comp.ref,
-            value=getattr(comp, "value", "") or "",
-            footprint=getattr(comp, "footprint", "") or "",
-            x_mm=round(x_mm, 4),
-            y_mm=round(y_mm, 4),
-            rotation_deg=round(rotation, 2),
-            side=_infer_side(comp),
-            step_model=_infer_step_model(comp),
-        ))
+        rows.append(
+            McadComponentRow(
+                ref=comp.ref,
+                value=getattr(comp, "value", "") or "",
+                footprint=getattr(comp, "footprint", "") or "",
+                x_mm=round(x_mm, 4),
+                y_mm=round(y_mm, 4),
+                rotation_deg=round(rotation, 2),
+                side=_infer_side(comp),
+                step_model=_infer_step_model(comp),
+            )
+        )
 
     return McadPositionTable(board_width_mm=width, board_height_mm=height, rows=rows)

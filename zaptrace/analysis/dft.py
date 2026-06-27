@@ -105,7 +105,7 @@ def bringup_checklist(design: Design) -> list[str]:
 # ---------------------------------------------------------------------------
 
 _TP_DIAMETER_MM = 1.0  # standard SMD test-point pad diameter
-_TP_DRILL_MM = 0.0     # SMD (no drill); through-hole TPs would be > 0
+_TP_DRILL_MM = 0.0  # SMD (no drill); through-hole TPs would be > 0
 
 
 @dataclass(frozen=True)

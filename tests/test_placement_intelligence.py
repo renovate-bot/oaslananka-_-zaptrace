@@ -261,9 +261,7 @@ class TestPlacementCandidateScoring:
                 "sensor1": (80.0, 60.0),
             }
         )
-        d.constraints.placement.append(
-            PlacementIntent(component="J*", edge="bottom", reason="connector at bottom")
-        )
+        d.constraints.placement.append(PlacementIntent(component="J*", edge="bottom", reason="connector at bottom"))
         d.constraints.placement.append(
             PlacementIntent(
                 component="C*",
@@ -307,9 +305,7 @@ class TestOverallScore:
                 "sensor1": (80.0, 60.0),
             }
         )
-        d.constraints.placement.append(
-            PlacementIntent(component="J*", edge="bottom", reason="edge connector")
-        )
+        d.constraints.placement.append(PlacementIntent(component="J*", edge="bottom", reason="edge connector"))
         analysis = analyze_placement(d)
         # Should be close to 1.0 since constraints are met and no violations
         assert analysis.score > 0.8, f"Score too low: {analysis.score}"
