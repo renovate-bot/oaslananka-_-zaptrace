@@ -10,13 +10,11 @@ Provides:
 
 from __future__ import annotations
 
-import os
 import re
 import time
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # Risk levels
@@ -50,9 +48,13 @@ _SECRET_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 # ---------------------------------------------------------------------------
 
 _INJECTION_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("system-override", re.compile(r"(?i)(?:ignore|override|disregard)\s+(?:all\s+)?(?:previous|above|system)\s+(?:instructions|prompts|commands)")),
+    ("system-override", re.compile(
+        r"(?i)(?:ignore|override|disregard)\s+(?:all\s+)?(?:previous|above|system)\s+(?:instructions|prompts|commands)"
+    )),
     ("delimiter-confusion", re.compile(r"(?i)(?:forget|ignore|new\s+instruction|system\s+prompt)")),
-    ("role-impersonation", re.compile(r"(?i)(?:you\s+are\s+(?:now|not\s+)|act\s+as\s+(?:if\s+)?you\s+are|from\s+now\s+on\s+you\s+are)")),
+    ("role-impersonation", re.compile(
+        r"(?i)(?:you\s+are\s+(?:now|not\s+)|act\s+as\s+(?:if\s+)?you\s+are|from\s+now\s+on\s+you\s+are)"
+    )),
     ("payload-smuggle", re.compile(r"(?i)(?:<\|im_start|im_end\|>|<\|system\|>|<\|user\|>|<\|assistant\|>)")),
     ("jailbreak", re.compile(r"(?i)(?:DAN|do\s+anything\s+now|jailbreak|ignore\s+all\s+rules|no\s+limits)")),
     ("sql-injection", re.compile(r"(?:'.*\s*OR\s*'|'.*\s*--\s*|;\s*DROP\s+TABLE)", re.IGNORECASE)),
@@ -165,7 +167,7 @@ def classify_tool_call(session_id: str, tool_name: str, params: dict[str, Any]) 
     # Suspicious sequences
     if sb.tool_history:
         last_tool = sb.tool_history[-1]["tool"]
-        for tool_a, tool_b, label in _SUSPICIOUS_SEQUENCES:
+        for tool_a, tool_b, _label in _SUSPICIOUS_SEQUENCES:
             if last_tool == tool_a and tool_name == tool_b:
                 return ActionRisk.SUSPICIOUS
 

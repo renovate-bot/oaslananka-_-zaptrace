@@ -119,7 +119,7 @@ def crosstalk_risk_label(coupling_fraction: float) -> str:
 # Return-path continuity checker (#111)
 # ---------------------------------------------------------------------------
 
-from dataclasses import dataclass
+from dataclasses import dataclass  # noqa: E402
 
 
 @dataclass(frozen=True)

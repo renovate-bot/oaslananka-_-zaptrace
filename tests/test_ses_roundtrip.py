@@ -128,7 +128,7 @@ class TestSesRoundTrip:
 
     def test_roundtrip_preserves_net_names(self, tmp_path: Path) -> None:
         """Net names in the SES file should match the design's net names."""
-        design = _make_roundtrip_design()
+        _make_roundtrip_design()
         ses_file = tmp_path / "output.ses"
         ses_file.write_text(_make_ses_content())
 
@@ -201,7 +201,7 @@ class TestSesParserEdgeCases:
         assert len(result.vias) == 1
         assert len(result.traces) == 1  # via represented as trace segment
         via = result.vias[0]
-        x, y, diam, hole = via[0], via[1], via[2], via[3]
+        x, y, _diam, _hole = via[0], via[1], via[2], via[3]
         assert x > 0
         assert y > 0
 
@@ -239,7 +239,7 @@ class TestSesImportIntegration:
         ses_file.write_text(_make_ses_content())
 
         # 4. Apply routing
-        result = apply_ses_routing(design, ses_file)
+        apply_ses_routing(design, ses_file)
 
         # 5. Verify design is populated
         assert design.routing is not None
@@ -255,6 +255,6 @@ class TestSesImportIntegration:
         # Check via data integrity
         for via in design.routing.vias:
             assert len(via) >= 4
-            x, y, diam, hole = via[0], via[1], via[2], via[3]
+            _x, _y, diam, hole = via[0], via[1], via[2], via[3]
             assert diam > 0
             assert hole > 0

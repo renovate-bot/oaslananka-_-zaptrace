@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from zaptrace.library.datasheet import DatasheetExtract, ExtractedField, extract_datasheet
+from zaptrace.library.datasheet import ExtractedField, extract_datasheet
 
 _LDO_DATASHEET = """
 TS2940 Positive Voltage Regulator

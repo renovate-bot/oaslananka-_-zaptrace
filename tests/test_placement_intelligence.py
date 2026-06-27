@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from zaptrace.core.models import (
     Component,
-    ConstraintSet,
     Design,
     DesignMeta,
     Net,
@@ -15,7 +14,6 @@ from zaptrace.core.models import (
 )
 from zaptrace.synthesis.placement import (
     PlacementAnalysis,
-    PlacementCandidate,
     analyze_placement,
     group_components,
 )

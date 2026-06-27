@@ -76,8 +76,8 @@ def verify_plugin_signature(
         return False, f"public key fingerprint '{fingerprint}' not in trusted set"
 
     try:
-        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
         from cryptography.exceptions import InvalidSignature
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
     except ImportError:
         return False, "cryptography package not installed; cannot verify Ed25519 signatures"
 

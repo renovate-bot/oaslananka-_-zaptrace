@@ -9,21 +9,11 @@ from zaptrace.core.models import (
     Component,
     Design,
     DesignMeta,
-    FootprintDef,
-    LayerSet,
     LayerSpec,
     Net,
     NetNode,
-    Pad,
-    PadShape,
     RouteResult,
     TraceSegment,
-)
-from zaptrace.export.ipc2581 import (
-    FabCapabilityDb,
-    PanelLayout,
-    compute_panel,
-    export_ipc2581,
 )
 from zaptrace.export.capabilities import (
     ExportBackend,
@@ -31,7 +21,12 @@ from zaptrace.export.capabilities import (
     ExportSupport,
     get_export_capability,
 )
-
+from zaptrace.export.ipc2581 import (
+    FabCapabilityDb,
+    PanelLayout,
+    compute_panel,
+    export_ipc2581,
+)
 
 # ---------------------------------------------------------------------------
 #  IPC-2581 export tests

@@ -19,7 +19,6 @@ from typing import Any
 
 from zaptrace.core.models import ConstraintSet, Design, PlacementIntent
 
-
 # ---------------------------------------------------------------------------
 # Public result types
 # ---------------------------------------------------------------------------
@@ -289,13 +288,12 @@ def _check_keepouts(
                 pos = placement[cid]
                 x, y = pos
                 near_edge = False
-                if intent.edge == "left" and x < edge_margin:
-                    near_edge = True
-                elif intent.edge == "right" and x > bw - edge_margin:
-                    near_edge = True
-                elif intent.edge == "top" and y > bh - edge_margin:
-                    near_edge = True
-                elif intent.edge == "bottom" and y < edge_margin:
+                if (
+                    intent.edge == "left" and x < edge_margin
+                    or intent.edge == "right" and x > bw - edge_margin
+                    or intent.edge == "top" and y > bh - edge_margin
+                    or intent.edge == "bottom" and y < edge_margin
+                ):
                     near_edge = True
                 if not near_edge:
                     comp = design.components[cid]
@@ -479,7 +477,9 @@ def _score_placement_for_component(
     assert placement is not None, "design.placement must be set before scoring"
     comp = design.components.get(component_id)
     if comp is None:
-        return PlacementCandidate(component_id=component_id, x_mm=x_mm, y_mm=y_mm, score=0.0, reasons=["unknown component"])
+        return PlacementCandidate(
+            component_id=component_id, x_mm=x_mm, y_mm=y_mm, score=0.0, reasons=["unknown component"]
+        )
 
     board = design.board
     bw = board.width_mm if hasattr(board, "width_mm") else 100.0
@@ -500,13 +500,12 @@ def _score_placement_for_component(
 
         if intent.edge:
             on_correct_edge = False
-            if intent.edge == "bottom" and y_mm < margin:
-                on_correct_edge = True
-            elif intent.edge == "top" and y_mm > bh - margin:
-                on_correct_edge = True
-            elif intent.edge == "left" and x_mm < margin:
-                on_correct_edge = True
-            elif intent.edge == "right" and x_mm > bw - margin:
+            if (
+                intent.edge == "bottom" and y_mm < margin
+                or intent.edge == "top" and y_mm > bh - margin
+                or intent.edge == "left" and x_mm < margin
+                or intent.edge == "right" and x_mm > bw - margin
+            ):
                 on_correct_edge = True
             if on_correct_edge:
                 constraint_score += 0.05
@@ -571,13 +570,11 @@ def _score_placement_for_component(
                 continue
             other_pos = placement[other_id]
             d = _distance_mm((x_mm, y_mm), other_pos)
-            if is_analog and other_type in ("mcu", "microcontroller", "switcher", "dc-dc", "digital"):
-                if d < 5.0:
-                    score -= 0.1
-                    reasons.append(f"analog {comp.ref} too close to digital {other_comp.ref} ({d:.1f} mm)")
-            if is_digital and other_type in ("sensor", "analog", "adc", "dac"):
-                if d < 5.0:
-                    score -= 0.05
+            if is_analog and other_type in ("mcu", "microcontroller", "switcher", "dc-dc", "digital") and d < 5.0:
+                score -= 0.1
+                reasons.append(f"analog {comp.ref} too close to digital {other_comp.ref} ({d:.1f} mm)")
+            if is_digital and other_type in ("sensor", "analog", "adc", "dac") and d < 5.0:
+                score -= 0.05
 
     return PlacementCandidate(
         component_id=component_id,

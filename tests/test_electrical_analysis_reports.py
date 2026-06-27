@@ -91,12 +91,12 @@ def test_run_analysis_adapter_matches_proof_checker_shape() -> None:
 # EMC pre-compliance tests  (#111)
 # ---------------------------------------------------------------------------
 
-from zaptrace.analysis.reports import (
+from zaptrace.analysis.reports import (  # noqa: E402
     _check_external_cable_filtering,
     _detect_fast_edges,
     _emc_loop_area_scores,
 )
-from zaptrace.core.models import (
+from zaptrace.core.models import (  # noqa: E402
     Component,
     Design,
     DesignMeta,

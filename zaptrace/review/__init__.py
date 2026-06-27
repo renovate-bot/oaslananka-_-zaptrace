@@ -17,13 +17,13 @@ from zaptrace.review.panels import (
     collect_review_bundle,
 )
 from zaptrace.review.workflow import (
+    HumanChecklistItem,
     ReviewDecision,
     ReviewSession,
-    HumanChecklistItem,
-    create_review_session,
-    approve_checklist_item,
-    reject_checklist_item,
     add_waiver,
+    approve_checklist_item,
+    create_review_session,
+    reject_checklist_item,
     resolve_decision,
 )
 

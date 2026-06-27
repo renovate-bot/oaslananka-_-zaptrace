@@ -12,7 +12,7 @@ complete and reviewable.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -180,7 +180,7 @@ def check_permission(
     if audit_log is not None:
         audit_log.append(
             AuditEvent(
-                timestamp=datetime.now(tz=timezone.utc).isoformat(),
+                timestamp=datetime.now(tz=UTC).isoformat(),
                 user_id=member.user_id,
                 permission=permission.value,
                 resource_id=resource_id,

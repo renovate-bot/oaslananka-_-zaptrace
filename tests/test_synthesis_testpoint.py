@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from zaptrace.core.models import Component, Design, DesignMeta, Net, NetNode, NetType, Pin, PinType
-from zaptrace.synthesis.testpoint import TestPointPlan, insert_test_points
+from zaptrace.synthesis.testpoint import insert_test_points
 
 
 def _minimal_design() -> Design:
@@ -35,7 +35,7 @@ class TestTestPointInsertion:
 
     def test_tp_components_added(self) -> None:
         d = _minimal_design()
-        plan = insert_test_points(d)
+        insert_test_points(d)
         # Check that TP components were created
         tp_refs = [ref for ref in d.components if ref.upper().startswith("TP")]
         assert len(tp_refs) >= 1
@@ -58,9 +58,9 @@ class TestTestPointInsertion:
     def test_does_not_duplicate_tps(self) -> None:
         d = _minimal_design()
         # Run insertion twice
-        plan1 = insert_test_points(d)
+        insert_test_points(d)
         tp_count_1 = len([ref for ref in d.components if ref.upper().startswith("TP")])
-        plan2 = insert_test_points(d)
+        insert_test_points(d)
         tp_count_2 = len([ref for ref in d.components if ref.upper().startswith("TP")])
         # Second run should not add duplicate TPs on the same nets
         assert tp_count_2 >= tp_count_1  # may add more for uncovered nets
@@ -78,7 +78,7 @@ class TestTestPointInsertion:
             id="TP1", ref="TP1", type="testpoint", value="",
             pins={"1": Pin(name="1", type=PinType.PASSIVE)},
         )
-        plan = insert_test_points(d)
+        insert_test_points(d)
         # New TPs should start at TP2
         assert "TP1" in d.components
         tp_refs = sorted([ref for ref in d.components if ref.upper().startswith("TP")])

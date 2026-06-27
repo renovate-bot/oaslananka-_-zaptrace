@@ -10,7 +10,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-
 _INVALID_CHARS_RE = re.compile(r"[^a-zA-Z0-9_+\-\.]")
 _LEADING_DIGIT_RE = re.compile(r"^[0-9]")
 

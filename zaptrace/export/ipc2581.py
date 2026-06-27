@@ -17,13 +17,11 @@ References
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any
 
-from zaptrace.core.models import Design, PadShape, RouteResult
-
+from zaptrace.core.models import Design, RouteResult
 
 # ---------------------------------------------------------------------------
 # IPC-2581 constants
@@ -190,7 +188,7 @@ def _export_stackup(parent: ET.Element, design: Design) -> None:
     else:
         # Default 2-layer stackup
         layers = []
-        for i, name in enumerate(_STANDARD_LAYER_NAMES[:2]):
+        for _, name in enumerate(_STANDARD_LAYER_NAMES[:2]):
             from zaptrace.core.models import LayerSpec
 
             layers.append(LayerSpec(name=name, type="signal"))
@@ -201,7 +199,12 @@ def _export_stackup(parent: ET.Element, design: Design) -> None:
         layer_el = _add_sub(
             stackup,
             "Layer",
-            attrib={"layerFunction": lf, "layerNumber": seq, "layerName": layer.name, "side": "Top" if i == 0 else "Bottom" if i == len(layers) - 1 else "Inner"},
+            attrib={
+                "layerFunction": lf,
+                "layerNumber": seq,
+                "layerName": layer.name,
+                "side": "Top" if i == 0 else "Bottom" if i == len(layers) - 1 else "Inner",
+            },
         )
         _add_sub(layer_el, "etchedLayer", attrib={
             "conductiveMaterial": "Copper",
@@ -366,7 +369,7 @@ class FabCapabilityDb:
     def profile_names(self) -> list[str]:
         return self._registry.available_names
 
-    def get_profile(self, name: str):
+    def get_profile(self, name: str) -> object:
         """Return a fab profile by name, or raise ValueError."""
         profile = self._registry.get(name)
         if profile is None:

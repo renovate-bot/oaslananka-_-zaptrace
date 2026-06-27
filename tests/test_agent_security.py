@@ -1,19 +1,17 @@
 """Tests for agent-runtime security hardening (sandbox, replay, injection detection)."""
 
 import json
-import re
 import time
-from pathlib import Path
 
 import pytest
 
 from zaptrace.security.replay import (
     ReplayEntry,
     SessionLog,
+    _session_logs,
     get_replay,
     get_session_log,
     record_tool_call,
-    _session_logs,
 )
 from zaptrace.security.sandbox import (
     ActionRisk,
@@ -28,7 +26,6 @@ from zaptrace.security.sandbox import (
     reset_sandbox,
     sandbox_status,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -193,7 +190,11 @@ class TestSecretRedaction:
         assert "[REDACTED]" in result
 
     def test_jwt_redacted(self):
-        result = redact_secrets("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.d8f1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0")
+        token = (
+            "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0"
+            ".d8f1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0"
+        )
+        result = redact_secrets(token)
         assert "[REDACTED]" in result
 
     def test_private_key_detected(self):

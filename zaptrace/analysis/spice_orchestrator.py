@@ -20,9 +20,9 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from zaptrace.analysis.spice_sim import SpiceResult, run_operating_point
 from zaptrace.core.models import Design, NetType
 from zaptrace.export.spice import export_spice_netlist
-from zaptrace.analysis.spice_sim import SpiceResult, run_operating_point
 
 
 @dataclass

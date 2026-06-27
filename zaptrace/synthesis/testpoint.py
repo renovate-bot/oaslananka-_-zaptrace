@@ -10,8 +10,8 @@ placed.
 
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass, field
-from typing import Any
 
 from zaptrace.core.models import Component, Design, NetType
 
@@ -44,10 +44,8 @@ def _next_tp_index(design: Design) -> int:
     existing: set[str] = set()
     for comp in design.components.values():
         if comp.ref.upper().startswith("TP"):
-            try:
+            with contextlib.suppress(ValueError, IndexError):
                 existing.add(comp.ref.upper())
-            except (ValueError, IndexError):
-                pass
     idx = 1
     while f"TP{idx}" in existing:
         idx += 1
@@ -90,7 +88,7 @@ def insert_test_points(design: Design, *, add_debug_tps: bool = True) -> TestPoi
             continue
         # Skip very low voltage nets (likely references, not rails)
         # Infer from net name if possible
-        ref = _add_tp(design, net.id, net.name, tp_idx)
+        _add_tp(design, net.id, net.name, tp_idx)
         plan.added_power_rail_tps.append(net.name)
         tp_idx += 1
 
@@ -99,7 +97,7 @@ def insert_test_points(design: Design, *, add_debug_tps: bool = True) -> TestPoi
         for net in design.nets.values():
             name_lower = net.name.lower()
             if any(tok in name_lower for tok in _DEBUG_NET_TOKENS):
-                ref = _add_tp(design, net.id, net.name, tp_idx)
+                _add_tp(design, net.id, net.name, tp_idx)
                 plan.added_debug_signal_tps.append(net.name)
                 tp_idx += 1
 
@@ -107,15 +105,21 @@ def insert_test_points(design: Design, *, add_debug_tps: bool = True) -> TestPoi
     for net in design.nets.values():
         if net.type != NetType.ANALOG:
             continue
-        ref = _add_tp(design, net.id, net.name, tp_idx)
+        _add_tp(design, net.id, net.name, tp_idx)
         plan.added_analog_tps.append(net.name)
         tp_idx += 1
 
+    _total_tps = (
+        tp_idx - _next_tp_index(design)
+        + len(plan.added_power_rail_tps)
+        + len(plan.added_debug_signal_tps)
+        + len(plan.added_analog_tps)
+    )
     plan.notes.append(
         f"Added {len(plan.added_power_rail_tps)} power-rail TP(s), "
         f"{len(plan.added_debug_signal_tps)} debug TP(s), "
         f"{len(plan.added_analog_tps)} analog TP(s) — "
-        f"total {tp_idx - _next_tp_index(design) + len(plan.added_power_rail_tps) + len(plan.added_debug_signal_tps) + len(plan.added_analog_tps)} test points"
+        f"total {_total_tps} test points"
     )
     return plan
 
@@ -133,7 +137,11 @@ def extend_synthesis_with_testpoints(design: Design) -> TestPointPlan:
         record = ProvRecord(
             record_id="synth-tp-insert",
             tool="zaptrace-synthesis",
-            decision_summary=f"Auto-inserted {len(plan.added_power_rail_tps) + len(plan.added_debug_signal_tps) + len(plan.added_analog_tps)} test points",
+            decision_summary=(
+                f"Auto-inserted "
+                f"{len(plan.added_power_rail_tps) + len(plan.added_debug_signal_tps) + len(plan.added_analog_tps)}"
+                " test points"
+            ),
         )
         design.prov_records.append(record)
     return plan

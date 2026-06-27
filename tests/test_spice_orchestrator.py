@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import pytest
-
-from zaptrace.analysis.spice_orchestrator import NodeVoltageCheck, SpiceOrchestrationResult, orchestrate_spice, annotate_design_from_spice
-from zaptrace.core.models import Component, Design, DesignMeta, Net, NetNode, NetType, Pin
-from zaptrace.core.models import PinType
+from zaptrace.analysis.spice_orchestrator import (
+    SpiceOrchestrationResult,
+    annotate_design_from_spice,
+    orchestrate_spice,
+)
+from zaptrace.core.models import Component, Design, DesignMeta, Net, NetNode, NetType, Pin, PinType
 
 
 def _simple_design() -> Design:

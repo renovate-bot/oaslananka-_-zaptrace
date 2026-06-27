@@ -6,7 +6,6 @@ import pytest
 
 from zaptrace.benchmark.corpus import (
     BUILTIN_BENCHMARKS,
-    BenchmarkEntry,
     BenchmarkResult,
     BenchmarkRunResult,
     get_benchmark,

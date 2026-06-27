@@ -11,14 +11,9 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict, Field
-
 from zaptrace.core.diff import diff_designs
 from zaptrace.core.models import Design
 from zaptrace.export.bom import generate_bom_json
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -291,7 +286,7 @@ def _diff_panel(design: Design, baseline: Design | None = None) -> ReviewPanel:
         )
     try:
         changes = diff_designs(baseline, design)
-        items = [getattr(c, "model_dump", lambda mode="json": {"message": str(c)})() for c in changes]
+        items = [getattr(c, "model_dump", lambda mode="json", _c=c: {"message": str(_c)})() for c in changes]
         return ReviewPanel(
             panel_id="semantic_diff",
             title="Semantic Diff",

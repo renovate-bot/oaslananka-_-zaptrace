@@ -923,7 +923,10 @@ def rule_ERC027(design: Design) -> list[ERCViolation]:
                     severity=ERCSeverity.WARNING,
                     message=f"Power net '{net.name}' has no identified driving source (no regulator, output pin, or connector on this net)",  # noqa: E501
                     net_refs=[net.id],
-                    patch_suggestion=f"Verify that '{net.name}' is fed by a regulator, power-source output, or external connector",
+                    patch_suggestion=(
+                        f"Verify that '{net.name}' is fed by a regulator, "
+                        "power-source output, or external connector"
+                    ),
                 )
             )
     return violations
@@ -982,15 +985,13 @@ def rule_ERC028(design: Design) -> list[ERCViolation]:
         # Check headroom: regulator's output net vs supply
         output_nets: set[str] = set()
         input_nets: set[str] = set()
-        for pin_name, pin in comp.pins.items():
+        for _pin_name, pin in comp.pins.items():
             if pin.type.value == "output" and pin.net:
                 output_nets.add(pin.net)
             if pin.type.value == "power" and pin.net:
                 input_nets.add(pin.net)
 
-        if input_nets and output_nets:
-            # If the regulator has a voltage_supply, compare to output
-            if comp.voltage_supply:
+        if input_nets and output_nets and comp.voltage_supply:
                 vin = _parse_supply_voltage(comp.voltage_supply)
                 if vin is not None:
                     for out_net_id in output_nets:
@@ -1004,7 +1005,10 @@ def rule_ERC028(design: Design) -> list[ERCViolation]:
                                     severity=ERCSeverity.WARNING,
                                     message=f"{comp.ref} buck regulator input ({vin:g}V) may be too low to regulate",
                                     component_refs=[comp.ref],
-                                    patch_suggestion=f"Verify {comp.ref} input voltage is above its minimum operating voltage",
+                                    patch_suggestion=(
+                                        f"Verify {comp.ref} input voltage is above "
+                                        "its minimum operating voltage"
+                                    ),
                                 )
                             )
 
@@ -1064,7 +1068,7 @@ def rule_ERC029(design: Design) -> list[ERCViolation]:
         return violations
 
     # Check power nets: if ALL decoupling caps on a net are DNP, flag it
-    ground_net_ids = {nid for nid, n in design.nets.items() if n.type == NetType.GROUND}
+    {nid for nid, n in design.nets.items() if n.type == NetType.GROUND}
     for net in design.nets.values():
         if net.type != NetType.POWER:
             continue
@@ -1083,7 +1087,10 @@ def rule_ERC029(design: Design) -> list[ERCViolation]:
                     message=f"All decoupling capacitors on power net '{net.name}' are DNP — no decoupling in the populated variant",  # noqa: E501
                     net_refs=[net.id],
                     component_refs=[c.ref for c in caps_on_net],
-                    patch_suggestion="Review DNP assignments: at least one decoupling cap per power rail must be populated",
+                    patch_suggestion=(
+                        "Review DNP assignments: at least one decoupling cap "
+                        "per power rail must be populated"
+                    ),
                 )
             )
 

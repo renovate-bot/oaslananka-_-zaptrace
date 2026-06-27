@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-from zaptrace.synthesis.calculators import nearest_e_series, _sig
+from zaptrace.synthesis.calculators import _sig, nearest_e_series
 
 
 def noninverting_gain(r_feedback: float, r_ground: float) -> float:

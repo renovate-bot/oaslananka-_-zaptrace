@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 MANIFESTO = Path("docs/product/manifesto.md")
 COMPETITOR_MATRIX = Path("docs/strategy/competitor-matrix.md")
 

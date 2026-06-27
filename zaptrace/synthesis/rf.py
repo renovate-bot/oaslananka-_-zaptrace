@@ -203,11 +203,15 @@ def microstrip_50ohm_width_mm(
     a = z0 / 60.0 * math.sqrt((er + 1) / 2.0) + (er - 1) / (er + 1) * (0.23 + 0.11 / er)
     b = 377.0 * math.pi / (2.0 * z0 * math.sqrt(er))
     w_over_h_narrow = 8 * math.exp(a) / (math.exp(2 * a) - 2)
-    w_over_h_wide = 2.0 / math.pi * (b - 1.0 - math.log(2 * b - 1) + (er - 1) / (2 * er) * (math.log(b - 1) + 0.39 - 0.61 / er))
+    w_over_h_wide = (
+        2.0 / math.pi * (b - 1.0 - math.log(2 * b - 1) + (er - 1) / (2 * er) * (math.log(b - 1) + 0.39 - 0.61 / er))
+    )
     w_over_h = w_over_h_narrow if w_over_h_narrow < 2.0 else w_over_h_wide
     # Account for copper thickness (Hammerstad correction)
     t_mm = copper_thickness_um / 1000.0
-    dw = t_mm / math.pi * math.log(1 + 4 * math.e * substrate_height_mm / (t_mm * (1 / math.tanh(math.sqrt(6.517 * w_over_h))) ** 2))
+    dw = t_mm / math.pi * math.log(
+        1 + 4 * math.e * substrate_height_mm / (t_mm * (1 / math.tanh(math.sqrt(6.517 * w_over_h))) ** 2)
+    )
     w_mm = w_over_h * substrate_height_mm - dw
     return round(max(w_mm, 0.01), 4)
 

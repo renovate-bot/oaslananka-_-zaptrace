@@ -2,36 +2,25 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-from typing import Any
-
 import pytest
 from fastapi.testclient import TestClient
 
 from zaptrace.api.server import app
-from zaptrace.core.diff import DiffEntry, DiffType
-from zaptrace.core.models import Component, DRCViolation, DRCResult, Design, DesignMeta, Net, NetNode
-from zaptrace.erc.models import ERCViolation, ERCSeverity
+from zaptrace.core.models import Component, Design, DesignMeta, DRCResult, DRCViolation, Net, NetNode
+from zaptrace.erc.models import ERCSeverity, ERCViolation
 from zaptrace.review.panels import (
-    ReviewPanel,
-    ReviewPanelBundle,
     collect_panels,
     collect_review_bundle,
 )
 from zaptrace.review.workflow import (
     ChecklistStatus,
     DecisionType,
-    HumanChecklistItem,
-    ReviewDecision,
-    ReviewSession,
     add_waiver,
     approve_checklist_item,
     create_review_session,
     reject_checklist_item,
     resolve_decision,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -135,7 +124,10 @@ class TestCollectPanels:
 
     def test_all_panels_returned(self, design: Design) -> None:
         panels = collect_panels(design)
-        expected = {"requirements", "erc", "drc", "dfm", "bom", "supply", "manufacturing", "simulation", "proof_pack", "decision_log"}
+        expected = {
+            "requirements", "erc", "drc", "dfm", "bom",
+            "supply", "manufacturing", "simulation", "proof_pack", "decision_log",
+        }
         assert expected.issubset(set(panels.keys()))
 
     def test_review_bundle_overall_pass(self, design: Design) -> None:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import APIRouter, HTTPException
 
 from zaptrace.security.replay import get_replay
@@ -16,23 +18,23 @@ router = APIRouter()
 
 
 @router.get("/sandbox/{session_id}/status")
-def api_sandbox_status(session_id: str):
+def api_sandbox_status(session_id: str) -> dict[str, Any]:
     """Get sandbox status for a session (call count, budget, emergency flag)."""
     try:
         return sandbox_status(session_id)
     except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @router.post("/sandbox/{session_id}/stop")
-def api_sandbox_stop(session_id: str, reason: str = ""):
+def api_sandbox_stop(session_id: str, reason: str = "") -> dict[str, Any]:
     """Emergency-stop a session — no further tool calls allowed."""
     emergency_stop(session_id, reason)
     return {"session_id": session_id, "emergency_stopped": True}
 
 
 @router.post("/sandbox/{session_id}/reset")
-def api_sandbox_reset(session_id: str):
+def api_sandbox_reset(session_id: str) -> dict[str, Any]:
     """Reset emergency stop for a session."""
     emergency_reset(session_id)
     status = sandbox_status(session_id)
@@ -40,14 +42,14 @@ def api_sandbox_reset(session_id: str):
 
 
 @router.post("/sandbox/{session_id}/clear")
-def api_sandbox_clear(session_id: str):
+def api_sandbox_clear(session_id: str) -> dict[str, Any]:
     """Full sandbox reset — clear counters and budgets."""
     reset_sandbox(session_id)
     return {"session_id": session_id, "reset": True}
 
 
 @router.get("/replay/{session_id}")
-def api_replay_log(session_id: str):
+def api_replay_log(session_id: str) -> dict[str, Any]:
     """Get the replayable session log for a session."""
     log = get_replay(session_id)
     if log is None:

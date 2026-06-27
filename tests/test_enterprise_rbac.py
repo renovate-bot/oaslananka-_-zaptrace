@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from zaptrace.enterprise.rbac import (
     AuditEvent,
     Permission,

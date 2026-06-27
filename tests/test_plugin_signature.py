@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import base64
 
-import pytest
-
 from zaptrace.plugin.manifest import PluginEntry, PluginManifest, PluginSigning
 from zaptrace.plugin.signature import (
     _canonical_payload,
@@ -101,7 +99,6 @@ class TestSignatureVerification:
         assert len(fp1) == 64  # SHA-256 hex digest
 
     def test_canonical_payload_excludes_signing(self) -> None:
-        import json
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
         priv_bytes, pub_bytes = _generate_keypair()

@@ -69,7 +69,10 @@ def _write_pr_comment(failing: list[dict[str, str]], max_risk: str, output_path:
 def main() -> int:
     parser = argparse.ArgumentParser(description="BOM risk gate for hardware CI/CD")
     parser.add_argument("bom", help="Path to BOM JSON or CSV file")
-    parser.add_argument("--max-risk", default="medium", choices=_RISK_ORDER, help="Maximum allowed risk level (default: medium)")
+    parser.add_argument(
+        "--max-risk", default="medium", choices=_RISK_ORDER,
+        help="Maximum allowed risk level (default: medium)",
+    )
     parser.add_argument("--pr-comment", default=None, help="Write a GitHub PR comment markdown to this file on failure")
     args = parser.parse_args()
 

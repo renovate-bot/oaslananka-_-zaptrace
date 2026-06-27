@@ -119,7 +119,7 @@ def review_diff(
         changes = diff_designs(da, db)
         items = []
         for c in changes:
-            d = getattr(c, "model_dump", lambda mode="json": {"message": str(c)})()
+            d = getattr(c, "model_dump", lambda mode="json", _c=c: {"message": str(_c)})()
             items.append(d if isinstance(d, dict) else {"message": str(c)})
         return {"ok": True, "design_a": design_a, "design_b": design_b, "changes": items, "count": len(items)}
     except (ValueError, TypeError) as e:
@@ -233,8 +233,8 @@ def decide_review_route(
         raise HTTPException(404, f"Review session '{session_id}' not found")
     try:
         dt = DecisionType(decision.lower())
-    except ValueError:
-        raise HTTPException(400, f"Invalid decision '{decision}'. Use: approve, reject, rollback")
+    except ValueError as e:
+        raise HTTPException(400, f"Invalid decision '{decision}'. Use: approve, reject, rollback") from e
     rec = resolve_decision(
         rs,
         dt,

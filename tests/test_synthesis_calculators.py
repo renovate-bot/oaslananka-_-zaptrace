@@ -7,8 +7,8 @@ import math
 import pytest
 
 from zaptrace.synthesis.calculators import (
-    boot_reset_strap_plan,
     boost_inductor_capacitor,
+    boot_reset_strap_plan,
     buck_inductor_capacitor,
     decoupling_plan,
     divider_for_output,

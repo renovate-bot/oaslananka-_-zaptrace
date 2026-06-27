@@ -20,10 +20,7 @@ import yaml
 from zaptrace.supply.contracts import (
     BomIntelligenceProvider,
     BomProviderResult,
-    CacheMetadata,
     CacheStatus,
-    LifecycleStatus,
-    PriceBreak,
 )
 
 

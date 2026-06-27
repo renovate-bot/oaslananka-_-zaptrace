@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from zaptrace.synthesis.explain import SynthesisDecisionLog, SynthesisDecision, format_decision_log_as_markdown
+from zaptrace.synthesis.explain import SynthesisDecision, SynthesisDecisionLog, format_decision_log_as_markdown
 
 
 class TestSynthesisDecision:

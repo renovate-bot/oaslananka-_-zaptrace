@@ -5,10 +5,8 @@ from __future__ import annotations
 import json
 
 from zaptrace.analysis.mechanical import (
-    McadComponentRow,
-    McadPositionTable,
-    mechanical_review,
     mcad_component_table,
+    mechanical_review,
 )
 from zaptrace.core.models import BoardDefinition, Component, Design, DesignMeta, MountingHole
 

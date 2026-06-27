@@ -127,7 +127,8 @@ def generate_electrical_analysis_report(design: Design) -> ElectricalAnalysisRep
         "length-matching uses routed trace segment lengths when available "
         "and reports missing route evidence as an info finding",
         "EMC findings are pre-compliance heuristics only — not a substitute for lab emissions/immunity testing",
-        "EMC loop-area estimates assume worst-case geometry; actual emissions depend on layout, shielding, and enclosure",
+        "EMC loop-area estimates assume worst-case geometry; "
+        "actual emissions depend on layout, shielding, and enclosure",
     ]
     return ElectricalAnalysisReport(
         design_name=design.meta.name, findings=findings, assumptions=assumptions, limitations=limitations
@@ -610,9 +611,8 @@ def _detect_split_plane_crossings(design: Design) -> list[str]:
     for net in design.nets.values():
         if net.name in fast_nets:
             continue  # already counted
-        if net.constraints and net.constraints.impedance_target is not None:
-            if net.constraints.return_path_net is None:
-                at_risk.append(net.name)
+        if net.constraints and net.constraints.impedance_target is not None and net.constraints.return_path_net is None:
+            at_risk.append(net.name)
     return sorted(at_risk)
 
 

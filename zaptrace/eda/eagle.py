@@ -21,7 +21,9 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from xml.etree import ElementTree
+from xml.etree.ElementTree import ParseError as _XMLParseError
+
+import defusedxml.ElementTree as ElementTree
 
 
 @dataclass(frozen=True)
@@ -84,7 +86,7 @@ def import_eagle_xml(path: str | Path) -> EagleImportResult:
 
     try:
         tree = ElementTree.parse(path)
-    except ElementTree.ParseError as exc:
+    except _XMLParseError as exc:
         raise ValueError(f"Invalid Eagle XML: {exc}") from exc
 
     root = tree.getroot()
@@ -151,19 +153,19 @@ def import_eagle_xml(path: str | Path) -> EagleImportResult:
     # -------------------------------------------------------------------------
     # Flag unsupported constructs
     # -------------------------------------------------------------------------
-    for polygon in root.iter("polygon"):
+    for _polygon in root.iter("polygon"):
         result.unsupported.append(
             EagleUnsupportedRecord("polygon", "Polygon fill not yet imported", "info")
         )
         break  # flag once, not per-polygon
 
-    for dr in root.iter("designrules"):
+    for _dr in root.iter("designrules"):
         result.unsupported.append(
             EagleUnsupportedRecord("designrules", "Eagle design rules not imported", "info")
         )
         break
 
-    for lib in root.iter("library"):
+    for _lib in root.iter("library"):
         result.unsupported.append(
             EagleUnsupportedRecord("library", "Embedded library definitions not imported", "info")
         )
@@ -172,7 +174,7 @@ def import_eagle_xml(path: str | Path) -> EagleImportResult:
     return result
 
 
-def import_eagle_to_design(path: str | Path) -> tuple["Any", EagleImportResult]:
+def import_eagle_to_design(path: str | Path) -> tuple[Any, EagleImportResult]:
     """Import an Eagle file and convert to a ZapTrace Design (best-effort).
 
     Returns ``(design, import_result)`` where ``design`` is a ZapTrace
