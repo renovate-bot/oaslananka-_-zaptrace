@@ -1,0 +1,39 @@
+name: Epic
+description: Define a milestone-level work package
+title: "[Epic]: "
+labels: ["type:epic", "status:needs-audit"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What outcome should this epic achieve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: required-issues
+    attributes:
+      label: Required issues
+      description: Link the child issues required to complete the epic.
+      placeholder: |
+        - [ ] #...
+        - [ ] #...
+    validations:
+      required: true
+
+  - type: textarea
+    id: release-gate
+    attributes:
+      label: Release gate
+      description: What evidence or gate makes this epic complete?
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: Which claims or behaviors are explicitly out of scope?
+    validations:
+      required: true

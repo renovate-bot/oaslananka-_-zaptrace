@@ -1,0 +1,20 @@
+id: "tps3839"
+name: "TPS3839"
+category: power
+manufacturer: "Texas Instruments"
+mpn: "TPS3839J25DBVR"
+description: "Ultra-low-power voltage supervisor, 2.25V threshold, open-drain output, SOT-23-3"
+datasheet: "https://www.ti.com/lit/gpn/tps3839"
+package: "SOT-23-3"
+footprint: "SOT23-3"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VDD: {type: "power", description: "Supply and monitored voltage"}
+  GND: {type: "power", description: "Ground"}
+  RESET: {type: "output", description: "Active-low reset output (open-drain)"}
+properties:
+  topology: "supervisor"
+  threshold_v: 2.25
+  output_type: "open-drain"
+  quiescent_current_ua: 0.15

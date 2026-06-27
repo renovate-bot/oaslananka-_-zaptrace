@@ -1,0 +1,96 @@
+name: Feature Request
+description: Propose a ZapTrace capability or workflow improvement
+title: "[Feature]: "
+labels: ["enhancement", "status:needs-audit"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the feature as a reviewable engineering capability, not as an unbounded autonomy claim.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user, agent, verification, or manufacturing problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What should be implemented?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Concrete pass/fail criteria.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence required
+      description: What proof-pack records, CI artifacts, docs, or generated files must demonstrate completion?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - type:feature
+        - type:hardening
+        - type:research
+        - type:benchmark
+        - type:docs
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - area:architecture
+        - area:agent-runtime
+        - area:eda-interop
+        - area:verification
+        - area:manufacturing
+        - area:supply-chain
+        - area:security
+        - area:ui
+        - area:ci
+        - area:docs
+        - area:plugin
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Suggested priority
+      options:
+        - priority:P0
+        - priority:P1
+        - priority:P2
+        - priority:P3
+    validations:
+      required: true
+
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: What should this issue explicitly not claim or not implement?
+    validations:
+      required: true

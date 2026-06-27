@@ -1,0 +1,17 @@
+id: "led-0805"
+name: "LED 0805"
+category: optoelectronic
+manufacturer: "Generic"
+mpn: "LED-0805"
+description: "Standard SMD LED, 0805 package"
+datasheet: ""
+package: "0805"
+footprint: "LED-0805"
+lifecycle: "active"
+voltage_supply: ""
+pins:
+  ANODE: {type: "passive", description: "Anode (+)"}
+  CATHODE: {type: "passive", description: "Cathode (-)"}
+properties:
+  color: "varies"
+  package_size: "0805"

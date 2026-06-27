@@ -1,0 +1,17 @@
+id: "sma-edge"
+name: "SMA Edge Connector"
+category: connector
+manufacturer: "Generic"
+mpn: "SMA-EDGE-RP"
+description: "SMA coaxial edge-mount connector, RP-SMA female"
+datasheet: ""
+package: "SMD"
+footprint: "SMA-EDGE"
+lifecycle: "active"
+voltage_supply: ""
+pins:
+  SIGNAL: {type: "passive", description: "Signal center pin"}
+  GND: {type: "power", description: "Ground / shield"}
+properties:
+  type: "SMA RP"
+  impedance_ohm: 50

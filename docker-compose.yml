@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  zaptrace:
+    build: .
+    volumes:
+      - ./data:/workspace/data
+      - ./output:/workspace/output
+    command: --help
+
+  zaptrace-api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/workspace/data
+      - ./output:/workspace/output
+    command: serve --host 0.0.0.0 --port 8000

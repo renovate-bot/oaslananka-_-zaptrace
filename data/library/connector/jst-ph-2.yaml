@@ -1,0 +1,17 @@
+id: "jst-ph-2"
+name: "JST PH-2"
+category: connector
+manufacturer: "JST"
+mpn: "S2B-PH-SM4-TB"
+description: "JST PH-series 2-pin connector, 2.0mm pitch"
+datasheet: "https://www.jst.com/product/detail.php?product=PH"
+package: "SMD-2P"
+footprint: "JST-PH-2-SMD"
+lifecycle: "active"
+voltage_supply: ""
+pins:
+  P1: {type: "passive", description: "Pin 1 (positive)"}
+  P2: {type: "passive", description: "Pin 2 (negative)"}
+properties:
+  pitch_mm: 2.0
+  current_rating_a: 2

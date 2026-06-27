@@ -1,0 +1,20 @@
+id: "aht20"
+name: "AHT20"
+category: sensor
+manufacturer: "ASAIR"
+mpn: "AHT20"
+description: "Temperature and humidity sensor, I2C, MEMS"
+datasheet: "http://www.aosong.com/userfiles/files/media/Data%20Sheet%20AHT20.pdf"
+package: "DFN-6"
+footprint: "AHT20-DFN6"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VDD: {type: "power", description: "2.0-5.5V supply"}
+  GND: {type: "power", description: "Ground"}
+  SDA: {type: "bidirectional", description: "I2C data"}
+  SCL: {type: "input", description: "I2C clock"}
+properties:
+  interface: ["i2c"]
+  humidity_range: "0-100%"
+  temperature_range: "-40..85 C"

@@ -1,0 +1,24 @@
+id: "sht31-dis"
+name: "SHT31-DIS"
+category: sensor
+manufacturer: "Sensirion"
+mpn: "SHT31-DIS-B"
+description: "Digital humidity and temperature sensor, I2C"
+datasheet: "https://www.sensirion.com/media/documents/213E6C0C/63A5F569/Sensirion_Humidity_Sensors_SHT3x_Datasheet_digital.pdf"
+package: "DFN-8"
+footprint: "SHT31-DIS-DFN8"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VDD: {type: "power", description: "2.4-5.5V supply"}
+  GND: {type: "power", description: "Ground"}
+  SDA: {type: "bidirectional", description: "I2C data"}
+  SCL: {type: "input", description: "I2C clock"}
+  ADDR: {type: "input", description: "I2C address select"}
+  ALERT: {type: "output", description: "Alert output"}
+  nRESET: {type: "input", description: "Reset (active low)"}
+properties:
+  interface: ["i2c"]
+  humidity_range: "0-100%"
+  temperature_range: "-40..125 C"
+  accuracy_humidity: "+/-2%"

@@ -1,0 +1,536 @@
+"""Proof Pack — self-verifying design validation bundles.
+
+v1: artifact SHA-256 hashing, environment metadata, input checksums, validation.
+"""
+
+from __future__ import annotations
+
+import json
+import platform
+import re
+import sys
+import zipfile
+from dataclasses import dataclass, field
+from hashlib import sha256
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from zaptrace import __version__ as _zaptrace_version
+from zaptrace.core.models import Design
+from zaptrace.core.parser import dump_str
+from zaptrace.core.state import design_state_hash
+
+from .checker import CheckResult, CheckStatus, ProofRunner
+from .manifest import (
+    ArtifactRecord,
+    CheckRecord,
+    EnvironmentRecord,
+    InputRecord,
+    KiCadOracleEvidence,
+    ProofManifest,
+)
+
+# ---------------------------------------------------------------------------
+# Hashing utilities
+# ---------------------------------------------------------------------------
+
+
+def hash_file(path: str | Path) -> str:
+    """Compute SHA-256 hex digest of a file.
+
+    Returns the hex digest string. Raises FileNotFoundError if the file
+    does not exist.
+    """
+    h = sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(65536)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def hash_bytes(data: bytes) -> str:
+    """Compute SHA-256 hex digest of a byte string."""
+    return sha256(data).hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# Environment capture
+# ---------------------------------------------------------------------------
+
+
+def capture_environment() -> EnvironmentRecord:
+    """Capture the current runtime environment for reproducibility evidence."""
+    import shutil
+    import subprocess
+
+    tool_versions: dict[str, str] = {}
+
+    for tool, version_flag in [
+        ("kicad-cli", "--version"),
+        ("git", "--version"),
+    ]:
+        exe_path = shutil.which(tool)
+        if exe_path:
+            try:
+                result = subprocess.run(
+                    [exe_path, version_flag],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if result.returncode == 0:
+                    tool_versions[tool] = result.stdout.strip()
+            except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+                pass
+
+    return EnvironmentRecord(
+        zaptrace_version=_zaptrace_version,
+        python_version=sys.version.split()[0],
+        platform=platform.platform(),
+        os=platform.system(),
+        tool_versions=tool_versions,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Proof pack validation
+# ---------------------------------------------------------------------------
+
+
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+class ValidationError(Exception):
+    """Raised when a proof pack fails validation."""
+
+
+def validate_proof_pack(
+    manifest: ProofManifest,
+    base_path: Path,
+    results: list[CheckResult] | None = None,
+) -> list[str]:
+    """Validate a proof pack manifest and its artifacts.
+
+    Checks:
+      - Schema version is supported
+      - Required fields are present
+      - Referenced artifact files exist
+      - Artifact SHA-256 hashes match (if recorded)
+      - Check status values are valid
+      - Limitations contain the human-review warning
+
+    Returns a list of error messages (empty = valid).
+    Raises ValidationError for structural issues.
+    """
+    errors: list[str] = []
+
+    supported_versions = {"1.0"}
+    if manifest.version not in supported_versions:
+        errors.append(f"Unsupported schema version: {manifest.version} (supported: {supported_versions})")
+
+    if not manifest.name:
+        errors.append("Manifest name is required")
+
+    if not manifest.design_path:
+        errors.append("design_path is required")
+
+    for art in manifest.artifacts:
+        rel = Path(art.path)
+        if rel.is_absolute() or ".." in rel.parts:
+            errors.append(f"Artifact path must be relative and contained: {art.path}")
+            continue
+        if art.sha256 and _SHA256_RE.fullmatch(art.sha256.lower()) is None:
+            errors.append(f"Artifact sha256 must be 64 lowercase hex characters: {art.path}")
+        art_path = base_path / rel
+        if not art_path.exists():
+            errors.append(f"Artifact missing: {art.path}")
+            continue
+        if art.sha256:
+            try:
+                actual_hash = hash_file(art_path)
+                if actual_hash != art.sha256:
+                    errors.append(
+                        f"Artifact hash mismatch for {art.path}: "
+                        f"recorded={art.sha256[:16]}... actual={actual_hash[:16]}..."
+                    )
+            except OSError as e:
+                errors.append(f"Cannot hash artifact {art.path}: {e}")
+
+    valid_statuses = {"pass", "warning", "fail", "skipped"}
+    for cr in manifest.check_records:
+        if cr.status not in valid_statuses:
+            errors.append(f"Invalid check status '{cr.status}' for check '{cr.name}'")
+        if cr.status == "skipped" and not (cr.summary or cr.details_path):
+            errors.append(f"Skipped check '{cr.name}' must include a skip reason or details_path")
+
+    for oracle in manifest.kicad_oracle:
+        if oracle.status == "skipped" and not oracle.skip_reason:
+            errors.append(f"Skipped KiCad oracle '{oracle.check}' must include skip_reason")
+
+    has_review_warning = any("human engineer review" in lim.lower() for lim in manifest.limitations)
+    if not has_review_warning:
+        errors.append("Limitations must include a human-engineer-review warning")
+
+    return errors
+
+
+# ---------------------------------------------------------------------------
+# ProofPack class
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ProofPack:
+    """A self-verifying design validation bundle.
+
+    A Proof Pack validates that a PCB design satisfies all defined constraints
+    and checks. It can be shared, versioned, and run in CI.
+
+    v1 features:
+      - Artifact SHA-256 hashing on bundle
+      - Environment metadata capture
+      - Input checksum tracking
+      - Validation against schema + artifacts
+    """
+
+    manifest: ProofManifest
+    base_path: Path = field(default=Path("."))
+
+    # Results populated after run()
+    results: list[CheckResult] = field(default_factory=list)
+
+    @classmethod
+    def load(cls, path: str | Path, *, capture_env: bool = False) -> ProofPack:
+        """Load a proof pack from a proof.yaml file or directory.
+
+        If capture_env=True, populates environment metadata from the
+        current runtime.
+        """
+        path = Path(path)
+        if path.is_dir():
+            path = path / "proof.yaml"
+        base = path.parent
+        with open(path) as f:
+            data = yaml.safe_load(f)
+        manifest = ProofManifest(**data)
+
+        # Optionally populate environment snapshot
+        if capture_env:
+            manifest.environment = capture_environment()
+
+        return cls(manifest=manifest, base_path=base)
+
+    def load_design(self) -> Design:
+        """Load the design referenced by the manifest."""
+        design_path = self.base_path / self.manifest.design_path
+        if not design_path.exists():
+            raise FileNotFoundError(f"Design not found: {design_path}")
+
+        from zaptrace.core.parser import parse_file
+
+        return parse_file(design_path)
+
+    def run(self) -> list[CheckResult]:
+        """Execute all checks in the manifest."""
+        design = self.load_design()
+        runner = ProofRunner(design)
+        self.results = runner.run_checks(self.manifest.checks)
+        return self.results
+
+    @property
+    def passed(self) -> bool:
+        """True if all checks passed."""
+        return all(r.passed for r in self.results)
+
+    @property
+    def summary(self) -> str:
+        """Human-readable summary of results."""
+        total = len(self.results)
+        passed = sum(1 for r in self.results if r.status == CheckStatus.PASS)
+        failed = sum(1 for r in self.results if r.status == CheckStatus.FAIL)
+        errors = sum(1 for r in self.results if r.status == CheckStatus.ERROR)
+        skipped = sum(1 for r in self.results if r.status == CheckStatus.SKIP)
+
+        lines = [f"Proof Pack: {self.manifest.name}"]
+        lines.append(f"{'─' * 40}")
+        lines.append(f"Total:   {total}")
+        lines.append(f"Passed:  {passed}")
+        lines.append(f"Failed:  {failed}")
+        lines.append(f"Errors:  {errors}")
+        lines.append(f"Skipped: {skipped}")
+        lines.append(f"Verdict: {'✓ PASS' if self.passed else '✗ FAIL'}")
+        return "\n".join(lines)
+
+    def report_json(self) -> str:
+        """JSON-formatted results report."""
+        return json.dumps(
+            {
+                "name": self.manifest.name,
+                "version": self.manifest.version,
+                "passed": self.passed,
+                "checks": [r.to_dict() for r in self.results],
+            },
+            indent=2,
+        )
+
+    @property
+    def stable_id(self) -> str:
+        """Deterministic SHA-256 hex digest of manifest + design.
+
+        Two runs against the same design and manifest always produce the
+        same hash, regardless of timestamps or absolute file paths.
+        """
+        raw = json.dumps(
+            {
+                "manifest": self._stable_manifest_payload(),
+                "results": [r.to_dict() for r in self.results],
+            },
+            sort_keys=True,
+        )
+        return sha256(raw.encode()).hexdigest()
+
+    def _stable_manifest_payload(self) -> dict[str, Any]:
+        """Return stable manifest fields used for deterministic IDs.
+
+        Runtime evidence such as environment snapshots, artifact paths, external
+        oracle command paths, and generated check records are intentionally
+        excluded; they remain in the bundle manifest but do not perturb the
+        stable design/check identity.
+        """
+        data = self.manifest.model_dump(mode="json")
+        for runtime_key in (
+            "environment",
+            "artifacts",
+            "check_records",
+            "kicad_oracle",
+            "bom_provenance",
+            "manufacturing_evidence",
+            "manufacturing_exports",
+        ):
+            data.pop(runtime_key, None)
+        data["design_path"] = Path(str(data.get("design_path", ""))).name
+        data["references"] = {
+            str(key): Path(str(value)).name for key, value in sorted((data.get("references") or {}).items())
+        }
+        return data
+
+    def bundle(self, output_dir: str | Path) -> Path:
+        """Bundle the proof pack results into a zip archive.
+
+        v1 bundle includes:
+        - manifest.json       — full manifest with evidence records
+        - results.json        — per-check pass/fail detail
+        - stable_id.txt       — deterministic hash
+        - design.yaml         — design file if it exists
+        - artifacts/          — referenced artifact files (copied/hashed)
+
+        Populates manifest.artifacts with SHA-256 hashes of bundled files.
+        Returns the path to the created zip.
+        """
+        out = Path(output_dir) / f"{self.manifest.name}-proof.zip"
+        out.parent.mkdir(parents=True, exist_ok=True)
+
+        if not self.manifest.environment.zaptrace_version:
+            self.manifest.environment = capture_environment()
+        if not self.manifest.input_record.checksum_sha256:
+            self._capture_input_checksum()
+        if not self.manifest.final_state_hash:
+            self._capture_final_state_hash()
+        if not self.manifest.kicad_oracle:
+            self._capture_kicad_oracle_metadata()
+
+        # Add check records from results
+        self._populate_check_records()
+
+        artifact_records: list[ArtifactRecord] = []
+
+        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("manifest.json", self.manifest.model_dump_json(indent=2))
+            zf.writestr("results.json", self.report_json())
+            zf.writestr("stable_id.txt", self.stable_id)
+
+            # Design file
+            try:
+                design = self.load_design()
+                design_yaml = dump_str(design)
+                zf.writestr("design.yaml", design_yaml)
+                artifact_records.append(
+                    ArtifactRecord(
+                        path="design.yaml",
+                        kind="other",
+                        sha256=hash_bytes(design_yaml.encode()),
+                        size_bytes=len(design_yaml),
+                    )
+                )
+            except FileNotFoundError:
+                pass
+
+            for rel_path, src_path in self.manifest.references.items():
+                src = Path(src_path)
+                if not src.is_absolute():
+                    src = self.base_path / src
+                if src.exists():
+                    data = src.read_bytes()
+                    zf.writestr(f"artifacts/{rel_path}", data)
+                    artifact_records.append(
+                        ArtifactRecord(
+                            path=f"artifacts/{rel_path}",
+                            kind=self._infer_kind(rel_path),
+                            sha256=hash_bytes(data),
+                            size_bytes=len(data),
+                        )
+                    )
+
+        self.manifest.artifacts = artifact_records
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as ntf:
+            tmp = Path(ntf.name)
+        # NamedTemporaryFile already created ``tmp`` on disk, so the move must
+        # overwrite it. ``Path.rename`` fails on Windows when the target exists;
+        # ``Path.replace`` overwrites unconditionally on every platform.
+        out.replace(tmp)
+
+        try:
+            with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
+                zf.writestr("manifest.json", self.manifest.model_dump_json(indent=2))
+                zf.writestr("results.json", self.report_json())
+                zf.writestr("stable_id.txt", self.stable_id)
+                with zipfile.ZipFile(tmp, "r") as zf_tmp:
+                    for name in zf_tmp.namelist():
+                        if name in ("manifest.json", "results.json", "stable_id.txt"):
+                            continue
+                        zf.writestr(name, zf_tmp.read(name))
+        finally:
+            tmp.unlink(missing_ok=True)
+
+        return out
+
+    def _capture_final_state_hash(self) -> None:
+        """Record a deterministic hash for the final design state."""
+        try:
+            self.manifest.final_state_hash = design_state_hash(self.load_design())
+        except FileNotFoundError:
+            self.manifest.final_state_hash = ""
+
+    def _capture_input_checksum(self) -> None:
+        """Compute SHA-256 of the input design file."""
+        design_path = self.base_path / self.manifest.design_path
+        if design_path.exists():
+            try:
+                csum = hash_file(design_path)
+                self.manifest.input_record = InputRecord(
+                    source_type="file",
+                    filename=design_path.name,
+                    checksum_sha256=csum,
+                )
+            except OSError:
+                pass
+
+    def _capture_kicad_oracle_metadata(self) -> None:
+        """Record explicit KiCad oracle availability/skip metadata."""
+        from zaptrace.kicad.oracle import detect_kicad
+
+        oracle = detect_kicad()
+        if oracle.available:
+            self.manifest.kicad_oracle = [
+                KiCadOracleEvidence(
+                    check="proof_pack_oracle",
+                    status="skipped",
+                    version=oracle.version,
+                    cli_path=oracle.cli_path or "",
+                    skip_reason="proof pack has no KiCad ERC/DRC artifact configured",
+                    message="KiCad CLI detected; oracle checks were not configured for this proof pack",
+                )
+            ]
+        else:
+            self.manifest.kicad_oracle = [
+                KiCadOracleEvidence(
+                    check="proof_pack_oracle",
+                    status="skipped",
+                    skip_reason="kicad-cli not found",
+                    message="KiCad oracle unavailable; explicit approved skip recorded",
+                )
+            ]
+
+    def _populate_check_records(self) -> None:
+        """Synchronize check results into manifest.check_records."""
+        records: list[CheckRecord] = []
+        for r in self.results:
+            records.append(
+                CheckRecord(
+                    name=r.check.name,
+                    source="zaptrace",
+                    status=r.status.value,
+                    severity=r.check.severity.value,
+                    summary=f"{r.message} ({r.duration_ms:.0f}ms)",
+                )
+            )
+        self.manifest.check_records = records
+
+    @staticmethod
+    def _infer_kind(path: str) -> str:
+        """Infer artifact kind from file extension."""
+        ext = Path(path).suffix.lower()
+        kind_map = {
+            ".gbr": "gerber",
+            ".gtl": "gerber",
+            ".gbl": "gerber",
+            ".gts": "gerber",
+            ".gbs": "gerber",
+            ".gto": "gerber",
+            ".gbo": "gerber",
+            ".gtp": "gerber",
+            ".gbp": "gerber",
+            ".xln": "excellon",
+            ".drl": "excellon",
+            ".csv": "bom",
+            ".json": "report",
+            ".kicad_pcb": "kicad",
+            ".kicad_sch": "kicad",
+            ".net": "netlist",
+            ".md": "report",
+            ".svg": "report",
+            ".yaml": "other",
+            ".yml": "other",
+        }
+        return kind_map.get(ext, "other")
+
+    def validate(self) -> list[str]:
+        """Validate this proof pack's manifest and artifacts.
+
+        Returns a list of error messages (empty = valid).
+        """
+        return validate_proof_pack(
+            manifest=self.manifest,
+            base_path=self.base_path,
+            results=self.results,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Convenience functions
+# ---------------------------------------------------------------------------
+
+
+def run_proof(path: str | Path, *, capture_env: bool = False) -> ProofPack:
+    """Load and run a proof pack from a proof.yaml path.
+
+    Args:
+        path: Path to proof.yaml or a directory containing proof.yaml.
+        capture_env: If True, populate environment metadata snapshot.
+
+    Returns:
+        The completed ProofPack with results populated.
+    """
+    path_obj = Path(path)
+    if path_obj.is_dir():
+        path_obj = path_obj / "proof.yaml"
+    pack = ProofPack.load(path_obj, capture_env=capture_env)
+    pack.run()
+    return pack

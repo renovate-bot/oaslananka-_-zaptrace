@@ -1,0 +1,67 @@
+id: "stm32g0b1cet6"
+name: "STM32G0B1CET6"
+category: mcu
+manufacturer: "STMicroelectronics"
+mpn: "STM32G0B1CET6"
+description: "ARM Cortex-M0+ MCU, 64MHz, 512KB flash, 144KB SRAM, USB-C PD, CAN-FD"
+datasheet: "https://www.st.com/resource/en/datasheet/stm32g0b1ce.pdf"
+package: "LQFP-48"
+footprint: "STM32G0B1CET6-LQFP48"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  PA0: {type: "bidirectional", description: "GPIOA0"}
+  PA1: {type: "bidirectional", description: "GPIOA1"}
+  PA2: {type: "bidirectional", description: "GPIOA2"}
+  PA3: {type: "bidirectional", description: "GPIOA3"}
+  PA4: {type: "bidirectional", description: "GPIOA4"}
+  PA5: {type: "bidirectional", description: "GPIOA5"}
+  PA6: {type: "bidirectional", description: "GPIOA6"}
+  PA7: {type: "bidirectional", description: "GPIOA7"}
+  PA8: {type: "bidirectional", description: "GPIOA8"}
+  PA9: {type: "bidirectional", description: "GPIOA9"}
+  PA10: {type: "bidirectional", description: "GPIOA10"}
+  PA11: {type: "bidirectional", description: "GPIOA11"}
+  PA12: {type: "bidirectional", description: "GPIOA12"}
+  PA13: {type: "bidirectional", description: "GPIOA13 / SWDIO"}
+  PA14: {type: "bidirectional", description: "GPIOA14 / SWCLK"}
+  PA15: {type: "bidirectional", description: "GPIOA15"}
+  PB0: {type: "bidirectional", description: "GPIOB0"}
+  PB1: {type: "bidirectional", description: "GPIOB1"}
+  PB2: {type: "bidirectional", description: "GPIOB2"}
+  PB3: {type: "bidirectional", description: "GPIOB3"}
+  PB4: {type: "bidirectional", description: "GPIOB4"}
+  PB5: {type: "bidirectional", description: "GPIOB5"}
+  PB6: {type: "bidirectional", description: "GPIOB6"}
+  PB7: {type: "bidirectional", description: "GPIOB7"}
+  PB8: {type: "bidirectional", description: "GPIOB8"}
+  PB9: {type: "bidirectional", description: "GPIOB9"}
+  PB10: {type: "bidirectional", description: "GPIOB10"}
+  PB11: {type: "bidirectional", description: "GPIOB11"}
+  PB12: {type: "bidirectional", description: "GPIOB12"}
+  PB13: {type: "bidirectional", description: "GPIOB13"}
+  PB14: {type: "bidirectional", description: "GPIOB14"}
+  PB15: {type: "bidirectional", description: "GPIOB15"}
+  PC6: {type: "bidirectional", description: "GPIOC6"}
+  PC7: {type: "bidirectional", description: "GPIOC7"}
+  PC8: {type: "bidirectional", description: "GPIOC8"}
+  PC9: {type: "bidirectional", description: "GPIOC9"}
+  PC10: {type: "bidirectional", description: "GPIOC10"}
+  PC11: {type: "bidirectional", description: "GPIOC11"}
+  PC12: {type: "bidirectional", description: "GPIOC12"}
+  PC13: {type: "bidirectional", description: "GPIOC13"}
+  PC14: {type: "bidirectional", description: "GPIOC14"}
+  PC15: {type: "bidirectional", description: "GPIOC15"}
+  PD0: {type: "bidirectional", description: "GPIOD0"}
+  PD1: {type: "bidirectional", description: "GPIOD1"}
+  PD2: {type: "bidirectional", description: "GPIOD2"}
+  USB_DP: {type: "bidirectional", description: "USB D+"}
+  USB_DM: {type: "bidirectional", description: "USB D-"}
+  UCPD1_CC1: {type: "bidirectional", description: "USB-C CC1"}
+  UCPD1_CC2: {type: "bidirectional", description: "USB-C CC2"}
+properties:
+  core: "ARM Cortex-M0+"
+  frequency_mhz: 64
+  flash_kb: 512
+  sram_kb: 144
+  interfaces: ["usb_c_pd", "can_fd", "i2c", "spi", "uart"]

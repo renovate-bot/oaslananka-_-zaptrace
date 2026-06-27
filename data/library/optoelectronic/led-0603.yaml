@@ -1,0 +1,17 @@
+id: "led-0603"
+name: "LED 0603"
+category: optoelectronic
+manufacturer: "Generic"
+mpn: "LED-0603"
+description: "Standard SMD LED, 0603 package"
+datasheet: ""
+package: "0603"
+footprint: "LED-0603"
+lifecycle: "active"
+voltage_supply: ""
+pins:
+  ANODE: {type: "passive", description: "Anode (+)"}
+  CATHODE: {type: "passive", description: "Cathode (-)"}
+properties:
+  color: "varies"
+  package_size: "0603"

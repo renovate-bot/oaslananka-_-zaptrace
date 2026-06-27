@@ -1,0 +1,17 @@
+id: "led-0402"
+name: "LED 0402"
+category: optoelectronic
+manufacturer: "Generic"
+mpn: "LED-0402"
+description: "Standard SMD LED, 0402 package"
+datasheet: ""
+package: "0402"
+footprint: "LED-0402"
+lifecycle: "active"
+voltage_supply: ""
+pins:
+  ANODE: {type: "passive", description: "Anode (+)"}
+  CATHODE: {type: "passive", description: "Cathode (-)"}
+properties:
+  color: "varies"
+  package_size: "0402"

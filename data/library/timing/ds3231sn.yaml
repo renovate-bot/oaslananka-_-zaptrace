@@ -1,0 +1,29 @@
+id: "ds3231sn"
+name: "DS3231SN"
+category: timing
+manufacturer: "Maxim Integrated"
+mpn: "DS3231SN#"
+description: "Extremely accurate I2C RTC with integrated crystal, TCXO, ±2ppm accuracy, SOIC-16"
+datasheet: "https://www.analog.com/media/en/technical-documentation/data-sheets/ds3231.pdf"
+package: "SOIC-16"
+footprint: "DS3231N-SOIC16"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VCC: {type: "power", description: "2.3-5.5V supply"}
+  GND: {type: "power", description: "Ground"}
+  SDA: {type: "bidirectional", description: "I2C data"}
+  SCL: {type: "input", description: "I2C clock"}
+  INT: {type: "output", description: "Active-low interrupt"}
+  SQW: {type: "output", description: "Square-wave output"}
+  RST: {type: "input", description: "Active-low reset"}
+  VBAT: {type: "power", description: "Backup battery supply"}
+  NC1: {type: "no_connect", description: "No connect (leave open)"}
+  NC2: {type: "no_connect", description: "No connect (leave open)"}
+  NC3: {type: "no_connect", description: "No connect (leave open)"}
+  NC4: {type: "no_connect", description: "No connect (leave open)"}
+properties:
+  interface: "i2c"
+  accuracy_ppm: 2
+  backup_battery: true
+  temp_compensated: true

@@ -1,0 +1,36 @@
+name: Research Task
+description: Track a bounded research or design investigation
+title: "[Research]: "
+labels: ["type:research", "status:needs-audit"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+      description: What decision should this research enable?
+    validations:
+      required: true
+
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources to review
+      description: Standards, tool docs, academic work, competitor capabilities, or local repo files.
+    validations:
+      required: true
+
+  - type: textarea
+    id: deliverable
+    attributes:
+      label: Deliverable
+      description: What document, scorecard, prototype, or decision record should be produced?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: What makes the research complete and actionable?
+    validations:
+      required: true

@@ -1,0 +1,20 @@
+id: "ws2812b-2020"
+name: "WS2812B-2020"
+category: optoelectronic
+manufacturer: "Worldsemi"
+mpn: "WS2812B-2020"
+description: "Addressable RGB LED, 2020 package, 5V, embedded driver IC, 1-wire control"
+datasheet: "https://www.worldsemi.com/download/WS2812B-2020_datasheet.pdf"
+package: "2020"
+footprint: "WS2812B-2020"
+lifecycle: "active"
+voltage_supply: "5"
+pins:
+  VDD: {type: "power", description: "5V supply"}
+  GND: {type: "power", description: "Ground"}
+  DIN: {type: "input", description: "Data input"}
+  DOUT: {type: "output", description: "Data output (daisy-chain)"}
+properties:
+  led_color: "RGB"
+  control_interface: "1-wire"
+  forward_current_ma: 20

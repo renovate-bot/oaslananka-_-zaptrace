@@ -1,0 +1,242 @@
+name: Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.13"
+  UV_VERSION: "0.11"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Pyright
+        run: uv run pyright
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Run tests
+        run: uv run pytest --cov --cov-report=xml -q
+
+      - name: Gerber smoke test
+        run: uv run python scripts/ci_smoke.py gerber
+
+      - name: Proof pack smoke test
+        run: uv run python scripts/ci_smoke.py proof
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
+        with:
+          files: ./coverage.xml
+          flags: unittests
+
+  rust:
+    name: Build Rust extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Install maturin
+        run: uv pip install maturin
+
+      - name: Check Rust formatting
+        run: cargo fmt --manifest-path zaptrace_core/Cargo.toml --check
+
+      - name: Run Clippy
+        run: cargo clippy --manifest-path zaptrace_core/Cargo.toml -- -D warnings
+
+      - name: Run Rust tests
+        run: cargo test --manifest-path zaptrace_core/Cargo.toml
+
+      - name: Build Rust extension
+        run: uv run maturin build --manifest-path zaptrace_core/Cargo.toml
+
+  benchmark-001:
+    name: Benchmark 001 acceptance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Run deterministic benchmark 001 harness
+        run: |
+          uv run python scripts/ci_benchmark_001.py \
+            --strict \
+            --output benchmark-001-report.json \
+            --markdown "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload benchmark 001 report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: benchmark-001-report
+          path: benchmark-001-report.json
+
+
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Build package
+        run: uv build
+
+  docs-stale:
+    name: Check stale docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Check MCP tools reference is up to date
+        run: uv run python scripts/generate_mcp_docs.py --check
+
+      - name: Check JSON Schema matches generated
+        run: |
+          uv run python -c "
+          from zaptrace.core.parser import generate_json_schema, write_json_schema
+          import json, sys
+          from pathlib import Path
+          generated = generate_json_schema()
+          committed = json.loads(Path('docs/schemas/design-v1.json').read_text(encoding='utf-8'))
+          if generated != committed:
+              print('ERROR: docs/schemas/design-v1.json is stale. Run write_json_schema() to regenerate.')
+              sys.exit(1)
+          print('OK: JSON Schema is up to date')
+          "
+
+
+  release-gate-summary:
+    name: Release gate summary
+    runs-on: ubuntu-latest
+    needs: [lint, test, rust, build, docs-stale, benchmark-001]
+    if: always()
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Generate v0.2.3 gate summary
+        run: |
+          uv run python scripts/ci_release_gate.py \
+            --gate "lint=${{ needs.lint.result }}" \
+            --gate "tests=${{ needs.test.result }}" \
+            --gate "rust=${{ needs.rust.result }}" \
+            --gate "build=${{ needs.build.result }}" \
+            --gate "docs-stale=${{ needs.docs-stale.result }}" \
+            --gate "benchmark-001=${{ needs.benchmark-001.result }}" \
+            --gate "kicad-oracle=skipped" \
+            --skip-reason "kicad-oracle=separate-workflow-path-filtered-or-tool-unavailable" \
+            --required-oracle "kicad-oracle" \
+            --output release-gate-summary.json \
+            --markdown "$GITHUB_STEP_SUMMARY" \
+            --strict
+
+      - name: Upload release gate summary
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: release-gate-summary
+          path: release-gate-summary.json

@@ -1,0 +1,28 @@
+id: "ads1115"
+name: "ADS1115IDGSR"
+category: sensor
+manufacturer: "Texas Instruments"
+mpn: "ADS1115IDGSR"
+description: "16-bit ADC with I2C interface, 4-channel, PGA"
+datasheet: "https://www.ti.com/lit/ds/symlink/ads1115.pdf"
+package: "MSOP-10"
+footprint: "ADS1115-MSOP10"
+lifecycle: "active"
+voltage_supply: "5.0"
+pins:
+  VDD: {type: "power", description: "2.0-5.5V supply"}
+  GND: {type: "power", description: "Ground"}
+  SDA: {type: "bidirectional", description: "I2C data"}
+  SCL: {type: "input", description: "I2C clock"}
+  ADDR: {type: "input", description: "I2C address select"}
+  ALERT: {type: "output", description: "Alert / ready"}
+  AIN0: {type: "input", description: "Analog input 0"}
+  AIN1: {type: "input", description: "Analog input 1"}
+  AIN2: {type: "input", description: "Analog input 2"}
+  AIN3: {type: "input", description: "Analog input 3"}
+properties:
+  interface: ["i2c"]
+  resolution_bit: 16
+  channels: 4
+  gain: "+/-6.144V to +/-0.256V"
+  sample_rate_sps: 860

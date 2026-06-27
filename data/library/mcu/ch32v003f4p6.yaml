@@ -1,0 +1,38 @@
+id: "ch32v003f4p6"
+name: "CH32V003F4P6"
+category: mcu
+manufacturer: "WCH"
+mpn: "CH32V003F4P6"
+description: "32-bit RISC-V MCU, 48MHz, 16KB flash, 2KB SRAM"
+datasheet: "https://www.wch-ic.com/downloads/CH32V003DS0_PDF.html"
+package: "TSSOP-20"
+footprint: "CH32V003F4P6-TSSOP20"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  PA1: {type: "bidirectional", description: "GPIOA1"}
+  PA2: {type: "bidirectional", description: "GPIOA2"}
+  PC0: {type: "bidirectional", description: "GPIOC0"}
+  PC1: {type: "bidirectional", description: "GPIOC1"}
+  PC2: {type: "bidirectional", description: "GPIOC2"}
+  PC3: {type: "bidirectional", description: "GPIOC3"}
+  PC4: {type: "bidirectional", description: "GPIOC4"}
+  PC5: {type: "bidirectional", description: "GPIOC5"}
+  PC6: {type: "bidirectional", description: "GPIOC6"}
+  PC7: {type: "bidirectional", description: "GPIOC7"}
+  PD0: {type: "bidirectional", description: "GPIOD0"}
+  PD1: {type: "bidirectional", description: "GPIOD1"}
+  PD2: {type: "bidirectional", description: "GPIOD2"}
+  PD3: {type: "bidirectional", description: "GPIOD3"}
+  PD4: {type: "bidirectional", description: "GPIOD4"}
+  PD5: {type: "bidirectional", description: "GPIOD5"}
+  PD6: {type: "bidirectional", description: "GPIOD6"}
+  PD7: {type: "bidirectional", description: "GPIOD7"}
+  VDD: {type: "power", description: "2.7-5.5V supply"}
+  GND: {type: "power", description: "Ground"}
+properties:
+  core: "RISC-V RV32EC"
+  frequency_mhz: 48
+  flash_kb: 16
+  sram_kb: 2
+  interfaces: ["i2c", "spi", "uart", "adc"]

@@ -1,0 +1,18 @@
+id: "pot-trim-3296w"
+name: "Trimmer Pot 3296W"
+category: passive
+manufacturer: "Bourns"
+mpn: "3296W-1-103LF"
+description: "Multi-turn trimmer potentiometer, 10k, 3296W package"
+datasheet: "https://www.bourns.com/docs/product-datasheets/3296.pdf"
+package: "3296W"
+footprint: "3296W"
+lifecycle: "active"
+voltage_supply: ""
+pins:
+  P1: {type: "passive", description: "Terminal 1 (CW)"}
+  P2: {type: "passive", description: "Wiper"}
+  P3: {type: "passive", description: "Terminal 2 (CCW)"}
+properties:
+  tracks: 1
+  adjustment: "multi-turn"

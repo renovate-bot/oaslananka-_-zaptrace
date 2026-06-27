@@ -1,0 +1,109 @@
+version: '3'
+
+tasks:
+  install:
+    desc: Install all dependencies
+    cmds:
+      - uv sync --all-extras --all-groups
+
+  test:
+    desc: Run test suite
+    cmds:
+      - uv run pytest --cov=zaptrace --cov-report=term-missing
+
+  test-fast:
+    desc: Run tests excluding slow/rust marks
+    cmds:
+      - uv run pytest -m "not slow and not rust"
+
+  lint:
+    desc: Check code quality
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+
+  typecheck:
+    desc: Type-check application sources
+    cmds:
+      - uv run pyright
+
+  format:
+    desc: Auto-format all code
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check --fix .
+
+  build:
+    desc: Build source and wheel distributions
+    cmds:
+      - uv build
+
+  release:
+    desc: Run the release quality gate and build artifacts
+    deps: [lint, typecheck, test, test-rust, build]
+
+  test-rust:
+    desc: Rust unit tests
+    cmds:
+      - cargo fmt --manifest-path zaptrace_core/Cargo.toml --check
+      - cargo clippy --manifest-path zaptrace_core/Cargo.toml -- -D warnings
+      - cargo test --manifest-path zaptrace_core/Cargo.toml
+      - cargo build --release --manifest-path zaptrace_core/Cargo.toml
+
+  build-dev:
+    desc: Build Rust extension in dev mode
+    cmds:
+      - maturin develop --release --manifest-path zaptrace_core/Cargo.toml
+
+  serve:
+    desc: Start REST API server (dev)
+    cmds:
+      - uv run zaptrace-api --host 0.0.0.0 --port 8080
+
+  mcp:
+    desc: Start MCP server
+    cmds:
+      - uv run zaptrace-mcp
+
+  docs-mcp:
+    desc: Regenerate MCP tools reference from TOOL_REGISTRY
+    cmds:
+      - uv run python scripts/generate_mcp_docs.py
+
+  check-docs:
+    desc: Verify generated MCP docs are up to date with TOOL_REGISTRY
+    cmds:
+      - uv run python scripts/generate_mcp_docs.py --check
+
+  oracle-kicad:
+    desc: Run KiCad CLI oracle (skips if kicad-cli not installed)
+    cmds:
+      - uv run python scripts/ci_kicad_oracle.py
+
+  oracle-kicad-check:
+    desc: Verify kicad-cli is available for the oracle
+    cmds:
+      - uv run python scripts/ci_kicad_oracle.py --check
+
+  kicad-roundtrip-scorecard:
+    desc: Run deterministic KiCad round-trip fidelity scorecard
+    cmds:
+      - uv run python scripts/ci_kicad_roundtrip_scorecard.py --strict --output kicad-roundtrip-scorecard.json
+
+  oracle-smoke:
+    desc: Run Gerber + Proof smoke tests
+    cmds:
+      - uv run python scripts/ci_smoke.py gerber
+      - uv run python scripts/ci_smoke.py proof
+
+  benchmark-001:
+    desc: Run deterministic ESP32 benchmark 001 acceptance harness
+    cmds:
+      - uv run python scripts/ci_benchmark_001.py --strict --output benchmark-001-report.json
+
+  clean:
+    desc: Remove build artifacts
+    cmds:
+      - find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
+      - find . -name "*.pyc" -delete 2>/dev/null; true
+      - rm -rf dist/ build/ .coverage htmlcov/ *.egg-info/

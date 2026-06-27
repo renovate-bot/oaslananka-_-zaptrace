@@ -1,0 +1,24 @@
+id: "bmp390"
+name: "BMP390"
+category: sensor
+manufacturer: "Bosch"
+mpn: "BMP390"
+description: "Barometric pressure sensor, I2C/SPI, +-0.03 hPa accuracy"
+datasheet: "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp390-ds002.pdf"
+package: "LGA-10"
+footprint: "BMP390-LGA10"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VDD: {type: "power", description: "1.65-3.6V supply"}
+  VDDIO: {type: "power", description: "I/O supply"}
+  GND: {type: "power", description: "Ground"}
+  CSB: {type: "input", description: "SPI chip select"}
+  SDI: {type: "bidirectional", description: "SPI data in / I2C data"}
+  SCK: {type: "input", description: "SPI/I2C clock"}
+  SDO: {type: "bidirectional", description: "SPI data out / I2C address"}
+  INT: {type: "output", description: "Data ready interrupt"}
+properties:
+  interface: ["i2c", "spi"]
+  pressure_range: "300-1250 hPa"
+  temperature_range: "-40..85 C"

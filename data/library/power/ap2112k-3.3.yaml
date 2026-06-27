@@ -1,0 +1,21 @@
+id: "ap2112k-3.3"
+name: "AP2112K-3.3"
+category: power
+manufacturer: "Diodes Inc."
+mpn: "AP2112K-3.3TRG1"
+description: "Low-dropout voltage regulator, 3.3V, 600mA, SOT-23-5"
+datasheet: "https://www.diodes.com/assets/Datasheets/AP2112.pdf"
+package: "SOT-23-5"
+footprint: "SOT-23-5"
+lifecycle: "active"
+voltage_supply: "5.0"
+pins:
+  VIN: {type: "power", description: "2.5-6.0V input"}
+  GND: {type: "power", description: "Ground"}
+  EN: {type: "input", description: "Enable (active high)"}
+  VOUT: {type: "output", description: "3.3V output"}
+  NC: {type: "no_connect", description: "No connect"}
+properties:
+  output_voltage_v: 3.3
+  output_current_ma: 600
+  dropout_voltage_mv: 150

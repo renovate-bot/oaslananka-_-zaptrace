@@ -1,0 +1,28 @@
+id: "nrf24l01"
+name: "nRF24L01+"
+category: rf
+manufacturer: "Nordic Semiconductor"
+mpn: "nRF24L01+"
+description": "2.4GHz RF transceiver, 250kbps-2Mbps, QFN-20"
+datasheet: "https://infocenter.nordicsemi.com/pdf/nRF24L01P_PS_v1.0.pdf"
+package: "QFN-20"
+footprint: "NRF24L01-QFN20"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VDD: {type: "power", description: "1.9-3.6V supply"}
+  GND: {type: "power", description: "Ground"}
+  CE: {type: "input", description: "Chip enable"}
+  CSN: {type: "input", description: "SPI chip select"}
+  SCK: {type: "input", description: "SPI clock"}
+  MOSI: {type: "input", description: "SPI data in"}
+  MISO: {type: "output", description: "SPI data out"}
+  IRQ: {type: "output", description: "Interrupt"}
+  ANT: {type: "output", description: "Antenna output"}
+  XC1: {type: "passive", description: "Crystal 1"}
+  XC2: {type: "passive", description: "Crystal 2"}
+properties:
+  frequency_ghz: 2.4
+  data_rate: "250kbps-2Mbps"
+  max_power_dbm: 0
+  interface: "spi"

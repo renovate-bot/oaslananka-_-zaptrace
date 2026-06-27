@@ -1,0 +1,45 @@
+name: Release Gate
+description: Define a release-blocking validation gate
+title: "[Release Gate]: "
+labels: ["type:hardening", "area:verification", "status:needs-audit"]
+body:
+  - type: textarea
+    id: gate
+    attributes:
+      label: Gate description
+      description: What must be checked before release?
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Command or evidence source
+      description: Exact command, workflow, or artifact producer.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: pass-fail
+    attributes:
+      label: Pass/fail/blocking criteria
+      description: What is PASS, FAIL, SKIP-APPROVED, and SKIP-UNAPPROVED?
+    validations:
+      required: true
+
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Required evidence artifacts
+      description: List generated reports, proof-pack records, CI logs, or external-tool outputs.
+    validations:
+      required: true
+
+  - type: textarea
+    id: skip-policy
+    attributes:
+      label: Skip policy
+      description: Which skips are acceptable, and what must be recorded?
+    validations:
+      required: true

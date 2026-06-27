@@ -1,0 +1,22 @@
+id: "tcs34725"
+name: "TCS34725"
+category: sensor
+manufacturer: "ams-OSRAM"
+mpn: "TCS34725FN"
+description: "RGB color light sensor with IR filter, I2C"
+datasheet: "https://ams.com/documents/20143/36005/TCS3472_DS000390_3-00.pdf"
+package: "DFN-6"
+footprint: "TCS34725-DFN6"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VDD: {type: "power", description: "2.7-3.6V supply"}
+  GND: {type: "power", description: "Ground"}
+  SDA: {type: "bidirectional", description: "I2C data"}
+  SCL: {type: "input", description: "I2C clock"}
+  INT: {type: "output", description: "Interrupt output"}
+  LED: {type: "output", description: "LED driver"}
+properties:
+  interface: ["i2c"]
+  resolution: "4 channels (RGB+clear)"
+  gain: "1-60x"

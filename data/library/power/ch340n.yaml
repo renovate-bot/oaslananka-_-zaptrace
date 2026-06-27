@@ -1,0 +1,24 @@
+id: "ch340n"
+name: "CH340N"
+category: power
+manufacturer: "WCH"
+mpn: "CH340N"
+description: "USB-to-UART bridge, SOP-8, HID-compatible"
+datasheet: "https://www.wch-ic.com/downloads/CH340DS1_PDF.html"
+package: "SOP-8"
+footprint: "CH340N-SOP8"
+lifecycle: "active"
+voltage_supply: "5.0"
+pins:
+  VCC: {type: "power", description: "5V supply"}
+  GND: {type: "power", description: "Ground"}
+  V3: {type: "power", description: "3.3V output for USB"}
+  TXD: {type: "output", description: "UART transmit"}
+  RXD: {type: "input", description: "UART receive"}
+  D+: {type: "bidirectional", description: "USB D+"}
+  D-: {type: "bidirectional", description: "USB D-"}
+  RI: {type: "output", description: "Ring indicator"}
+  DTR: {type: "output", description: "Data terminal ready"}
+properties:
+  uart_baud_max: 2000000
+  interface: "usb-to-uart"

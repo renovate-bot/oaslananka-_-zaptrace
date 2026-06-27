@@ -1,0 +1,20 @@
+id: "ds18b20"
+name: "DS18B20"
+category: sensor
+manufacturer: "Maxim Integrated"
+mpn: "DS18B20+"
+description: "Programmable resolution 1-Wire digital thermometer"
+datasheet: "https://www.analog.com/media/en/technical-documentation/data-sheets/ds18b20.pdf"
+package: "TO-92"
+footprint: "DS18B20-TO92"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VDD: {type: "power", description: "3.0-5.5V supply"}
+  GND: {type: "power", description: "Ground"}
+  DQ: {type: "bidirectional", description: "1-Wire data"}
+properties:
+  interface: ["1-wire"]
+  temperature_range: "-55..125 C"
+  resolution_bit: 9-12
+  accuracy: "+/-0.5 C"

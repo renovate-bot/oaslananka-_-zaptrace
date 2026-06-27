@@ -1,0 +1,43 @@
+"""Review Studio — evidence cockpit data models and panel aggregation.
+
+Review Studio is the surface where a person reviews evidence before accepting
+a design mutation, release export, or manufacturing handoff.  This module
+provides the data models (ReviewSession, ReviewPanel, ReviewDecision) and the
+aggregation functions that collect evidence from ERC, DRC, DFM, BOM, supply,
+manufacturing, simulation, proof-pack, and decision-log sources into unified
+review panels.
+"""
+
+from __future__ import annotations
+
+from zaptrace.review.panels import (
+    ReviewPanel,
+    ReviewPanelBundle,
+    collect_panels,
+    collect_review_bundle,
+)
+from zaptrace.review.workflow import (
+    ReviewDecision,
+    ReviewSession,
+    HumanChecklistItem,
+    create_review_session,
+    approve_checklist_item,
+    reject_checklist_item,
+    add_waiver,
+    resolve_decision,
+)
+
+__all__ = [
+    "HumanChecklistItem",
+    "ReviewDecision",
+    "ReviewPanel",
+    "ReviewPanelBundle",
+    "ReviewSession",
+    "add_waiver",
+    "approve_checklist_item",
+    "collect_panels",
+    "collect_review_bundle",
+    "create_review_session",
+    "reject_checklist_item",
+    "resolve_decision",
+]

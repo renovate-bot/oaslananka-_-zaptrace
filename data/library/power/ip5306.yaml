@@ -1,0 +1,24 @@
+id: "ip5306"
+name: "IP5306"
+category: power
+manufacturer: "Injoinic"
+mpn: "IP5306"
+description: "Power management SoC for power banks, 2.1A charge/2.4A discharge"
+datasheet: "https://www.injoinic.com/uploads/2021/04/IP5306_Datasheet_V1.3.pdf"
+package: "SOP-16"
+footprint: "IP5306-SOP16"
+lifecycle: "active"
+voltage_supply: "5.0"
+pins:
+  VIN: {type: "power", description: "5V USB input"}
+  BAT: {type: "bidirectional", description: "Battery connection"}
+  VOUT: {type: "output", description: "5V boost output"}
+  KEY: {type: "input", description: "Key input"}
+  MFB: {type: "output", description: "Multi-function button"}
+  SDA: {type: "bidirectional", description: "I2C data"}
+  SCL: {type: "input", description: "I2C clock"}
+  GND: {type: "power", description: "Ground"}
+properties:
+  charge_current_ma: 2100
+  discharge_current_ma: 2400
+  cell_type: "1S Li-Ion"

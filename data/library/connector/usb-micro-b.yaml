@@ -1,0 +1,21 @@
+id: "usb-micro-b"
+name: "USB Micro-B"
+category: connector
+manufacturer: "Generic"
+mpn: "USB-MICRO-B-SMD"
+description: "USB Micro-B 5-pin receptacle"
+datasheet: "https://www.usb.org/document-library/usb-20-specification"
+package: "SMD-5P"
+footprint: "USB-MICRO-B-SMD"
+lifecycle: "active"
+voltage_supply: "5.0"
+pins:
+  VBUS: {type: "power", description: "5V bus power"}
+  GND: {type: "power", description: "Ground"}
+  D+: {type: "bidirectional", description: "USB D+"}
+  D-: {type: "bidirectional", description: "USB D-"}
+  ID: {type: "input", description: "ID pin (OTG)"}
+  SHIELD: {type: "power", description: "Shield"}
+properties:
+  type: "USB Micro-B"
+  pins: 5

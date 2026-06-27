@@ -1,0 +1,29 @@
+id: "cc1101"
+name: "CC1101"
+category: rf
+manufacturer: "Texas Instruments"
+mpn: "CC1101RTKR"
+description: "Sub-1GHz RF transceiver, 315/433/868/915MHz"
+datasheet: "https://www.ti.com/lit/ds/symlink/cc1101.pdf"
+package: "QFN-20"
+footprint: "CC1101-QFN20"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VDD: {type: "power", description": "1.8-3.6V supply"}
+  GND: {type: "power", description: "Ground"}
+  SCK: {type: "input", description: "SPI clock"}
+  MISO: {type: "output", description: "SPI data out"}
+  MOSI: {type: "input", description: "SPI data in"}
+  CS: {type: "input", description: "SPI chip select"}
+  GDO0: {type: "bidirectional", description: "Digital output 0"}
+  GDO1: {type: "bidirectional", description: "Digital output 1"}
+  GDO2: {type: "bidirectional", description: "Digital output 2"}
+  RF_P: {type: "input", description: "RF input positive"}
+  RF_N: {type: "input", description: "RF input negative"}
+  XTAL1: {type: "passive", description: "Crystal 1"}
+  XTAL2: {type: "passive", description: "Crystal 2"}
+properties:
+  frequency_bands: ["315", "433", "868", "915"]
+  modulation: ["FSK", "MSK", "OOK", "ASK"]
+  interface: "spi"

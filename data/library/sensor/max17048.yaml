@@ -1,0 +1,23 @@
+id: "max17048"
+name: "MAX17048G+"
+category: sensor
+manufacturer: "Maxim Integrated"
+mpn: "MAX17048G+T10"
+description: "1-cell Li+ fuel gauge with ModelGauge, I2C"
+datasheet: "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX17048-MAX17049.pdf"
+package: "WLP-8"
+footprint: "MAX17048-WLP8"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  VDD: {type: "power", description: "2.5-4.5V supply"}
+  GND: {type: "power", description: "Ground"}
+  SDA: {type: "bidirectional", description: "I2C data"}
+  SCL: {type: "input", description: "I2C clock"}
+  ALT: {type: "output", description: "Alert output"}
+  QST: {type: "input", description: "Quick-start"}
+  CELL: {type: "input", description: "Cell connection"}
+properties:
+  interface: ["i2c"]
+  cell_type: "1S Li+"
+  accuracy: "+/- 1%"

@@ -1,0 +1,45 @@
+id: "esp32-c3-mini-1"
+name: "ESP32-C3-MINI-1"
+category: mcu
+manufacturer: "Espressif Systems"
+mpn: "ESP32-C3-MINI-1"
+description: "32-bit RISC-V Wi-Fi+BT LE MCU module, 160MHz, 4MB flash"
+datasheet: "https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_en.pdf"
+package: "SMD-module-52pin"
+footprint: "ESP32-C3-MINI-1"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  GND: {type: "power", description: "Ground"}
+  VCC: {type: "power", description: "3.3V supply"}
+  EN: {type: "input", description: "Chip enable"}
+  GPIO0: {type: "bidirectional", description: "GPIO0"}
+  GPIO1: {type: "bidirectional", description: "GPIO1"}
+  GPIO2: {type: "bidirectional", description: "GPIO2"}
+  GPIO3: {type: "bidirectional", description: "GPIO3"}
+  GPIO4: {type: "bidirectional", description: "GPIO4"}
+  GPIO5: {type: "bidirectional", description: "GPIO5"}
+  GPIO6: {type: "bidirectional", description: "GPIO6"}
+  GPIO7: {type: "bidirectional", description: "GPIO7"}
+  GPIO8: {type: "bidirectional", description: "GPIO8"}
+  GPIO9: {type: "bidirectional", description: "GPIO9"}
+  GPIO10: {type: "bidirectional", description: "GPIO10"}
+  GPIO11: {type: "bidirectional", description: "GPIO11"}
+  GPIO12: {type: "bidirectional", description: "GPIO12"}
+  GPIO13: {type: "bidirectional", description: "GPIO13"}
+  GPIO14: {type: "bidirectional", description: "GPIO14"}
+  GPIO15: {type: "bidirectional", description: "GPIO15"}
+  GPIO16: {type: "bidirectional", description: "GPIO16"}
+  GPIO17: {type: "bidirectional", description: "GPIO17"}
+  GPIO18: {type: "bidirectional", description: "GPIO18"}
+  GPIO19: {type: "bidirectional", description: "GPIO19"}
+  GPIO20: {type: "bidirectional", description: "GPIO20"}
+  GPIO21: {type: "bidirectional", description: "GPIO21"}
+  USB_DP: {type: "bidirectional", description: "USB D+"}
+  USB_DM: {type: "bidirectional", description: "USB D-"}
+properties:
+  core: "RISC-V 32-bit"
+  frequency_mhz: 160
+  flash_mb: 4
+  sram_kb: 400
+  wireless: ["wifi_2.4ghz", "ble_5.0"]

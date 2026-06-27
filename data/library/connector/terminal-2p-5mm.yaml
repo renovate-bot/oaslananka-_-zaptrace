@@ -1,0 +1,17 @@
+id: "terminal-2p-5mm"
+name: "Terminal Block 2P 5mm"
+category: connector
+manufacturer: "Generic"
+mpn: "TB-2P-5MM"
+description: "Screw terminal block, 2-pole, 5mm pitch, THT"
+datasheet: ""
+package: "THT-2P"
+footprint: "TERMINAL-2P-5MM"
+lifecycle: "active"
+voltage_supply: ""
+pins:
+  P1: {type: "passive", description: "Terminal 1"}
+  P2: {type: "passive", description: "Terminal 2"}
+properties:
+  pitch_mm: 5.0
+  current_rating_a: 10
