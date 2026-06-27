@@ -250,8 +250,10 @@ def mcad_component_table(
             continue
 
         pos = pos_map.get(comp.id) or pos_map.get(comp.ref)
-        if pos is None and getattr(comp, "position", None) is not None:
-            pos = (float(comp.position[0]), float(comp.position[1]))
+        if pos is None:
+            _pos_raw = getattr(comp, "position", None)
+            if _pos_raw is not None:
+                pos = (float(_pos_raw[0]), float(_pos_raw[1]))
         x_mm = float(pos[0]) if pos else 0.0
         y_mm = float(pos[1]) if pos else 0.0
 

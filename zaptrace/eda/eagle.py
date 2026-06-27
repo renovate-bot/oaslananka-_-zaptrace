@@ -20,7 +20,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+from xml.etree.ElementTree import Element as _Element
 from xml.etree.ElementTree import ParseError as _XMLParseError
 
 import defusedxml.ElementTree as ElementTree
@@ -89,7 +90,7 @@ def import_eagle_xml(path: str | Path) -> EagleImportResult:
     except _XMLParseError as exc:
         raise ValueError(f"Invalid Eagle XML: {exc}") from exc
 
-    root = tree.getroot()
+    root: _Element = cast(_Element, tree.getroot())  # defusedxml lacks stubs
     if root.tag != "eagle":
         raise ValueError(f"Not an Eagle file: root tag is '{root.tag}', expected 'eagle'")
 
@@ -187,7 +188,7 @@ def import_eagle_to_design(path: str | Path) -> tuple[Any, EagleImportResult]:
     )
 
     eagle_result = import_eagle_xml(path)
-    design = Design(meta=DesignMeta(name=Path(path).stem, source="eagle"))
+    design = Design(meta=DesignMeta(name=Path(path).stem, author="eagle-import"))
 
     # Add components
     for ref, attrs in eagle_result.components.items():

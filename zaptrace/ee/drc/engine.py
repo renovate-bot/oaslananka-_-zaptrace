@@ -817,7 +817,7 @@ def check_hole_to_hole_clearance(design: Design, _kb: KnowledgeBase, _result: DR
         return vio
 
     _IPC_MIN_WALL_MM = 0.25
-    vias = [(seg, seg.x1, seg.y1, seg.via_hole) for seg in routing.traces if seg.via_hole]
+    vias = [(seg, seg.start[0], seg.start[1], seg.via_hole) for seg in routing.traces if seg.via_hole]
     for i, (s1, x1, y1, d1) in enumerate(vias):
         for s2, x2, y2, d2 in vias[i + 1 :]:
             dist = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
