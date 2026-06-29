@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 86
+> Total tools: 87
 
 ---
 
@@ -642,6 +642,14 @@ Plan a justified power tree (sources, charger, power-path, per-rail regulators) 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `intent` | `string` | Design intent description |
+
+### `synthesis_benchmark`
+
+Synthesize a fixed corpus of board types and report aggregate completeness across the engine
+
+**Parameters:**
+
+*No parameters*
 
 ### `resolve_footprints`
 

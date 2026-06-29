@@ -1279,6 +1279,18 @@ def tool_simulation_gate(design_name: str, strict: bool = False, session_id: str
     return {"design": design_name, **result.to_dict()}
 
 
+def tool_synthesis_benchmark() -> dict[str, Any]:
+    """Synthesize a fixed corpus of board types and report aggregate completeness.
+
+    Measures the engine, not one board: mean score, per-dimension pass rates, the
+    weakest dimension, and the worst case — a deterministic, regression-catching
+    snapshot of how finished synthesis is across representative intents.
+    """
+    from zaptrace.synthesis.benchmark import run_benchmark
+
+    return run_benchmark().to_dict()
+
+
 def tool_synthesize_board_score(intent: str, session_id: str = "default") -> dict[str, Any]:
     """Synthesize a board end to end and score its completeness (0-100).
 
@@ -2529,6 +2541,12 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
             "output_dir": {"type": "string", "description": "Directory to write manufacturing artifacts"},
             "session_id": {"type": "string", "description": "Session identifier"},
         },
+    },
+    "synthesis_benchmark": {
+        "name": "synthesis_benchmark",
+        "description": "Synthesize a fixed corpus of board types and report aggregate completeness across the engine",
+        "fn": tool_synthesis_benchmark,
+        "params": {},
     },
     "synthesize_board_score": {
         "name": "synthesize_board_score",
