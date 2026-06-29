@@ -187,6 +187,8 @@ def plan_architecture(requirements: Requirements) -> ArchitecturePlan:
 
     # --- Power blocks: USB-C input termination + one regulator per rail. -----
     power = plan_power_tree(requirements)
+    no_input = not requirements.usb_c and not requirements.battery
+    system_v = max(requirements.rails_v) if requirements.rails_v else None
     if requirements.usb_c:
         plan.blocks.append(
             PlannedBlock(
@@ -205,6 +207,7 @@ def plan_architecture(requirements: Requirements) -> ArchitecturePlan:
                 rationale="USB-C receptacle: the board's physical power input",
                 contract=BlockContract(provides=("net:VBUS",), requires=("net:GND",)),
                 realized=True,
+                params={"connector": "usb_c"},
             )
         )
     for stage in power["stages"]:
@@ -213,6 +216,20 @@ def plan_architecture(requirements: Requirements) -> ArchitecturePlan:
         rail_v = stage["to_rail_v"]
         rail_net = _rail_net(rail_v)
         topology = stage["topology"]
+        # No on-board input source stated: the highest rail is externally supplied,
+        # so a DC power connector drives it directly instead of an (impossible) boost.
+        if no_input and system_v is not None and rail_v == system_v and topology == "boost":
+            plan.blocks.append(
+                PlannedBlock(
+                    block_id=f"J_DC_{rail_net}",
+                    kind="connector",
+                    rationale=f"external DC power input at {rail_v:g} V (no on-board conversion stated)",
+                    contract=BlockContract(provides=(f"rail:{rail_net}",), requires=("net:GND",)),
+                    realized=True,
+                    params={"connector": "dc_input", "rail_net": rail_net},
+                )
+            )
+            continue
         realized = topology in ("buck", "ldo")  # boost has no block yet
         plan.blocks.append(
             PlannedBlock(
@@ -365,11 +382,15 @@ def build_architecture_design(
                 "topology", block.block_id, "USB-C CC Rd", rationale=block.rationale, calculator="usb_c_cc_termination"
             )
 
-        elif block.kind == "connector":  # USB-C receptacle
-            from zaptrace.synthesis.connectors import instantiate_usb_c_connector
+        elif block.kind == "connector":
+            from zaptrace.synthesis.connectors import instantiate_dc_input, instantiate_usb_c_connector
 
-            ref = instantiate_usb_c_connector(design, vbus_net=input_net)
-            log.record("topology", block.block_id, f"USB-C receptacle {ref}", rationale=block.rationale)
+            if block.params.get("connector") == "dc_input":
+                ref = instantiate_dc_input(design, vin_net=block.params["rail_net"])
+                log.record("topology", block.block_id, f"DC power input {ref}", rationale=block.rationale)
+            else:
+                ref = instantiate_usb_c_connector(design, vbus_net=input_net)
+                log.record("topology", block.block_id, f"USB-C receptacle {ref}", rationale=block.rationale)
 
         elif block.kind == "regulator":
             rail_v = block.params["rail_v"]

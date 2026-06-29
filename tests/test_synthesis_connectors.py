@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from zaptrace.core.models import Design, DesignMeta
 from zaptrace.synthesis.architecture import build_architecture_design
-from zaptrace.synthesis.connectors import instantiate_usb_c_connector
+from zaptrace.synthesis.connectors import instantiate_dc_input, instantiate_usb_c_connector
 from zaptrace.synthesis.footprint_resolver import resolve_footprints
 from zaptrace.synthesis.requirements import parse_requirements
 
@@ -41,6 +41,15 @@ class TestInstantiateConnector:
         assert ref != "J1"
 
 
+class TestDcInput:
+    def test_wires_rail_and_ground(self) -> None:
+        design = Design(meta=DesignMeta(name="dc_test"))
+        ref = instantiate_dc_input(design, vin_net="VDD_3V3")
+        assert ref.startswith("J")
+        assert any(n.component_ref == ref for n in design.nets["VDD_3V3"].nodes)
+        assert any(n.component_ref == ref for n in design.nets["GND"].nodes)
+
+
 class TestIntegration:
     def test_usb_c_board_gets_a_connector_and_cc_is_terminated(self) -> None:
         design, plan, _log = build_architecture_design(parse_requirements("ESP32-C3 USB-C 3.3V board, I2C sensor"))
@@ -52,9 +61,16 @@ class TestIntegration:
         # the connector is a realized block in the graph
         assert any(b.kind == "connector" and b.realized for b in plan.blocks)
 
-    def test_non_usb_board_has_no_usb_connector(self) -> None:
+    def test_non_usb_board_gets_a_dc_input_not_usb_c(self) -> None:
+        # No stated power input → a DC power terminal drives the rail (not USB-C).
         design, plan, _log = build_architecture_design(parse_requirements("STM32 3.3V board, RS485 modbus"))
-        assert not any(b.kind == "connector" for b in plan.blocks)
+        connectors = [b for b in plan.blocks if b.kind == "connector"]
+        assert connectors
+        assert all(b.params.get("connector") == "dc_input" for b in connectors)
+        # the rail it drives is no longer floating
+        from zaptrace.analysis.dc_bias import resolve_dc_bias
+
+        assert resolve_dc_bias(design).passed
 
     def test_connector_footprint_resolves(self) -> None:
         design, _plan, _log = build_architecture_design(parse_requirements("ESP32-C3 USB-C 3.3V board, I2C sensor"))

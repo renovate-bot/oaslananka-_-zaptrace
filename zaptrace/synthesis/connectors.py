@@ -74,3 +74,26 @@ def instantiate_usb_c_connector(
         if pin in spec.pins:
             _connect(design, net, ref, pin)
     return ref
+
+
+def instantiate_dc_input(design: Design, *, vin_net: str, gnd_net: str = "GND", ref: str | None = None) -> str:
+    """Place a 2-terminal DC power input and wire it to a rail and ground.
+
+    Used when an intent states a rail but no on-board input source: the board is
+    powered externally at that rail's voltage through a screw terminal.
+    """
+    spec = LibraryLoader().get("terminal-2p-5mm")
+    if ref is None:
+        ref = _next_ref(design, "J")
+    design.components[ref] = Component(
+        id=ref,
+        ref=ref,
+        type="connector",
+        value=spec.name,
+        mpn=spec.mpn,
+        footprint=spec.footprint,
+        pins={name: Pin(name=name, type=_pin_type(raw)) for name, raw in spec.pins.items()},
+    )
+    _connect(design, vin_net, ref, "P1")
+    _connect(design, gnd_net, ref, "P2")
+    return ref

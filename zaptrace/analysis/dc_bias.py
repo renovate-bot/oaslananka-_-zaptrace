@@ -61,7 +61,10 @@ def _rail_volts(net_name: str) -> float | None:
         return None
 
 
-def _is_regulator(comp: Component) -> bool:
+def _is_power_source(comp: Component) -> bool:
+    """A regulator, or a connector that brings external power onto a rail."""
+    if comp.type.lower() == "connector":
+        return True
     if comp.type.lower() in _REGULATOR_TYPES:
         return True
     value = (comp.value or "").upper()
@@ -72,12 +75,13 @@ def resolve_dc_bias(design: Design) -> DcBiasResult:
     """Assign nominal DC voltages and flag any rail with no regulator driving it."""
     result = DcBiasResult()
 
-    # Nets a regulator touches; a rail among them is regulator-driven.
-    regulator_nets: set[str] = set()
-    regulator_refs = {c.ref for c in design.components.values() if _is_regulator(c)}
+    # Nets a power source (regulator or input connector) touches; a rail among
+    # them is driven.
+    driven_nets: set[str] = set()
+    source_refs = {c.ref for c in design.components.values() if _is_power_source(c)}
     for net in design.nets.values():
-        if any(node.component_ref in regulator_refs for node in net.nodes):
-            regulator_nets.add(net.name)
+        if any(node.component_ref in source_refs for node in net.nodes):
+            driven_nets.add(net.name)
 
     for net in design.nets.values():
         if net.type == NetType.GROUND or net.name.upper() in {"GND", "VSS"}:
@@ -91,7 +95,7 @@ def resolve_dc_bias(design: Design) -> DcBiasResult:
             continue
         result.rails_checked.append(net.name)
         result.net_voltages[net.name] = rail_v
-        if net.name not in regulator_nets:
+        if net.name not in driven_nets:
             result.undriven_rails.append(net.name)
 
     return result
