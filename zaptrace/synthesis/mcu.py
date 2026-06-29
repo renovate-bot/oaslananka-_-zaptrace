@@ -46,14 +46,15 @@ _FAMILY_PART: dict[str, str] = {
 _INTERFACE_SIGNALS: dict[str, list[tuple[str, str]]] = {
     "i2c": [("SDA", "SDA"), ("SCL", "SCL")],
     "spi": [("SCK", "SPI_SCK"), ("MOSI", "SPI_MOSI"), ("MISO", "SPI_MISO"), ("CS", "SPI_CS")],
+    "ethernet": [("SCK", "ETH_SCLK"), ("MOSI", "ETH_MOSI"), ("MISO", "ETH_MISO"), ("CS", "ETH_SCS")],
     "rs485": [("RO", "RS485_RO"), ("DI", "RS485_DI"), ("nRE", "RS485_nRE"), ("DE", "RS485_DE")],
     "can": [("TXD", "CAN_TXD"), ("RXD", "CAN_RXD")],
 }
 # Buses whose nets must already exist (their support block created them); other
-# interfaces (SPI) have the MCU create the nets.
+# interfaces (SPI, the SPI-based Ethernet controller) have the MCU create them.
 _REQUIRES_SUPPORT_NET = frozenset({"i2c", "rs485", "can"})
 # Deterministic interface order for pin assignment.
-_INTERFACE_ORDER = ("i2c", "spi", "uart", "rs485", "can")
+_INTERFACE_ORDER = ("i2c", "spi", "ethernet", "uart", "rs485", "can")
 
 _GROUND_NAMES = {"GND", "VSS", "VSSA", "AGND", "DGND"}
 _ENABLE_NAMES = {"EN", "NRST", "RESET", "RST"}

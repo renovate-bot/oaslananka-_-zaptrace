@@ -127,7 +127,7 @@ _INTERFACE_SUPPORT: dict[str, dict[str, Any]] = {
         "rationale": "I2C bus needs SDA/SCL pull-ups to the logic rail",
     },
     "usb": {"support": "gnd-only", "realized": True, "rationale": "USB-C port needs CC pin Rd termination to GND"},
-    "ethernet": {"support": "gnd-only", "realized": True, "rationale": "Ethernet magnetics need Bob-Smith termination"},
+    "ethernet": {"support": "none", "realized": True, "rationale": "Ethernet is an SPI controller (W5500) + RJ45 jack"},
     "spi": {
         "support": "none",
         "realized": True,
@@ -312,6 +312,22 @@ def plan_architecture(requirements: Requirements) -> ArchitecturePlan:
         if not periph.realized:
             plan.notes.append(f"peripheral '{periph.part_id}' ({periph.function}) has no library part")
 
+    # Ethernet: a W5500 SPI controller + RJ45 jack on the MCU-mastered SPI bus.
+    if "ethernet" in requirements.interfaces:
+        plan.blocks.append(
+            PlannedBlock(
+                block_id="PERIPH_ETHERNET",
+                kind="peripheral",
+                rationale="W5500 SPI Ethernet controller + RJ45 jack",
+                contract=BlockContract(
+                    provides=("peripheral:ethernet",),
+                    requires=(f"rail:{logic_rail}", "net:GND", "iface:ethernet"),
+                ),
+                realized=True,
+                params={"part_id": "w5500", "bus": "ethernet"},
+            )
+        )
+
     _check_composition(plan)
     return plan
 
@@ -348,7 +364,6 @@ def build_architecture_design(
         instantiate_can_transceiver,
         instantiate_i2c_pullups,
         instantiate_ldo,
-        instantiate_rj45_bob_smith,
         instantiate_rs485_transceiver,
         instantiate_sync_buck_tlv62569,
         instantiate_usb_c_ufp_cc,
@@ -425,9 +440,6 @@ def build_architecture_design(
                 supply_v = block.params["logic_rail_v"]
                 instantiate_i2c_pullups(design, block.block_id, vdd_net=logic_rail, supply_v=supply_v)
                 log.record("value", block.block_id, "I2C pull-ups", rationale=block.rationale, calculator="i2c_pullup")
-            elif support == "gnd-only" and block.block_id == "IF_ETHERNET":
-                instantiate_rj45_bob_smith(design, block.block_id)
-                log.record("topology", block.block_id, "RJ45 Bob-Smith", rationale=block.rationale)
             elif support == "gnd-only" and block.block_id == "IF_USB":
                 # USB-C CC already emitted as the power_input block; nothing extra.
                 log.record("topology", block.block_id, "covered by USB-C input", rationale=block.rationale)
@@ -459,11 +471,17 @@ def build_architecture_design(
                 )
 
         elif block.kind == "peripheral":
-            from zaptrace.synthesis.peripherals import instantiate_sensor, instantiate_spi_flash
+            from zaptrace.synthesis.peripherals import (
+                instantiate_ethernet,
+                instantiate_sensor,
+                instantiate_spi_flash,
+            )
 
             part_id = block.params["part_id"]
             bus = block.params["bus"]
-            if bus == "spi":
+            if bus == "ethernet":
+                ref = instantiate_ethernet(design, rail_net=logic_rail)
+            elif bus == "spi":
                 ref = instantiate_spi_flash(design, part_id, rail_net=logic_rail)
             else:
                 ref = instantiate_sensor(design, part_id, rail_net=logic_rail)

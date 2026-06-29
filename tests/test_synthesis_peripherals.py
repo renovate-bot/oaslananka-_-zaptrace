@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from zaptrace.core.models import Design, DesignMeta, Net
 from zaptrace.synthesis.architecture import build_architecture_design
-from zaptrace.synthesis.peripherals import instantiate_sensor, instantiate_spi_flash, plan_sensors, plan_storage
+from zaptrace.synthesis.peripherals import (
+    instantiate_ethernet,
+    instantiate_sensor,
+    instantiate_spi_flash,
+    plan_sensors,
+    plan_storage,
+)
 from zaptrace.synthesis.requirements import parse_requirements
 
 
@@ -121,6 +127,37 @@ class TestInstantiateSensor:
         design.components["U1"] = Component(id="U1", ref="U1", type="mcu", value="X")
         ref = instantiate_sensor(design, "sht31-dis", rail_net="VDD_3V3")
         assert ref != "U1"
+
+
+class TestEthernet:
+    def _spi_bus(self) -> Design:
+        design = Design(meta=DesignMeta(name="eth_test"))
+        for net in ("VDD_3V3", "GND", "ETH_SCLK", "ETH_MOSI", "ETH_MISO", "ETH_SCS"):
+            design.nets[net] = Net(id=net, name=net)
+        return design
+
+    def test_places_w5500_rj45_and_crystal(self) -> None:
+        design = self._spi_bus()
+        ref = instantiate_ethernet(design, rail_net="VDD_3V3")
+        assert ref is not None
+        types = {c.type for c in design.components.values()}
+        assert {"ic", "connector", "crystal", "capacitor"} <= types
+        # the W5500 joins the MCU-mastered SPI bus
+        assert any(n.component_ref == ref for n in design.nets["ETH_SCLK"].nodes)
+
+    def test_tx_rx_pairs_reach_the_jack(self) -> None:
+        design = self._spi_bus()
+        instantiate_ethernet(design, rail_net="VDD_3V3")
+        for net in ("ETH_TXP", "ETH_RXP"):
+            assert net in design.nets and len(design.nets[net].nodes) == 2  # W5500 + RJ45
+
+    def test_ethernet_board_is_electrically_clean(self) -> None:
+        from zaptrace.erc.runner import ERCRunner
+        from zaptrace.synthesis.repair import synthesize_and_repair
+
+        out = synthesize_and_repair("ESP32 3.3V board, I2C sensor, ethernet")
+        result = ERCRunner().run(out["design"])
+        assert result.total_errors == 0 and result.total_warnings == 0
 
 
 class TestIntegration:

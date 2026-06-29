@@ -1,0 +1,17 @@
+id: "crystal-25mhz"
+name: "25MHz Crystal"
+category: timing
+manufacturer: "Abracon"
+mpn: "ABM8-25.000MHZ-B2-T"
+description: "25 MHz SMD crystal, 3.2x2.5mm, 18pF load, ±30ppm (Ethernet PHY clock)"
+datasheet: "https://abracon.com/Resonators/ABM8.pdf"
+package: "SMD-3225-4P"
+footprint: "Crystal_SMD_3225-4Pin_3.2x2.5mm"
+lifecycle: "active"
+voltage_supply: ""
+pins:
+  XI: {type: "passive", description: "Crystal terminal 1"}
+  XO: {type: "passive", description: "Crystal terminal 2"}
+properties:
+  frequency_mhz: 25
+  load_pf: 18

@@ -143,6 +143,108 @@ def _find_pin(spec_pins: dict[str, dict[str, str]], names: set[str]) -> str | No
     return None
 
 
+def _place_eth_crystal(design: Design, w5500_ref: str, spec_pins: dict[str, dict[str, str]], *, gnd_net: str) -> None:
+    """Place the W5500's 25 MHz crystal with load caps across XTAL1/XTAL2."""
+    xtal_in = _find_pin(spec_pins, {"XTAL1", "XI", "XIN"})
+    xtal_out = _find_pin(spec_pins, {"XTAL2", "XO", "XOUT"})
+    if xtal_in is None or xtal_out is None:
+        return
+    spec = LibraryLoader().get("crystal-25mhz")
+    y_ref = _next_ref(design, "Y")
+    design.components[y_ref] = Component(
+        id=y_ref,
+        ref=y_ref,
+        type="crystal",
+        value=spec.name,
+        mpn=spec.mpn,
+        footprint=spec.footprint,
+        pins={name: Pin(name=name, type=_pin_type(raw)) for name, raw in spec.pins.items()},
+    )
+    for mcu_pin, xtal_pin, net in ((xtal_in, "XI", "ETH_XTAL_IN"), (xtal_out, "XO", "ETH_XTAL_OUT")):
+        _connect(design, net, w5500_ref, mcu_pin)
+        _connect(design, net, y_ref, xtal_pin)
+        cap = _next_ref(design, "C")
+        design.components[cap] = Component(id=cap, ref=cap, type="capacitor", value="18pF")
+        _connect(design, net, cap, "1")
+        _connect(design, gnd_net, cap, "2")
+
+
+def instantiate_ethernet(
+    design: Design,
+    *,
+    rail_net: str,
+    gnd_net: str = "GND",
+    sclk_net: str = "ETH_SCLK",
+    mosi_net: str = "ETH_MOSI",
+    miso_net: str = "ETH_MISO",
+    scs_net: str = "ETH_SCS",
+) -> str | None:
+    """Place a W5500 Ethernet controller + RJ45 jack and wire the full front-end.
+
+    The W5500 joins the MCU-mastered SPI bus, takes its power/clock/straps, and its
+    differential pairs reach an RJ45 jack with integrated magnetics. Returns the
+    W5500 ref. Mode pins are tied for all-capable auto-negotiation; the reset is
+    held high.
+    """
+    w = LibraryLoader().get("w5500")
+    rj = LibraryLoader().get("rj45-8p")
+    u_ref = _next_ref(design, "U")
+    design.components[u_ref] = Component(
+        id=u_ref,
+        ref=u_ref,
+        type="ic",
+        value=w.name,
+        mpn=w.mpn,
+        footprint=w.footprint,
+        pins={name: Pin(name=name, type=_pin_type(raw)) for name, raw in w.pins.items()},
+    )
+    # Power, SPI, control straps.
+    for name, raw in w.pins.items():
+        if raw.get("type") == "power":
+            _connect(design, gnd_net if name.upper() in _GROUND_NAMES else rail_net, u_ref, name)
+    for pin, net in (("SCLK", sclk_net), ("MOSI", mosi_net), ("MISO", miso_net), ("SCS", scs_net)):
+        if pin in w.pins:
+            _connect(design, net, u_ref, pin)
+    for pin in ("PMODE1", "PMODE2", "PMODE3"):  # 111 = all-capable auto-negotiation
+        if pin in w.pins:
+            _connect(design, rail_net, u_ref, pin)
+    if "RST" in w.pins:
+        _connect(design, rail_net, u_ref, "RST")  # active-low reset held high
+    if "TEST" in w.pins:
+        _connect(design, gnd_net, u_ref, "TEST")  # test mode off
+    _place_eth_crystal(design, u_ref, w.pins, gnd_net=gnd_net)
+
+    cap = _next_ref(design, "C")
+    design.components[cap] = Component(id=cap, ref=cap, type="capacitor", value="100nF")
+    _connect(design, rail_net, cap, "1")
+    _connect(design, gnd_net, cap, "2")
+
+    # RJ45 jack with integrated magnetics: the W5500 TX/RX pairs reach the jack.
+    j_ref = _next_ref(design, "J")
+    design.components[j_ref] = Component(
+        id=j_ref,
+        ref=j_ref,
+        type="connector",
+        value=rj.name,
+        mpn=rj.mpn,
+        footprint=rj.footprint,
+        pins={name: Pin(name=name, type=_pin_type(raw)) for name, raw in rj.pins.items()},
+    )
+    for w_pin, j_pin, net in (
+        ("TXP", "TX_P", "ETH_TXP"),
+        ("TXN", "TX_N", "ETH_TXN"),
+        ("RXP", "RX_P", "ETH_RXP"),
+        ("RXN", "RX_N", "ETH_RXN"),
+    ):
+        if w_pin in w.pins and j_pin in rj.pins:
+            _connect(design, net, u_ref, w_pin)
+            _connect(design, net, j_ref, j_pin)
+    for j_pin in ("GND", "SHIELD"):
+        if j_pin in rj.pins:
+            _connect(design, gnd_net, j_ref, j_pin)
+    return u_ref
+
+
 def instantiate_sensor(
     design: Design,
     part_id: str,
