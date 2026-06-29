@@ -1,0 +1,122 @@
+"""End-to-end: intent → fabricable package + evidence.
+
+Chains block-composition synthesis through the existing place / route / export
+pipeline so an agent can go from one sentence to a manufacturing bundle (Gerber,
+drill, BOM, pick-and-place, ZIP) in a single call — the "Prompt-to-Fab" thesis,
+on the composition synthesizer rather than template selection.
+
+Crucially it returns the **evidence** alongside the artifacts: the completeness
+scorecard, the DC bias check, and an explicit human-review checklist of what is
+*not* finished (parts with no copper, ERC left for review, undriven rails,
+unrealized blocks, a skipped simulation). The bundle is never presented as
+fabrication-ready — the checklist is the honest hand-off to a reviewer.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from zaptrace.analysis.dc_bias import DcBiasResult
+    from zaptrace.synthesis.footprint_resolver import FootprintResolution
+    from zaptrace.synthesis.repair import RepairResult
+
+
+@dataclass
+class FabResult:
+    """The fabrication package plus the evidence and review checklist."""
+
+    intent: str
+    design_name: str
+    component_count: int
+    net_count: int
+    scorecard: dict[str, Any]
+    dc_bias: dict[str, Any]
+    artifacts: list[str] = field(default_factory=list)
+    review_checklist: list[str] = field(default_factory=list)
+    output_dir: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "intent": self.intent,
+            "design_name": self.design_name,
+            "component_count": self.component_count,
+            "net_count": self.net_count,
+            "scorecard": self.scorecard,
+            "dc_bias": self.dc_bias,
+            "artifacts": self.artifacts,
+            "review_checklist": self.review_checklist,
+            "output_dir": self.output_dir,
+        }
+
+
+def _review_checklist(
+    design: Any,
+    repair: RepairResult,
+    footprints: FootprintResolution,
+    dc_bias: DcBiasResult,
+    unrealized_blocks: list[str],
+) -> list[str]:
+    """The honest hand-off: everything a human must still resolve."""
+    items: list[str] = []
+    if dc_bias.undriven_rails:
+        items.append(f"Power: undriven rail(s) {', '.join(dc_bias.undriven_rails)} — add the missing regulator.")
+    for unresolved in footprints.unresolved:
+        items.append(
+            f"Footprint: {unresolved['ref']} ({unresolved['footprint'] or 'unnamed'}) has no pad geometry — "
+            "no copper will be emitted for it until a land pattern is supplied."
+        )
+    if repair.remaining:
+        items.append(f"ERC: {len(repair.remaining)} violation(s) left for review (e.g. connector/strapping nets).")
+    for block_id in unrealized_blocks:
+        items.append(f"Synthesis: block {block_id} was planned but not realized — complete it by hand.")
+    items.append("Run a full ERC/DRC and a real simulation, and have a qualified engineer review before fabrication.")
+    return items
+
+
+def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: str = "SynthesizedBoard") -> FabResult:
+    """Synthesize a board from intent and emit a manufacturing bundle plus evidence."""
+    from zaptrace.algo.placer import place_components
+    from zaptrace.algo.router import route_design_smart
+    from zaptrace.analysis.dc_bias import resolve_dc_bias
+    from zaptrace.export.manufacturing import generate_manufacturing_bundle
+    from zaptrace.synthesis.repair import synthesize_and_repair
+    from zaptrace.synthesis.scorecard import score_board
+
+    out = synthesize_and_repair(intent, name=name)
+    design = out["design"]
+
+    positions = place_components(design)
+    for ref, pos in positions.items():
+        if ref in design.components:
+            design.components[ref].position = tuple(pos) if not isinstance(pos, tuple) else pos
+    design.placement = dict(positions)
+    route_design_smart(design, {c.ref: c.position for c in design.components.values() if c.position})
+
+    out_path = Path(output_dir)
+    generate_manufacturing_bundle(design, out_path)
+    artifacts = sorted(p.name for p in out_path.iterdir() if p.is_file())
+
+    bias = resolve_dc_bias(design)
+    card = score_board(design, out["plan"], out["repair"], out["footprints"], bias)
+    checklist = _review_checklist(
+        design,
+        out["repair"],
+        out["footprints"],
+        bias,
+        [b.block_id for b in out["plan"].unrealized_blocks],
+    )
+
+    return FabResult(
+        intent=intent,
+        design_name=design.meta.name,
+        component_count=len(design.components),
+        net_count=len(design.nets),
+        scorecard=card.to_dict(),
+        dc_bias=bias.to_dict(),
+        artifacts=artifacts,
+        review_checklist=checklist,
+        output_dir=str(out_path),
+    )

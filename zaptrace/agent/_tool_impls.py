@@ -1305,6 +1305,23 @@ def tool_synthesize_board_score(intent: str, session_id: str = "default") -> dic
     }
 
 
+def tool_synthesize_board_manufacture(
+    intent: str, output_dir: str, session_id: str = "default"
+) -> dict[str, Any]:
+    """Synthesize a board from intent and emit a full manufacturing bundle + evidence.
+
+    Runs the whole chain — block composition, functional core, peripherals, repair,
+    footprint geometry, place, route, and manufacturing export (Gerber, drill, BOM,
+    pick-and-place, ZIP) — then returns the completeness score, DC bias, the artifact
+    list, and an explicit human-review checklist of what is NOT finished. The bundle
+    is never fabrication-ready; the checklist is the honest hand-off.
+    """
+    from zaptrace.synthesis.fab import synthesize_to_manufacturing
+
+    _get_session(session_id)  # validate/scope the session
+    return synthesize_to_manufacturing(intent, output_dir).to_dict()
+
+
 def tool_compliance_checklist(intent: str) -> dict[str, Any]:
     """Produce a product-class compliance pre-check checklist for a design intent.
 
@@ -2500,6 +2517,16 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "fn": tool_synthesize_board_repair,
         "params": {
             "intent": {"type": "string", "description": "Design intent description"},
+            "session_id": {"type": "string", "description": "Session identifier"},
+        },
+    },
+    "synthesize_board_manufacture": {
+        "name": "synthesize_board_manufacture",
+        "description": "Synthesize a board from intent and emit a manufacturing bundle, evidence, and review checklist",
+        "fn": tool_synthesize_board_manufacture,
+        "params": {
+            "intent": {"type": "string", "description": "Design intent description"},
+            "output_dir": {"type": "string", "description": "Directory to write manufacturing artifacts"},
             "session_id": {"type": "string", "description": "Session identifier"},
         },
     },

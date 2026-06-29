@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 85
+> Total tools: 86
 
 ---
 
@@ -1009,6 +1009,18 @@ Synthesize a board then run the convergent ERC -> patch -> re-verify self-correc
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `intent` | `string` | Design intent description |
+| `session_id` | `string` | Session identifier |
+
+### `synthesize_board_manufacture`
+
+Synthesize a board from intent and emit a manufacturing bundle, evidence, and review checklist
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `intent` | `string` | Design intent description |
+| `output_dir` | `string` | Directory to write manufacturing artifacts |
 | `session_id` | `string` | Session identifier |
 
 ### `synthesize_board_score`
