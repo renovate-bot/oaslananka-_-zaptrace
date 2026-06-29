@@ -1211,6 +1211,7 @@ def tool_synthesize_board_repair(intent: str, session_id: str = "default") -> di
     design = out["design"]
     plan = out["plan"]
     repair = out["repair"]
+    footprints = out["footprints"]
     session = _get_session(session_id)
     session["designs"][design.meta.name] = design
     return {
@@ -1224,8 +1225,26 @@ def tool_synthesize_board_repair(intent: str, session_id: str = "default") -> di
         "patches": [p.to_dict() for p in repair.patches],
         "remaining": repair.remaining,
         "unrealized_blocks": [b.block_id for b in plan.unrealized_blocks],
+        "footprints": footprints.to_dict(),
         "method": "block_composition_synthesis_with_self_repair",
     }
+
+
+def tool_resolve_footprints(design_name: str, session_id: str = "default") -> dict[str, Any]:
+    """Attach real IPC-7351 pad geometry to a stored design's components.
+
+    The manufacturing exporters need `footprint_def` geometry, not just a name.
+    Components whose package has no generator yet (e.g. an MCU module) are
+    reported as unresolved — a visible fabrication blocker, never faked.
+    """
+    from zaptrace.synthesis.footprint_resolver import resolve_footprints
+
+    session = _get_session(session_id)
+    design = session.get("designs", {}).get(design_name)
+    if design is None:
+        raise ValueError(f"Design '{design_name}' not found")
+    resolution = resolve_footprints(design)
+    return {"design": design_name, **resolution.to_dict()}
 
 
 def tool_simulation_gate(design_name: str, strict: bool = False, session_id: str = "default") -> dict[str, Any]:
@@ -2440,6 +2459,15 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "fn": tool_synthesize_board_repair,
         "params": {
             "intent": {"type": "string", "description": "Design intent description"},
+            "session_id": {"type": "string", "description": "Session identifier"},
+        },
+    },
+    "resolve_footprints": {
+        "name": "resolve_footprints",
+        "description": "Attach real IPC-7351 pad geometry to a stored design's components (reports gaps)",
+        "fn": tool_resolve_footprints,
+        "params": {
+            "design_name": {"type": "string", "description": "Design name"},
             "session_id": {"type": "string", "description": "Session identifier"},
         },
     },

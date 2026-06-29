@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 82
+> Total tools: 83
 
 ---
 
@@ -642,6 +642,17 @@ Plan a justified power tree (sources, charger, power-path, per-rail regulators) 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `intent` | `string` | Design intent description |
+
+### `resolve_footprints`
+
+Attach real IPC-7351 pad geometry to a stored design's components (reports gaps)
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `design_name` | `string` | Design name |
+| `session_id` | `string` | Session identifier |
 
 ### `simulation_gate`
 

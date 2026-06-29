@@ -289,15 +289,19 @@ def synthesize_and_repair(intent: str, *, name: str = "SynthesizedBoard") -> dic
     record of what the loop fixed and what still needs a human.
     """
     from zaptrace.synthesis.architecture import build_architecture_design
+    from zaptrace.synthesis.footprint_resolver import resolve_footprints
     from zaptrace.synthesis.requirements import parse_requirements
 
     requirements = parse_requirements(intent)
     design, plan, log = build_architecture_design(requirements, name=name)
     repair = repair_design(design)
+    # Footprint names are now assigned; attach real pad geometry so exports work.
+    footprints = resolve_footprints(design)
     return {
         "intent": intent,
         "design": design,
         "plan": plan,
         "decision_log": log,
         "repair": repair,
+        "footprints": footprints,
     }

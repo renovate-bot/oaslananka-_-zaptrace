@@ -27,7 +27,7 @@ closure**, not missing stages. What exists today, characterized honestly:
 | Stage | What is real today | Honest limitation |
 |-------|--------------------|-------------------|
 | Intent → requirements | Structured requirements extraction, assumption register, conflict detector, freeze gate | Heuristic NL parsing; not a planner |
-| Synthesis | **Template selection** + block-composition synthesis (power + interface support + **functional core**: a real MCU placed and pin-wired to the interfaces), provides/requires contracts, calculator library | MCU power+I2C/RS-485/CAN wiring only; SPI/UART peripherals, sensors, RF, and signal-chain blocks still deferred; footprints are names, not yet IPC-7351 geometry |
+| Synthesis | **Template selection** + block-composition synthesis (power + interface support + **functional core**: a real MCU placed and pin-wired to the interfaces) + **IPC-7351 footprint geometry** attached to each part, provides/requires contracts, calculator library | MCU power+I2C/RS-485/CAN wiring only; SPI/UART peripherals, sensors, RF, signal-chain still deferred; module land patterns (MCU modules) have no geometry generator yet |
 | ERC | 29 connectivity-precise rules over an electrical graph, coverage reporting | Rules catch known faults only; no functional/timing proof |
 | Placement / routing | Constraint-aware placement, grid + net-aware routing, copper pour | Grid router; no push-and-shove, length-match, or controlled-impedance routing in the loop |
 | DRC | 16 geometric rules, fab-profile-aware | Geometry only; not a manufacturability guarantee |
@@ -36,7 +36,7 @@ closure**, not missing stages. What exists today, characterized honestly:
 | Supply | BOM intelligence provider interface; DigiKey/Mouser/TME/Farnell adapters | Fixture-backed, not live API |
 | Export | Gerber, Excellon, BOM, PnP, KiCad, SVG, IPC-2581/ODB++ foundation | KiCad export one-way |
 | Verification evidence | Proof-pack runner + manifest, KiCad Oracle (optional), fab profiles | Proof pack experimental; oracle skippable |
-| Surfaces | Python SDK, CLI, REST API, MCP server (82 tools) | — |
+| Surfaces | Python SDK, CLI, REST API, MCP server (83 tools) | — |
 | Library | ~82 parts | Far short of professional breadth |
 
 The README status table and this section are the source of truth; no claim of

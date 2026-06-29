@@ -72,6 +72,7 @@ _CHIP_DIMENSIONS: dict[str, tuple[float, float, float, float, float, float]] = {
 _SOT_TH_DIMENSIONS: dict[str, tuple[int, float, float, float]] = {
     # (pins, pitch, pw, ph)
     "SOT-23": (3, 0.95, 0.6, 0.6),
+    "SOT-23-3": (3, 0.95, 0.6, 0.6),
     "SOT-23-5": (5, 0.95, 0.6, 0.6),
     "SOT-23-6": (6, 0.95, 0.6, 0.6),
     "SOT-89": (4, 1.5, 0.8, 0.8),
