@@ -47,6 +47,8 @@ _GROUND_NAMES = {"GND", "VSS"}
 _I2C_DATA_NAMES = {"SDA", "SDI"}
 _I2C_CLK_NAMES = {"SCL", "SCK"}
 _I2C_ADDR_NAMES = {"ADDR", "SA0"}  # tie to GND for the default I2C address
+# Active-low reset inputs: tie high to the rail so the part runs (not held in reset).
+_ACTIVE_LOW_RESET_NAMES = {"NRESET", "NRST", "RESET_N", "RST_N", "RESET#", "RST#"}
 _SPI_CLK_NAMES = {"CLK", "SCK", "SCLK"}
 _SPI_MOSI_NAMES = {"DI", "MOSI", "SI", "IO0"}
 _SPI_MISO_NAMES = {"DO", "MISO", "SO", "IO1"}
@@ -181,6 +183,9 @@ def instantiate_sensor(
     addr_pin = _find_pin(spec.pins, _I2C_ADDR_NAMES)
     if addr_pin is not None:
         _connect(design, gnd_net, ref, addr_pin)
+    reset_pin = _find_pin(spec.pins, _ACTIVE_LOW_RESET_NAMES)
+    if reset_pin is not None:
+        _connect(design, rail_net, ref, reset_pin)  # active-low reset held high
 
     # 100 nF decoupling cap on the sensor's rail (footprint assigned by repair).
     cap_ref = _next_ref(design, "C")

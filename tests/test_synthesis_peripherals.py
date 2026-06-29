@@ -91,6 +91,16 @@ class TestInstantiateSensor:
         ref = instantiate_sensor(design, "bmp390", rail_net="VDD_3V3")
         assert any(n.component_ref == ref for n in design.nets["SCL"].nodes)
 
+    def test_active_low_reset_is_tied_high(self) -> None:
+        # sht31-dis has an active-low nRESET; it must be held high, not left floating.
+        design = self._bus()
+        ref = instantiate_sensor(design, "sht31-dis", rail_net="VDD_3V3")
+        reset_on_rail = any(
+            n.component_ref == ref and n.pin_name.upper() in {"NRESET", "NRST"}
+            for n in design.nets["VDD_3V3"].nodes
+        )
+        assert reset_on_rail
+
     def test_ref_does_not_collide(self) -> None:
         design = self._bus()
         from zaptrace.core.models import Component
@@ -116,6 +126,14 @@ class TestIntegration:
     def test_no_sensor_block_without_a_sensor_intent(self) -> None:
         _design, plan, _log = build_architecture_design(parse_requirements("ESP32-C3 3.3V board, I2C bus"))
         assert not any(b.kind == "peripheral" for b in plan.blocks)
+
+    def test_usb_c_i2c_sensor_board_has_clean_erc(self) -> None:
+        # End-to-end: a complete I2C-sensor board should converge to a clean ERC
+        # (connector terminates CC, sensor reset tied, footprints assigned).
+        from zaptrace.synthesis.repair import synthesize_and_repair
+
+        out = synthesize_and_repair("ESP32-C3 USB-C 3.3V board, I2C temperature sensor")
+        assert out["repair"].fully_clean
 
     def test_spi_flash_joins_the_mcu_mastered_bus(self) -> None:
         design, _plan, _log = build_architecture_design(
