@@ -1,6 +1,6 @@
 # GitHub Triage Policy
 
-This document standardizes issue and pull-request triage for ZapTrace and addresses issue #60.
+This document standardizes issue and pull-request triage for ZapTrace.
 
 ## Required Issue Structure
 

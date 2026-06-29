@@ -1,4 +1,4 @@
-"""Enterprise team RBAC and audit trail. (#134)
+"""Enterprise team RBAC and audit trail.
 
 Defines the role-based access control (RBAC) model for ZapTrace enterprise
 use: who can do what to which designs. This is a *policy definition layer* —

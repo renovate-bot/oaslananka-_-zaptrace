@@ -1,4 +1,4 @@
-"""Benchmark corpus schema and scoring utilities. (#132)
+"""Benchmark corpus schema and scoring utilities.
 
 Defines the schema for ZapTrace benchmark test cases and provides a
 deterministic scorer that evaluates synthesis quality against a ground-truth

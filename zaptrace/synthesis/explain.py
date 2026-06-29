@@ -1,4 +1,4 @@
-"""Synthesis explainability framework. (#105 scope)
+"""Synthesis explainability framework.
 
 Every decision in the synthesis pipeline — which topology, which component value,
 which protection part — should carry an explanation that cites the datasheet,

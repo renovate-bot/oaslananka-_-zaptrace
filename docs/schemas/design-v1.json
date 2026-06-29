@@ -265,7 +265,7 @@
       "type": "object"
     },
     "BoardToBoardConnector": {
-      "description": "A connector bridging two PCBs in a multi-board system. (#104)",
+      "description": "A connector bridging two PCBs in a multi-board system.",
       "properties": {
         "id": {
           "description": "Unique connector identifier",
@@ -350,7 +350,7 @@
       "type": "object"
     },
     "CableHarness": {
-      "description": "A wire/cable harness connecting points within or across boards. (#104)",
+      "description": "A wire/cable harness connecting points within or across boards.",
       "properties": {
         "id": {
           "description": "Unique harness identifier",
@@ -1052,7 +1052,7 @@
       "type": "object"
     },
     "EnclosureDef": {
-      "description": "Mechanical enclosure definition for the product. (#104)",
+      "description": "Mechanical enclosure definition for the product.",
       "properties": {
         "id": {
           "description": "Unique enclosure identifier",
@@ -1277,7 +1277,7 @@
       "type": "object"
     },
     "HierarchySheet": {
-      "description": "A single schematic sheet within a hierarchical or multi-board design. (#104)",
+      "description": "A single schematic sheet within a hierarchical or multi-board design.",
       "properties": {
         "sheet_id": {
           "description": "Unique sheet identifier",
@@ -1325,7 +1325,7 @@
       "type": "object"
     },
     "ImportLossRecord": {
-      "description": "Record of data that was silently degraded or dropped during an import. (#104)\n\nImporters must never silently discard source data; every unsupported construct\nmust be recorded so downstream tools can report exactly what was degraded.",
+      "description": "Record of data that was silently degraded or dropped during an import.\n\nImporters must never silently discard source data; every unsupported construct\nmust be recorded so downstream tools can report exactly what was degraded.",
       "properties": {
         "source_format": {
           "description": "Source EDA format (e.g. 'KiCad 8', 'Altium 24', 'Eagle 9')",
@@ -1487,7 +1487,7 @@
       "type": "object"
     },
     "ManufacturingRecord": {
-      "description": "Manufacturing-process data for PCB fabrication and assembly. (#104)\n\nCovers fab profile parameters, drill data, annular ring, solder mask,\npaste, assembly notes, and panelization. Each record is tied to a\nspecific fab profile.",
+      "description": "Manufacturing-process data for PCB fabrication and assembly.\n\nCovers fab profile parameters, drill data, annular ring, solder mask,\npaste, assembly notes, and panelization. Each record is tied to a\nspecific fab profile.",
       "properties": {
         "profile_id": {
           "description": "Fabrication profile identifier (e.g. 'jlcpcb-2layer', 'pcbway-std')",
@@ -1644,7 +1644,7 @@
       "type": "object"
     },
     "MultiBoardProject": {
-      "description": "A system-level project containing multiple PCBs, harnesses, and an enclosure. (#104)",
+      "description": "A system-level project containing multiple PCBs, harnesses, and an enclosure.",
       "properties": {
         "name": {
           "description": "Project name",
@@ -2210,7 +2210,7 @@
       "type": "object"
     },
     "ProvRecord": {
-      "description": "Evidence / provenance record for a single agent or tool decision. (#104)\n\nEvery output artifact — a netlist, a DRC result, a synthesis plan — should\ncarry at least one ProvRecord so a downstream agent or human reviewer can\nanswer \"what produced this, from what input, using which version?\"",
+      "description": "Evidence / provenance record for a single agent or tool decision.\n\nEvery output artifact — a netlist, a DRC result, a synthesis plan — should\ncarry at least one ProvRecord so a downstream agent or human reviewer can\nanswer \"what produced this, from what input, using which version?\"",
       "properties": {
         "record_id": {
           "description": "Unique provenance record identifier",
@@ -2451,7 +2451,7 @@
       "type": "object"
     },
     "SupplyRecord": {
-      "description": "Supply-chain data for a single part, used by the supply graph. (#104)",
+      "description": "Supply-chain data for a single part, used by the supply graph.",
       "properties": {
         "mpn": {
           "description": "Manufacturer part number",

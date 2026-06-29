@@ -1,4 +1,4 @@
-"""SPICE simulation orchestrator. (#110)
+"""SPICE simulation orchestrator.
 
 Ties the SPICE export and the ngspice runner into a single evidence-bearing
 workflow:

@@ -67,7 +67,7 @@ def _score_average(scores: dict[str, Any]) -> float:
 
 
 def _check_metadata(corpus: dict[str, Any]) -> ScorecardCheck:
-    missing = [key for key in ["schema_version", "id", "name", "issue_links"] if not corpus.get(key)]
+    missing = [key for key in ["schema_version", "id", "name"] if not corpus.get(key)]
     if missing:
         return ScorecardCheck(
             name="metadata",

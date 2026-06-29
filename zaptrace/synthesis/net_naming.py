@@ -1,4 +1,4 @@
-"""Net-naming policy for clean, readable schematics. (#105 scope)
+"""Net-naming policy for clean, readable schematics.
 
 Provides canonical net name generators for common signal types so that
 synthesized schematics use consistent, EDA-tool-friendly names instead of

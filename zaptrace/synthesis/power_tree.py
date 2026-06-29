@@ -3,9 +3,9 @@
 From parsed :class:`~zaptrace.synthesis.requirements.Requirements`, plan the
 board's power architecture — input sources, battery charging, power-path, and a
 regulator per rail — with every choice justified and pointing at the calculator
-that sizes it. This is the *architecture* layer of real schematic synthesis
-(#105): it decides which power stages a design needs and why, before any
-component values or netlist are generated.
+that sizes it. This is the *architecture* layer of real schematic synthesis:
+it decides which power stages a design needs and why, before any component
+values or netlist are generated.
 
 Deterministic and conservative: it plans only from what the requirements state
 and never invents a rail or source that was not asked for.

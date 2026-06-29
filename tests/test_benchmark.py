@@ -1,4 +1,4 @@
-"""Tests for benchmark corpus schema and utilities. (#132)"""
+"""Tests for benchmark corpus schema and utilities."""
 
 from __future__ import annotations
 

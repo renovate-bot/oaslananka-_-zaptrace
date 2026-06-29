@@ -88,7 +88,7 @@ def test_run_analysis_adapter_matches_proof_checker_shape() -> None:
 
 
 # ---------------------------------------------------------------------------
-# EMC pre-compliance tests  (#111)
+# EMC pre-compliance tests
 # ---------------------------------------------------------------------------
 
 from zaptrace.analysis.reports import (  # noqa: E402

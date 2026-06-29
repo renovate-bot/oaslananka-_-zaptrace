@@ -1,4 +1,4 @@
-"""Tests for additional distributor BOM intelligence providers. (#107)"""
+"""Tests for additional distributor BOM intelligence providers."""
 
 from __future__ import annotations
 

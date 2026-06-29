@@ -95,7 +95,7 @@ def load_spec(path: Path) -> dict[str, Any]:
 
 
 def _check_required_metadata(spec: dict[str, Any]) -> BenchmarkCheck:
-    missing = [key for key in ["schema_version", "id", "name", "issue_links"] if not spec.get(key)]
+    missing = [key for key in ["schema_version", "id", "name"] if not spec.get(key)]
     if missing:
         return BenchmarkCheck(
             name="metadata",

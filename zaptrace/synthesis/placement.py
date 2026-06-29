@@ -1,4 +1,4 @@
-"""Constraint-aware placement intelligence. (#113)
+"""Constraint-aware placement intelligence.
 
 Analyses placement constraints from the :class:`ConstraintSet`, groups
 components functionally by net connectivity, scores placement candidates

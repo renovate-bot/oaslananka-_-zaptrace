@@ -1,4 +1,4 @@
-"""Connector ESD and protection policy generator. (#105 scope)
+"""Connector ESD and protection policy generator.
 
 Returns datasheet-grounded ESD protection recommendations for common connector
 types so an agent can automatically insert the right protection topology.

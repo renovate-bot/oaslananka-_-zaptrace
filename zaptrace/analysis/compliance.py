@@ -152,7 +152,7 @@ def compliance_checklist(requirements: Requirements) -> list[ComplianceItem]:
 
 @dataclass(frozen=True)
 class ProductClassProfile:
-    """Compliance profile for a product class. (#120)"""
+    """Compliance profile for a product class."""
 
     product_class: str
     primary_markets: list[str]

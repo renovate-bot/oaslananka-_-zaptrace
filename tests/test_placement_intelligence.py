@@ -1,4 +1,4 @@
-"""Tests for constraint-aware placement intelligence. (#113)"""
+"""Tests for constraint-aware placement intelligence."""
 
 from __future__ import annotations
 

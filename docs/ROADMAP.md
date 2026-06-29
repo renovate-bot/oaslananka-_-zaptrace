@@ -31,15 +31,15 @@ Current limitations:
 
 Primary issues:
 
-- #59 — Reconcile README, ROADMAP, CHANGELOG, audit docs, and old issue status.
-- #60 — Add GitHub issue templates, triage policy, and release-board conventions.
-- #61 — Define the v0.2.3 verification gate matrix and blocker criteria.
-- #62 — Add MCP and REST threat-model tests, scoped capability allowlists, and audit evidence.
-- #63 — Make KiCad Oracle evidence mandatory-or-explicitly-skipped in CI and proof packs.
-- #47 — Define canonical hardware IR and constraint graph.
-- #48 — Add transaction-safe design state, diff, and rollback.
-- #49 — Define agent permission model and capability levels.
-- #30 — Define KiCad import and round-trip fidelity.
+- Reconcile README, ROADMAP, CHANGELOG, audit docs, and old issue status.
+- Add GitHub issue templates, triage policy, and release-board conventions.
+- Define the v0.2.3 verification gate matrix and blocker criteria.
+- Add MCP and REST threat-model tests, scoped capability allowlists, and audit evidence.
+- Make KiCad Oracle evidence mandatory-or-explicitly-skipped in CI and proof packs.
+- Define canonical hardware IR and constraint graph.
+- Add transaction-safe design state, diff, and rollback.
+- Define agent permission model and capability levels.
+- Define KiCad import and round-trip fidelity.
 
 Exit criteria:
 
@@ -54,14 +54,14 @@ Exit criteria:
 
 Primary issues:
 
-- #50 — BOM intelligence provider interface.
-- #51 — ODB++ / IPC-2581 manufacturing evidence exports.
-- #52 — Review Studio product spec.
-- #53 — ESP32 benchmark project 001 agent flow.
-- #64 — KiCad round-trip fidelity scorecard corpus.
-- #65 — External manufacturing evidence adapters.
-- #66 — BOM provenance, alternates, cache, and lifecycle risk model.
-- #67 — Release-blocking ESP32 benchmark harness.
+- BOM intelligence provider interface.
+- ODB++ / IPC-2581 manufacturing evidence exports.
+- Review Studio product spec.
+- ESP32 benchmark project 001 agent flow.
+- KiCad round-trip fidelity scorecard corpus.
+- External manufacturing evidence adapters.
+- BOM provenance, alternates, cache, and lifecycle risk model.
+- Release-blocking ESP32 benchmark harness.
 
 Exit criteria:
 
@@ -75,10 +75,10 @@ Exit criteria:
 
 Primary issues:
 
-- #54 — Specialist agent orchestration and candidate generation.
-- #68 — Long-running agent workflow checkpoint, resume, and failure recovery.
-- #69 — Signed plugin manifest, tool admission, and deny-by-default permissions.
-- #34 — Plugin API and external integrations.
+- Specialist agent orchestration and candidate generation.
+- Long-running agent workflow checkpoint, resume, and failure recovery.
+- Signed plugin manifest, tool admission, and deny-by-default permissions.
+- Plugin API and external integrations.
 
 Exit criteria:
 
@@ -92,9 +92,9 @@ Exit criteria:
 
 Primary issues:
 
-- #29 — Signal integrity and EMC heuristics.
-- #58 — Enterprise signoff and cross-EDA readiness epic.
-- #70 — Altium, Eagle, and EasyEDA import-export fidelity targets and degradation reports.
+- Signal integrity and EMC heuristics.
+- Enterprise signoff and cross-EDA readiness epic.
+- Altium, Eagle, and EasyEDA import-export fidelity targets and degradation reports.
 
 Exit criteria:
 

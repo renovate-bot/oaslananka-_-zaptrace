@@ -1,4 +1,4 @@
-"""Tests for mechanical / enclosure review and MCAD export (#126)."""
+"""Tests for mechanical / enclosure review and MCAD export."""
 
 from __future__ import annotations
 
@@ -66,7 +66,7 @@ def test_findings_serializable() -> None:
 
 
 # ---------------------------------------------------------------------------
-# MCAD component position table (#126)
+# MCAD component position table
 # ---------------------------------------------------------------------------
 
 

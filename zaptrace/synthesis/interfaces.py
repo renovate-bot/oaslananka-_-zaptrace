@@ -77,7 +77,7 @@ def get_interface_profile(name: str) -> InterfaceProfile:
 
 
 # ---------------------------------------------------------------------------
-# Via-stub resonance warning (#124)
+# Via-stub resonance warning
 # ---------------------------------------------------------------------------
 
 # Speed of light in mm/ps (used to convert stub length to resonant frequency)
@@ -168,7 +168,7 @@ def via_stub_resonance(
 
 
 # ---------------------------------------------------------------------------
-# BGA breakout rules (#124)
+# BGA breakout rules
 # ---------------------------------------------------------------------------
 
 

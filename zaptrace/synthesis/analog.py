@@ -69,7 +69,7 @@ def adc_code_for_voltage(voltage_v: float, vref_v: float, bits: int) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Op-amp bandwidth / gain-bandwidth product (#122)
+# Op-amp bandwidth / gain-bandwidth product
 # ---------------------------------------------------------------------------
 
 
@@ -107,7 +107,7 @@ def opamp_min_gbw(target_bandwidth_hz: float, closed_loop_gain: float, *, margin
 
 
 # ---------------------------------------------------------------------------
-# Anti-alias (Sallen-Key) filter calculator (#122)
+# Anti-alias (Sallen-Key) filter calculator
 # ---------------------------------------------------------------------------
 
 
@@ -176,7 +176,7 @@ def anti_alias_filter(
 
 
 # ---------------------------------------------------------------------------
-# ADC source impedance check (#122)
+# ADC source impedance check
 # ---------------------------------------------------------------------------
 
 

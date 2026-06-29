@@ -1,6 +1,6 @@
 # 2026-06-19 Status Reconciliation
 
-This document records the governance reconciliation performed for issue #59.
+This document records the governance reconciliation performed across the README, ROADMAP, CHANGELOG, and audit docs.
 
 ## Baseline
 

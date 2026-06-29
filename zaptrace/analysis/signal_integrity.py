@@ -66,7 +66,7 @@ def delay_for_length_ps(length_mm: float, eff_dielectric: float) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Crosstalk heuristic (#111 — signal classification + crosstalk risk)
+# Crosstalk heuristic (signal classification + crosstalk risk)
 # ---------------------------------------------------------------------------
 
 
@@ -117,7 +117,7 @@ def crosstalk_risk_label(coupling_fraction: float) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Return-path continuity checker (#111)
+# Return-path continuity checker
 # ---------------------------------------------------------------------------
 
 from dataclasses import dataclass  # noqa: E402

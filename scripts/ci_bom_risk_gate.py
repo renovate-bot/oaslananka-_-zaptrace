@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hardware CI/CD — BOM risk gate script. (#130)
+"""Hardware CI/CD — BOM risk gate script.
 
 Parses a ZapTrace BOM JSON or CSV and fails CI if any component exceeds the
 allowed risk level. Intended as a required CI check before a design release.

@@ -1,4 +1,4 @@
-"""Tests for enterprise RBAC and audit trail. (#134)"""
+"""Tests for enterprise RBAC and audit trail."""
 
 from __future__ import annotations
 

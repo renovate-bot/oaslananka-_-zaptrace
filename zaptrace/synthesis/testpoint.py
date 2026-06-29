@@ -1,4 +1,4 @@
-"""Test-point auto-insertion for schematic synthesis. (#105 scope)
+"""Test-point auto-insertion for schematic synthesis.
 
 Automatically adds test-point (TP) components to a design so that critical
 signals — power rails, debug interfaces, analog sensor outputs — are accessible

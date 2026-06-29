@@ -1,6 +1,6 @@
 """FastMCP server exposing all agent tools as MCP tools + resources.
 
-Hardening layer (Issue #21):
+Hardening layer:
   - Session management: create / destroy / list sessions
   - Structured error wrapping: every tool output wrapped in a consistent envelope
   - Input validation: file path sandboxing, parameter type/bounds checks

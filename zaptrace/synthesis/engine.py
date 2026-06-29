@@ -17,7 +17,7 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 # This module performs *template selection*, not from-scratch circuit
 # synthesis: it keyword-scores pre-built templates and loads the best match.
 # Surfaced on every result so an agent never mistakes it for topology/value
-# generation (#105 — "honestly self-describe as a template selector").
+# generation ("honestly self-describe as a template selector").
 SYNTHESIS_METHOD = "template_selection"
 
 

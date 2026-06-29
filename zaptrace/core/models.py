@@ -512,7 +512,7 @@ class ConstraintSet(BaseModel):
 
 
 class ProvRecord(BaseModel):
-    """Evidence / provenance record for a single agent or tool decision. (#104)
+    """Evidence / provenance record for a single agent or tool decision.
 
     Every output artifact — a netlist, a DRC result, a synthesis plan — should
     carry at least one ProvRecord so a downstream agent or human reviewer can
@@ -548,7 +548,7 @@ class ProvRecord(BaseModel):
 
 
 class ImportLossRecord(BaseModel):
-    """Record of data that was silently degraded or dropped during an import. (#104)
+    """Record of data that was silently degraded or dropped during an import.
 
     Importers must never silently discard source data; every unsupported construct
     must be recorded so downstream tools can report exactly what was degraded.
@@ -571,7 +571,7 @@ class ImportLossRecord(BaseModel):
 
 
 class HierarchySheet(BaseModel):
-    """A single schematic sheet within a hierarchical or multi-board design. (#104)"""
+    """A single schematic sheet within a hierarchical or multi-board design."""
 
     model_config = ConfigDict(strict=False)
 
@@ -591,7 +591,7 @@ class HierarchySheet(BaseModel):
 
 
 class SupplyRecord(BaseModel):
-    """Supply-chain data for a single part, used by the supply graph. (#104)"""
+    """Supply-chain data for a single part, used by the supply graph."""
 
     model_config = ConfigDict(strict=False)
 
@@ -622,7 +622,7 @@ class SupplyRecord(BaseModel):
 
 
 class ManufacturingRecord(BaseModel):
-    """Manufacturing-process data for PCB fabrication and assembly. (#104)
+    """Manufacturing-process data for PCB fabrication and assembly.
 
     Covers fab profile parameters, drill data, annular ring, solder mask,
     paste, assembly notes, and panelization. Each record is tied to a
@@ -655,7 +655,7 @@ class ManufacturingRecord(BaseModel):
 
 
 class CableHarness(BaseModel):
-    """A wire/cable harness connecting points within or across boards. (#104)"""
+    """A wire/cable harness connecting points within or across boards."""
 
     model_config = ConfigDict(strict=False)
 
@@ -673,7 +673,7 @@ class CableHarness(BaseModel):
 
 
 class EnclosureDef(BaseModel):
-    """Mechanical enclosure definition for the product. (#104)"""
+    """Mechanical enclosure definition for the product."""
 
     model_config = ConfigDict(strict=False)
 
@@ -704,7 +704,7 @@ class EnclosureDef(BaseModel):
 
 
 class BoardToBoardConnector(BaseModel):
-    """A connector bridging two PCBs in a multi-board system. (#104)"""
+    """A connector bridging two PCBs in a multi-board system."""
 
     model_config = ConfigDict(strict=False)
 
@@ -721,7 +721,7 @@ class BoardToBoardConnector(BaseModel):
 
 
 class MultiBoardProject(BaseModel):
-    """A system-level project containing multiple PCBs, harnesses, and an enclosure. (#104)"""
+    """A system-level project containing multiple PCBs, harnesses, and an enclosure."""
 
     model_config = ConfigDict(strict=False)
 
@@ -798,7 +798,7 @@ class Design(BaseModel):
     )
     constraints: ConstraintSet = Field(default_factory=ConstraintSet, description="Constraint DSL v1 intents")
 
-    # Canonical Hardware IR extension fields (#104)
+    # Canonical Hardware IR extension fields
     prov_records: list[ProvRecord] = Field(
         default_factory=list,
         description="Evidence / provenance records for agent and tool decisions",
@@ -812,27 +812,27 @@ class Design(BaseModel):
         description="Schematic sheets in a hierarchical or multi-board design",
     )
 
-    # Supply-chain graph (#104)
+    # Supply-chain graph
     supply_chain: dict[str, SupplyRecord] = Field(
         default_factory=dict,
         description="Supply-chain data keyed by component ID",
     )
-    # Manufacturing records (#104)
+    # Manufacturing records
     manufacturing_records: list[ManufacturingRecord] = Field(
         default_factory=list,
         description="Manufacturing process records for fab/assembly profiles used",
     )
-    # Cable harness (#104)
+    # Cable harness
     cable_harnesses: list[CableHarness] = Field(
         default_factory=list,
         description="Cable/wire harness definitions",
     )
-    # Enclosure (#104)
+    # Enclosure
     enclosure: EnclosureDef | None = Field(
         default=None,
         description="Mechanical enclosure definition for the product",
     )
-    # Multi-board project reference (#104)
+    # Multi-board project reference
     multi_board: MultiBoardProject | None = Field(
         default=None,
         description="Multi-board project reference (links multiple PCBs into a system)",

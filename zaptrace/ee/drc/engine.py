@@ -766,7 +766,7 @@ def check_high_current_trace_width(design: Design, _kb: KnowledgeBase, _result: 
     If the net declares a ``min_trace_width_mm``, that value is used directly;
     otherwise the IPC-2152 external-conductor formula is applied with 1 A/mm²
     as a conservative default current density estimate.
-    (#115 scope: IPC-2152 current-capacity rule pack.)
+    (IPC-2152 current-capacity rule pack.)
     """
     vio: list[DRCViolation] = []
     routing = design.routing
@@ -809,7 +809,7 @@ def check_hole_to_hole_clearance(design: Design, _kb: KnowledgeBase, _result: DR
 
     IPC-2221 class A requires ≥ 0.25 mm between drill holes (wall-to-wall).
     For PTH to PTH, the wall clearance is (centre-to-centre − (d1+d2)/2).
-    (#115 scope: drill/hole-to-hole checks.)
+    (drill/hole-to-hole checks.)
     """
     vio: list[DRCViolation] = []
     routing = design.routing

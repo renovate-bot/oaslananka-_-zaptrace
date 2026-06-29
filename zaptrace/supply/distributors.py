@@ -1,4 +1,4 @@
-"""Additional distributor BOM intelligence providers. (#107)
+"""Additional distributor BOM intelligence providers.
 
 These providers follow the same :class:`BomIntelligenceProvider` contract as
 :class:`LcscBomProvider` but target DigiKey, Mouser, TME, and Farnell/Newark.

@@ -261,7 +261,7 @@ Plugin error → Host logs with plugin_id + traceback → Capability rollback �
 
 ## 12. MCP Transaction Boundary Integration
 
-ZapTrace already has MCP transaction safety (#41) with snapshot/rollback/commit. Plugin mutation integration:
+ZapTrace already has MCP transaction safety with snapshot/rollback/commit. Plugin mutation integration:
 
 ### Flow
 
@@ -382,7 +382,7 @@ Every plugin execution is recorded in the proof pack:
 | 5 | Filesystem sandbox (read/write paths) | Phase 4 |
 | 6 | Network sandbox | Phase 4 |
 | 7 | Signing/trust verification | Phase 1 |
-| 8 | MCP transaction boundary integration | Phase 5, MCP transaction safety (#41) |
+| 8 | MCP transaction boundary integration | Phase 5, MCP transaction safety |
 | 9 | Proof pack integration | Phase 8, proof-pack system |
 | 10 | Wasm sandbox | Independent of Phase 4 |
 

@@ -1,4 +1,4 @@
-"""Tests for product documentation completeness (#133)."""
+"""Tests for product documentation completeness."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""IPC-2581 (PCB fabrication data) export. (#116)
+"""IPC-2581 (PCB fabrication data) export.
 
 Generates a standard IPC-2581 revision D XML file from a :class:`Design`,
 covering the board stackup, component placements, pad/via definitions, net

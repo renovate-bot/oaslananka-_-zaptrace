@@ -1,4 +1,4 @@
-"""Datasheet intelligence pipeline. (#106)
+"""Datasheet intelligence pipeline.
 
 Structured extraction schema and heuristic pipeline that turns raw datasheet
 text (copy-pasted from a PDF or fetched from a URL) into a machine-readable

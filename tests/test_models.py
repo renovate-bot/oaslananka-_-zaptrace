@@ -251,7 +251,7 @@ class TestResolveVariant:
 
 
 class TestCanonicalIRExtensions:
-    """Tests for Canonical Hardware IR extension fields (#104)."""
+    """Tests for Canonical Hardware IR extension fields."""
 
     def test_pin_function_field(self) -> None:
         from zaptrace.core.models import Pin, PinType
@@ -367,7 +367,7 @@ class TestCanonicalIRExtensions:
 
 
 class TestSupplyChainModels:
-    """Tests for #104 Canonical Hardware IR — supply-chain, manufacturing, cable, enclosure."""
+    """Tests for the Canonical Hardware IR — supply-chain, manufacturing, cable, enclosure."""
 
     def test_supply_record_minimal(self) -> None:
         from zaptrace.core.models import SupplyRecord

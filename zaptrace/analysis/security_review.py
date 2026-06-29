@@ -39,7 +39,7 @@ def _any_type_contains(design: Design, tokens: tuple[str, ...]) -> bool:
 
 
 def security_review(design: Design) -> list[SecurityFinding]:
-    """Return advisory hardware-security findings for *design*. (#127)"""
+    """Return advisory hardware-security findings for *design*."""
     findings: list[SecurityFinding] = []
 
     if analyze_testability(design).has_debug_access:
@@ -132,7 +132,7 @@ def security_review(design: Design) -> list[SecurityFinding]:
 
 
 # ---------------------------------------------------------------------------
-# Structured security policy table (#127)
+# Structured security policy table
 # ---------------------------------------------------------------------------
 
 _HARDWARE_SECURITY_POLICIES: list[dict[str, str]] = [
@@ -188,7 +188,7 @@ _HARDWARE_SECURITY_POLICIES: list[dict[str, str]] = [
 
 
 def hardware_security_policies() -> list[dict[str, str]]:
-    """Return the hardware security policy table for a design review. (#127)
+    """Return the hardware security policy table for a design review.
 
     Each policy entry includes the required action, the reference standard,
     and a severity rating. This is advisory, not a certification.

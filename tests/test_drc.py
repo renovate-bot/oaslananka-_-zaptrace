@@ -377,7 +377,7 @@ class TestResultStructure:
 
 
 class TestFabProfileDRC:
-    """DRCEngine(fab_profile=...) reports fab-profile-specific violations (#115)."""
+    """DRCEngine(fab_profile=...) reports fab-profile-specific violations."""
 
     def _thin_trace_design(self) -> Design:
         d = _design()

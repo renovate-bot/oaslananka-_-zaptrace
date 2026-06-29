@@ -700,7 +700,7 @@ _MCU_STRAP_TABLE: dict[str, list[dict[str, object]]] = {
 
 
 # ---------------------------------------------------------------------------
-# Boost (step-up) converter inductor + output capacitor (#121)
+# Boost (step-up) converter inductor + output capacitor
 # ---------------------------------------------------------------------------
 
 
@@ -779,7 +779,7 @@ def boost_inductor_capacitor(
 
 
 # ---------------------------------------------------------------------------
-# LDO selection guide (#121)
+# LDO selection guide
 # ---------------------------------------------------------------------------
 
 
@@ -846,7 +846,7 @@ def ldo_selection(
 
 
 # ---------------------------------------------------------------------------
-# MOSFET safe-operating-area (SOA) check (#121)
+# MOSFET safe-operating-area (SOA) check
 # ---------------------------------------------------------------------------
 
 

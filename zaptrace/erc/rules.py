@@ -271,7 +271,7 @@ def rule_ERC008(design: Design) -> list[ERCViolation]:
     A series resistor is only counted if a resistor is *directly connected* to
     the LED (shares one of the LED's nets) -- the previous global check passed
     whenever any resistor existed anywhere in the design (e.g. an unrelated I2C
-    pull-up), masking real missing-current-limit faults. (#108: graph/pin
+    pull-up), masking real missing-current-limit faults. (graph/pin
     connectivity, not global heuristics.)
     """
     violations: list[ERCViolation] = []
@@ -368,7 +368,7 @@ def rule_ERC011(design: Design) -> list[ERCViolation]:
 
     The ESD/TVS device must share a net with the USB connector to count -- the
     previous check passed if any ESD part existed anywhere in the design, even
-    one protecting an unrelated net. (#108: graph/pin connectivity, not global
+    one protecting an unrelated net. (graph/pin connectivity, not global
     heuristics.)
     """
     violations: list[ERCViolation] = []
@@ -457,7 +457,7 @@ def rule_ERC014(design: Design) -> list[ERCViolation]:
 
     Generalised from a hardcoded 3.3 V vs 5 V check to any two distinct declared
     supply voltages (1.8/3.3, 3.3/5, 5/12, …), so cross-domain shorts are caught
-    for every rail — not just the one hardcoded pair. (#108: voltage-domain.)
+    for every rail — not just the one hardcoded pair. (voltage-domain.)
     """
     violations: list[ERCViolation] = []
     for net in design.nets.values():
@@ -511,7 +511,7 @@ def rule_ERC016(design: Design) -> list[ERCViolation]:
     or a resistor on that net bridges to a power/ground rail (pull-up). The
     previous check counted any resistor sharing the net regardless of where it
     went, and missed direct-to-rail resets and "R"/"Resistor"-typed parts.
-    (#108: graph/pin connectivity, not loose heuristics.)
+    (graph/pin connectivity, not loose heuristics.)
     """
     violations: list[ERCViolation] = []
     reset_pin_names = {"NRST", "RESET", "RST", "nRESET", "RSTB", "RUN"}
@@ -687,7 +687,7 @@ def rule_ERC023(design: Design) -> list[ERCViolation]:
 
     A pin the part marks 'no connect' / 'do not connect' must be left floating;
     wiring it to a net shared with other pins can violate the datasheet and, for
-    internally-used NC pins, damage the part. (#108: no-connect intent.)
+    internally-used NC pins, damage the part. (no-connect intent.)
     """
     violations: list[ERCViolation] = []
     graph = ElectricalGraph.from_design(design)
@@ -733,7 +733,7 @@ def rule_ERC024(design: Design) -> list[ERCViolation]:
 
     A floating DE pin enables the driver at power-up and will assert RS485 bus
     dominance even when idle. A floating RE pin (active-low) disables the receiver
-    unintentionally. Both must be pulled to a defined level. (#108 scope.)
+    unintentionally. Both must be pulled to a defined level.
     """
     violations: list[ERCViolation] = []
     graph = ElectricalGraph.from_design(design)
@@ -802,7 +802,7 @@ def rule_ERC025(design: Design) -> list[ERCViolation]:
 
     Every SPI slave must have its own dedicated chip-select net; sharing a CS
     between two peripherals selects them simultaneously and corrupts transfers.
-    (#108 scope: SPI CS uniqueness.)
+    (SPI CS uniqueness.)
     """
     violations: list[ERCViolation] = []
     graph = ElectricalGraph.from_design(design)
@@ -848,7 +848,7 @@ def rule_ERC026(design: Design) -> list[ERCViolation]:
     An unprotected LiPo can be discharged below 2.5 V, causing permanent damage
     or thermal runaway. A dedicated protection IC (or a charger IC with built-in
     protection, e.g. BQ24xxx) must be present on the same design.
-    (#108 scope: charger/battery protection.)
+    (charger/battery protection.)
     """
     violations: list[ERCViolation] = []
     battery_refs: list[str] = []
@@ -911,7 +911,7 @@ def rule_ERC027(design: Design) -> list[ERCViolation]:
     - It is a ground net.
 
     Power nets with no identified source are flagged; they cannot supply
-    current. (#108 scope: power-tree completeness.)
+    current. (power-tree completeness.)
     """
     violations: list[ERCViolation] = []
     from zaptrace.erc.graph import ElectricalGraph  # noqa: PLC0415
@@ -996,7 +996,7 @@ def rule_ERC028(design: Design) -> list[ERCViolation]:
        are loads on its output net, flag when the total estimated load
        exceeds the rating.
 
-    (#108 scope: current budget, regulator headroom.)
+    (current budget, regulator headroom.)
     """
     violations: list[ERCViolation] = []
 
@@ -1084,7 +1084,7 @@ def rule_ERC029(design: Design) -> list[ERCViolation]:
     or the only decoupling capacitor on a power net, is flagged for review
     so the designer confirms the intent.
 
-    (#108 scope: DNP/variant ERC.)
+    (DNP/variant ERC.)
     """
     violations: list[ERCViolation] = []
     dnp_refs = {comp.ref for comp in design.components.values() if comp.dnp}

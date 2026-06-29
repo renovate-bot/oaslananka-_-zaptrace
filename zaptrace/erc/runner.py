@@ -57,7 +57,7 @@ _ALL_RULES: list[RuleSpec] = [
 
 # Honest, code-owned record of what ERC does *not* yet verify, surfaced on every
 # result so a passing check is never mistaken for full electrical correctness.
-# Tie each gap to the epic item that would close it (#108).
+# Tie each gap to the epic item that would close it.
 ERC_COVERAGE_GAPS: tuple[str, ...] = (
     "Decoupling (ERC003) is checked at net-ownership level, not by physical "
     "pin-to-capacitor distance (requires placement data).",

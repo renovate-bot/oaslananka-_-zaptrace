@@ -1,4 +1,4 @@
-"""RF / wireless design calculators. (#123)
+"""RF / wireless design calculators.
 
 Deterministic RF maths — wavelength in a medium, quarter-wave length, free-
 space path loss, link budget, antenna keep-out zones, L-network impedance
@@ -50,7 +50,7 @@ def link_margin_db(
 
 
 # ---------------------------------------------------------------------------
-# Antenna keep-out zone (#123)
+# Antenna keep-out zone
 # ---------------------------------------------------------------------------
 
 
@@ -99,7 +99,7 @@ def antenna_keepout(freq_hz: float, *, er: float = 1.0) -> AntennaKeepout:
 
 
 # ---------------------------------------------------------------------------
-# L-network impedance matching (#123)
+# L-network impedance matching
 # ---------------------------------------------------------------------------
 
 
@@ -173,7 +173,7 @@ def l_network_matching(
 
 
 # ---------------------------------------------------------------------------
-# 50Ω microstrip trace width (#123)
+# 50Ω microstrip trace width
 # ---------------------------------------------------------------------------
 
 
@@ -219,7 +219,7 @@ def microstrip_50ohm_width_mm(
 
 
 # ---------------------------------------------------------------------------
-# Pre-certified module reference table (#123)
+# Pre-certified module reference table
 # ---------------------------------------------------------------------------
 
 

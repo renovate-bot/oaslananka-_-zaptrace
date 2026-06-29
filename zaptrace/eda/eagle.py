@@ -1,4 +1,4 @@
-"""Eagle .brd / .sch XML import adapter. (#131)
+"""Eagle .brd / .sch XML import adapter.
 
 Parses a subset of the Autodesk Eagle XML format (schema v7+) into a ZapTrace
 :class:`~zaptrace.core.models.Design`. This is a *structural* import: nets,

@@ -285,7 +285,7 @@ def requirements_assumptions(requirements: Requirements) -> list[dict[str, str]]
     Distinct from coverage (which maps *stated* requirements to constraints):
     this lists the *unstated* facts a downstream step would otherwise have to
     assume, so every assumption is explicit and reviewable instead of silently
-    baked in. (#103 — unspecified-assumption register.)
+    baked in. (unspecified-assumption register.)
     """
     assumptions: list[dict[str, str]] = []
 
@@ -334,7 +334,7 @@ def freeze_requirements(requirements: Requirements) -> dict[str, Any]:
     Returns ``{"hash": "<sha256>", "frozen": {<contract fields>}}``. The hash is
     a stable digest over the contract fields (not the raw prose), so downstream
     synthesis can record which requirements version it was built against and
-    detect drift — the freeze gate of the requirements engine. (#103.)
+    detect drift — the freeze gate of the requirements engine.
     """
     import hashlib
     import json
@@ -350,7 +350,7 @@ def diff_requirements(old: Requirements, new: Requirements) -> dict[str, Any]:
     Returns ``{"changed": [{"field", "from", "to"}], "unchanged": bool,
     "from_hash", "to_hash"}``. A non-empty ``changed`` list means the frozen
     contract moved and any downstream artifacts built on the old freeze must be
-    re-verified — the versioning/diff half of the freeze gate. (#103.)
+    re-verified — the versioning/diff half of the freeze gate.
     """
     old_fields = _contract_fields(old)
     new_fields = _contract_fields(new)
@@ -378,8 +378,7 @@ def review_assumptions(requirements: Requirements, approvals: dict[str, str] | N
     invalidates them and the gate re-opens.
 
     Returns ``{"freeze_hash", "approved": bool, "reviewed": [...], "pending": [...]}``;
-    ``approved`` is True only when no assumption is still pending. (#103 —
-    assumption approval workflow.)
+    ``approved`` is True only when no assumption is still pending. (assumption approval workflow.)
     """
     approvals = approvals or {}
     freeze_hash = freeze_requirements(requirements)["hash"]
@@ -410,7 +409,7 @@ def classify_risk(requirements: Requirements) -> dict[str, Any]:
     class is emitted only when there is concrete evidence — nothing is inferred.
 
     Returns ``{"risk_classes": [<names>], "classifications": [{"class",
-    "rationale", "evidence"}]}``. (#103 — product use-case & risk classifier.)
+    "rationale", "evidence"}]}``. (product use-case & risk classifier.)
     """
     text = requirements.raw_intent.lower()
     classifications: list[dict[str, str]] = []
@@ -479,7 +478,7 @@ def requirements_conflicts(requirements: Requirements) -> list[dict[str, Any]]:
     inconsistent and cannot all hold as written, so the contradiction is caught
     before any drawing happens. Each conflict cites the two sides and explains
     the physical/spec reason. Deterministic and conservative — only genuine,
-    explainable contradictions are emitted. (#103 — requirement conflict detector.)
+    explainable contradictions are emitted. (requirement conflict detector.)
     """
     conflicts: list[dict[str, Any]] = []
 
@@ -533,7 +532,7 @@ def requirements_coverage(requirements: Requirements) -> dict[str, Any]:
     Returns ``{"covered": [...], "uncovered": [...], "fully_covered": bool}``.
     The ``uncovered`` list is the honest record of stated requirements that the
     constraint derivation does not yet handle (e.g. battery charge/protection,
-    current budget) — a coverage matrix, not a silent pass. (#103.)
+    current budget) — a coverage matrix, not a silent pass.
     """
     constraints = requirements_to_constraints(requirements)
     covered: list[dict[str, Any]] = []

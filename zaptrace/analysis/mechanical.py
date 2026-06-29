@@ -1,4 +1,4 @@
-"""Mechanical / enclosure review and MCAD export. (#126)
+"""Mechanical / enclosure review and MCAD export.
 
 Catches the mechanical mistakes that are cheap on a drawing and expensive on a
 fabricated board: missing mounting holes, too few of them on a large board, and
@@ -86,7 +86,7 @@ def mechanical_review(design: Design) -> list[MechanicalFinding]:
 
 
 # ---------------------------------------------------------------------------
-# MCAD component position table (#126)
+# MCAD component position table
 # ---------------------------------------------------------------------------
 
 

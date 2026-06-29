@@ -235,7 +235,7 @@ class CheckRecord(BaseModel):
 
 
 class AgentDecisionRecord(BaseModel):
-    """A single agent or human decision captured in the Proof Pack. (#118)
+    """A single agent or human decision captured in the Proof Pack.
 
     Enables post-hoc review of *why* a component was chosen, a topology was
     selected, or a trade-off was made — not just *what* was generated.
@@ -322,7 +322,7 @@ class ProofManifest(BaseModel):
         description="Transaction history evidence for the final state",
     )
 
-    # --- v2 evidence fields: decision & evidence graph (#118) ---
+    # --- v2 evidence fields: decision & evidence graph ---
     captured_intent: str = Field(
         default="",
         description="Original natural-language design intent verbatim, before normalization",

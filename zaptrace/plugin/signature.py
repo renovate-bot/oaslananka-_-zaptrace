@@ -1,4 +1,4 @@
-"""Ed25519 signature verification for plugin manifests. (#129)
+"""Ed25519 signature verification for plugin manifests.
 
 Verifies that a plugin manifest's declared signature matches the manifest
 content, preventing tampered plugins from being loaded. The canonical payload

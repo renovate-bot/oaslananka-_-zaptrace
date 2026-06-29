@@ -1,4 +1,4 @@
-"""Tests for IPC-2581 export, panelization, and fab capability DB. (#116)"""
+"""Tests for IPC-2581 export, panelization, and fab capability DB."""
 
 from __future__ import annotations
 

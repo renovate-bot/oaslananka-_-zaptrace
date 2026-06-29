@@ -67,7 +67,7 @@ Required widgets:
 - approval id and approver metadata;
 - rollback target selector.
 
-Alignment with #48 and #49:
+Alignment with the canonical hardware-IR and agent-permission-model work:
 
 - write operations appear as transactions;
 - commit requires explicit approval id;

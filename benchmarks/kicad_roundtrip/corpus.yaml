@@ -1,7 +1,6 @@
 schema_version: "1.0"
 id: kicad-roundtrip-corpus
 name: KiCad round-trip fidelity scorecard corpus
-issue_links: ["#30", "#47", "#64"]
 thresholds:
   overall_min_score: 0.82
   categories:
@@ -56,5 +55,5 @@ cases:
       manufacturing: 0.84
     unsupported_features:
       - feature: full-kicad-import-pending-merge
-        degradation: "Uses contract scorecard until KiCad importer is merged from issue #30."
+        degradation: "Uses contract scorecard until the KiCad importer is merged."
         severity: warning

@@ -1,4 +1,4 @@
-"""Tests for synthesis explainability framework. (#105)"""
+"""Tests for synthesis explainability framework."""
 
 from __future__ import annotations
 

@@ -101,7 +101,7 @@ def bringup_checklist(design: Design) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Testpoint auto-insertion policy (#125)
+# Testpoint auto-insertion policy
 # ---------------------------------------------------------------------------
 
 _TP_DIAMETER_MM = 1.0  # standard SMD test-point pad diameter

@@ -163,7 +163,7 @@ ZapTrace has a layered architecture:
 - No branch protection evidence captured in the repo
 - No nightly builds
 - No mandatory hardware CI with real EDA binaries installed
-- Basic issue/PR templates exist; standardized governance templates and triage policy are added in #60 but automation is still future work
+- Basic issue/PR templates exist; standardized governance templates and triage policy are documented but automation is still future work
 
 ## Security Gaps
 
@@ -192,7 +192,7 @@ This audit now separates implemented foundation, experimental evidence, and miss
 - `v0.2.3` / M0 is the next stabilization milestone, not a feature-expansion milestone.
 - KiCad Oracle, fab profiles, proof packs, REST hardening, and MCP transaction primitives exist as foundations, but the project must still make skipped external evidence explicit and release-blocking.
 - DFM is no longer purely planned; the foundation exists, while external manufacturing adapters and evidence gates remain planned under M1.
-- Closed issues #25, #26, #27, and #28 require audit labels because their historical titles may imply completeness beyond the current experimental/release-gated state.
+- Several historical closed issues require audit labels because their titles may imply completeness beyond the current experimental/release-gated state.
 - Public positioning should remain: agent generates, proof system records evidence, human engineer approves.
 
 ## Release/Publishing Gaps

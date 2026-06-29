@@ -1,4 +1,4 @@
-"""Tests for datasheet intelligence extraction pipeline. (#106)"""
+"""Tests for datasheet intelligence extraction pipeline."""
 
 from __future__ import annotations
 

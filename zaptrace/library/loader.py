@@ -15,7 +15,7 @@ LIBRARY_ROOT = Path(__file__).parent.parent.parent / "data" / "library"
 # score. A part is only as trustworthy as the data ERC/BOM/DFM can rely on:
 # an exact MPN + datasheet make it sourceable and verifiable; a footprint and
 # pin map make it placeable and checkable. Weights sum to 1.0 so the score is a
-# 0..1 fraction. (Source: #107 — "library confidence score".)
+# 0..1 fraction. (Source: "library confidence score".)
 _GOVERNANCE_FIELDS: tuple[tuple[str, float], ...] = (
     ("mpn", 0.20),
     ("datasheet", 0.20),

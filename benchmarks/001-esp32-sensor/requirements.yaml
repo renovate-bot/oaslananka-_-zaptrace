@@ -1,7 +1,6 @@
 schema_version: "1.0"
 id: benchmark-001-esp32-sensor
 name: ESP32 sensor board benchmark 001
-issue_links: ["#53", "#67"]
 deterministic_mode: true
 release_gate:
   required: true

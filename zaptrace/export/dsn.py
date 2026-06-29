@@ -170,7 +170,7 @@ def export_dsn(design: Design) -> str:
             # We add custom rules or diff pair rules if gap exists. DSN doesn't natively
             # have a "gap" unless we define a diffpair constraint, but we can set the width.
             # Usually autorouters need a diffpair rule, but here we provide what's required:
-            # widths from the #11 computed width.
+            # widths from the computed width.
             pass
         out.append("      )")
         out.append("    )")

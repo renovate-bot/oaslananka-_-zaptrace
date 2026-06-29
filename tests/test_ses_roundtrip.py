@@ -1,4 +1,4 @@
-"""Tests for DSN → SES round-trip (Freerouting interop). (#114)
+"""Tests for DSN → SES round-trip (Freerouting interop).
 
 Verifies that a design exported to DSN can have its routing results read back
 from a SES session file and applied to the design.

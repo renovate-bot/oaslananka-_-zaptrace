@@ -1,4 +1,4 @@
-"""Tests for Ed25519 plugin signature verification. (#129)"""
+"""Tests for Ed25519 plugin signature verification."""
 
 from __future__ import annotations
 

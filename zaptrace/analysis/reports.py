@@ -104,7 +104,7 @@ def generate_electrical_analysis_report(design: Design) -> ElectricalAnalysisRep
 
     Covers impedance, length-match, PDN, thermal, and EMC pre-compliance.
     All outputs are heuristic estimates — not signoff-grade simulation.
-    (#111 scope: EMC pre-compliance items are included.)
+    (EMC pre-compliance items are included.)
     """
     findings: list[AnalysisFinding] = []
     findings.extend(_impedance_findings(design))
@@ -355,7 +355,7 @@ def _float_property(properties: dict[str, Any], key: str, default: float = 0.0) 
 
 
 # ---------------------------------------------------------------------------
-# EMC pre-compliance findings  (#111)
+# EMC pre-compliance findings
 # ---------------------------------------------------------------------------
 
 # Typical rise times (ns) for common logic families — lower means faster edge.
@@ -403,7 +403,7 @@ def _infer_interface_type(comp_type: str, value: str | None, name: str) -> str:
 def _emc_findings(design: Design) -> list[AnalysisFinding]:
     """EMC pre-compliance findings — edge-rate risk, loop areas, ferrite validation.
 
-    (#111 scope: EMC pre-compliance checklist + evidence report.)
+    (EMC pre-compliance checklist + evidence report.)
     """
     findings: list[AnalysisFinding] = []
 

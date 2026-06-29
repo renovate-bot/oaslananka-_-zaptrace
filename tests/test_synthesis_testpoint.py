@@ -1,4 +1,4 @@
-"""Tests for synthesis test-point auto-insertion. (#105)"""
+"""Tests for synthesis test-point auto-insertion."""
 
 from __future__ import annotations
 

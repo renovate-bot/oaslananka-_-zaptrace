@@ -1,4 +1,4 @@
-"""Tests for MCP server registration and hardening (Issue #21)."""
+"""Tests for MCP server registration and hardening."""
 
 from __future__ import annotations
 
