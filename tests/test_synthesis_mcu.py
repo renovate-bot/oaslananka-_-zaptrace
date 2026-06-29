@@ -70,6 +70,27 @@ class TestInstantiateMcu:
         assert "rs485" in result.unconnected_interfaces
         assert any(a.function == "i2c:SDA" for a in result.assignments)
 
+    def test_all_power_pins_are_connected(self) -> None:
+        # STM32 has VDDA/VBAT (extra supplies) and VSSA (analog ground) — a
+        # floating one would break the part, so every power pin must be tied.
+        design = _board_with_i2c_nets()
+        result = instantiate_mcu(design, "stm32", ["i2c"], rail_net="VDD_3V3")
+        rail_pins = {a.pin for a in result.assignments if a.function == "power"}
+        assert {"VDDA", "VBAT"} <= rail_pins
+        assert any(a.pin == "VSSA" and a.function == "ground" for a in result.assignments)
+
+    def test_boot_straps_are_applied(self) -> None:
+        design = _board_with_i2c_nets()
+        result = instantiate_mcu(design, "stm32", ["i2c"], rail_net="VDD_3V3")
+        # STM32 BOOT0 is strapped (pulled low) so it boots from flash
+        assert any(a.pin == "BOOT0" and a.function.startswith("strap") for a in result.assignments)
+
+    def test_stm32_board_reaches_clean_erc(self) -> None:
+        from zaptrace.synthesis.repair import synthesize_and_repair
+
+        out = synthesize_and_repair("STM32 3.3V board, RS485 modbus node")
+        assert out["repair"].fully_clean
+
     def test_unknown_family_is_not_faked(self) -> None:
         design = _board_with_i2c_nets()
         result = instantiate_mcu(design, "samd", ["i2c"], rail_net="VDD_3V3")

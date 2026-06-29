@@ -59,6 +59,13 @@ _GROUND_NAMES = {"GND", "VSS", "VSSA", "AGND", "DGND"}
 _ENABLE_NAMES = {"EN", "NRST", "RESET", "RST"}
 _NON_GPIO_NAMES = {"USB_DP", "USB_DM", "USB_D+", "USB_D-"}
 
+# Per-family boot/config straps so the part boots and runs: pin -> how to tie it.
+# "pulldown"/"pullup" add a 10 kΩ resistor; "gnd"/"rail" tie directly.
+_STRAPS: dict[str, dict[str, str]] = {
+    "stm32": {"BOOT0": "pulldown"},  # boot from main flash
+    "rp2040": {"RUN": "pullup", "TESTEN": "gnd"},  # run enabled, factory test off
+}
+
 
 @dataclass(frozen=True)
 class PinAssignment:
@@ -117,17 +124,23 @@ def _connect(design: Design, net_name: str, ref: str, pin: str) -> None:
     design.nets[net_name].nodes.append(NetNode(component_ref=ref, pin_name=pin))
 
 
-def _classify_pins(spec_pins: dict[str, dict[str, str]]) -> tuple[str | None, str | None, str | None, list[str]]:
-    """Return (supply_pin, ground_pin, enable_pin, assignable_gpio_pins)."""
-    supply = ground = enable = None
+def _classify_pins(spec_pins: dict[str, dict[str, str]]) -> tuple[list[str], list[str], str | None, list[str]]:
+    """Return (supply_pins, ground_pins, enable_pin, assignable_gpio_pins).
+
+    *Every* power pin is collected, not just the first: an MCU with a floating
+    VDDA/VBAT/USB_VDD does not work, so each must reach the rail or ground.
+    """
+    supply: list[str] = []
+    ground: list[str] = []
+    enable: str | None = None
     gpios: list[str] = []
     for name, raw in spec_pins.items():
         upper = name.upper()
         ptype = raw.get("type", "")
         if ptype == "power" and upper in _GROUND_NAMES:
-            ground = ground or name
+            ground.append(name)
         elif ptype == "power":
-            supply = supply or name  # first non-ground power pin is the supply
+            supply.append(name)  # VDD, VDDA, VBAT, USB_VDD, VREG_VIN, AVDD, ...
         elif upper in _ENABLE_NAMES:
             enable = enable or name
         elif ptype == "bidirectional" and upper not in _NON_GPIO_NAMES:
@@ -146,6 +159,33 @@ def _next_ref(design: Design, prefix: str) -> str:
     while f"{prefix}{idx}" in design.components:
         idx += 1
     return f"{prefix}{idx}"
+
+
+def _apply_straps(
+    design: Design, ref: str, family: str, spec_pins: dict[str, dict[str, str]], *, rail_net: str, gnd_net: str
+) -> list[PinAssignment]:
+    """Tie the family's boot/config pins so the part boots and runs."""
+    from zaptrace.core.models import Component
+
+    assignments: list[PinAssignment] = []
+    for pin, mode in _STRAPS.get(family, {}).items():
+        if pin not in spec_pins:
+            continue
+        if mode in ("gnd", "rail"):
+            target = gnd_net if mode == "gnd" else rail_net
+            _connect(design, target, ref, pin)
+            assignments.append(PinAssignment(pin, target, f"strap:{mode}"))
+            continue
+        # pull-up / pull-down: a 10k resistor from the pin's net to rail/gnd.
+        r_ref = _next_ref(design, "R")
+        design.components[r_ref] = Component(id=r_ref, ref=r_ref, type="resistor", value="10k", footprint="0402")
+        pin_net = f"{ref}_{pin}"
+        target = rail_net if mode == "pullup" else gnd_net
+        _connect(design, pin_net, ref, pin)
+        _connect(design, pin_net, r_ref, "2")
+        _connect(design, target, r_ref, "1")
+        assignments.append(PinAssignment(pin, pin_net, f"strap:{mode}"))
+    return assignments
 
 
 def instantiate_mcu(
@@ -174,7 +214,7 @@ def instantiate_mcu(
     if ref is None:
         ref = _next_ref(design, "U")
     spec = LibraryLoader().get(part_id)
-    supply_pin, ground_pin, enable_pin, gpios = _classify_pins(spec.pins)
+    supply_pins, ground_pins, enable_pin, gpios = _classify_pins(spec.pins)
 
     component = Component(
         id=ref,
@@ -188,15 +228,16 @@ def instantiate_mcu(
     design.components[ref] = component
 
     assignments: list[PinAssignment] = []
-    if supply_pin is not None:
-        _connect(design, rail_net, ref, supply_pin)
-        assignments.append(PinAssignment(supply_pin, rail_net, "power"))
-    if ground_pin is not None:
-        _connect(design, gnd_net, ref, ground_pin)
-        assignments.append(PinAssignment(ground_pin, gnd_net, "ground"))
+    for pin in supply_pins:
+        _connect(design, rail_net, ref, pin)
+        assignments.append(PinAssignment(pin, rail_net, "power"))
+    for pin in ground_pins:
+        _connect(design, gnd_net, ref, pin)
+        assignments.append(PinAssignment(pin, gnd_net, "ground"))
     if enable_pin is not None:
         _connect(design, rail_net, ref, enable_pin)
         assignments.append(PinAssignment(enable_pin, rail_net, "enable"))
+    assignments.extend(_apply_straps(design, ref, family, spec.pins, rail_net=rail_net, gnd_net=gnd_net))
 
     unconnected: list[str] = []
     available = list(gpios)
