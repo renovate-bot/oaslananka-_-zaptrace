@@ -80,6 +80,7 @@ nav:
   - Design:
       - Agent Workflow Runtime: design/agent-workflow-runtime.md
       - Autonomous Specialist Agents: design/autonomous-specialist-agents.md
+      - Autonomous Synthesis & Verification Loop: design/autonomous-synthesis.md
       - Hardware IR: design/hardware-ir.md
       - Plugin Runtime: design/plugin-runtime.md
 

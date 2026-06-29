@@ -69,3 +69,6 @@ TestDesign_schematic.svg
 
 # Regenerated KiCad sample export produced by tests — do not track
 kicad/
+
+# MkDocs build output
+site/

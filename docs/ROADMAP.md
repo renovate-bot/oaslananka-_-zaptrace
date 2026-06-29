@@ -2,128 +2,151 @@
 
 ## Vision
 
-ZapTrace is an AI-native, verification-first EDA kernel for transforming design intent into reviewable schematic, PCB, manufacturing, and proof artifacts. It is not a fabrication guarantee, a SPICE simulator, or a replacement for human engineering judgment. All outputs require human review before fabrication.
+ZapTrace is an AI-native, verification-first EDA kernel that turns design intent
+into reviewable schematic, PCB, manufacturing, and proof artifacts — usable
+entirely from an agent or a terminal, with **no GUI and no EDA tool as a runtime
+dependency**.
 
-## Current Baseline — 2026-06-19
+The long-range goal is an engine where an agent can carry a professional board
+**from intent to fabrication-grade output end to end** — synthesize the
+topology, size every value, place, route, verify, and package — and hand a human
+reviewer an auditable evidence pack instead of an unexplained file dump.
 
-**Released baseline:** `0.2.2` — verification foundation and safety hardening.
+"Flawless" and "fully autonomous" are an asymptote, not a shipping claim. The
+engineering target is concrete: the agent produces a *complete candidate* that
+passes simulation and rule checks in a closed loop, with every decision
+justified, so the only remaining step is human sign-off — not human authoring.
+ZapTrace is not a fabrication guarantee, not a substitute for engineering
+judgment, and every output requires human review before fabrication.
 
-Implemented foundation:
+## Current State — 2026-06-29
 
-- Design parsing, template synthesis, ERC, DRC, placement, routing, copper pour, Gerber/Excellon/BOM/PnP/KiCad/SVG exports.
-- Manufacturing ZIP bundle, REST API, MCP server, design diff, and full autopilot pipeline.
-- Proof-pack runner, manifest model, CLI/API/MCP entry points, and validation smoke checks.
-- KiCad Oracle integration as an optional external evidence layer when `kicad-cli` is available.
-- Fab-profile DFM foundation for manufacturer capability presets and profile-based checks.
-- Export regression corpus and dedicated hardware CI workflow scaffolding.
+ZapTrace already spans the full pipeline; the gap is **maturity and loop
+closure**, not missing stages. What exists today, characterized honestly:
 
-Current limitations:
+| Stage | What is real today | Honest limitation |
+|-------|--------------------|-------------------|
+| Intent → requirements | Structured requirements extraction, assumption register, conflict detector, freeze gate | Heuristic NL parsing; not a planner |
+| Synthesis | **Template selection** + parametric blocks (power-tree, decoupling, USB-C CC, buck L/C, LDO) and a calculator library | No from-scratch topology synthesis; closes only the power-tree path |
+| ERC | 29 connectivity-precise rules over an electrical graph, coverage reporting | Rules catch known faults only; no functional/timing proof |
+| Placement / routing | Constraint-aware placement, grid + net-aware routing, copper pour | Grid router; no push-and-shove, length-match, or controlled-impedance routing in the loop |
+| DRC | 16 geometric rules, fab-profile-aware | Geometry only; not a manufacturability guarantee |
+| Analysis | Deterministic textbook SI timing, thermal, impedance (IPC-2141), DfT, mechanical, EMC pre-check | Estimates, not field solvers or CFD |
+| Simulation | ngspice **DC operating-point**, skip-aware orchestrator | No transient/AC; device models absent; optional, not a gate |
+| Supply | BOM intelligence provider interface; DigiKey/Mouser/TME/Farnell adapters | Fixture-backed, not live API |
+| Export | Gerber, Excellon, BOM, PnP, KiCad, SVG, IPC-2581/ODB++ foundation | KiCad export one-way |
+| Verification evidence | Proof-pack runner + manifest, KiCad Oracle (optional), fab profiles | Proof pack experimental; oracle skippable |
+| Surfaces | Python SDK, CLI, REST API, MCP server (77 tools) | — |
+| Library | ~82 parts | Far short of professional breadth |
 
-- Proof packs are still experimental until deterministic evidence, external-tool records, and release gates are enforced.
-- KiCad Oracle and hardware CI can be skipped when external binaries are unavailable; skipped evidence must become explicit release evidence.
-- KiCad export is still mostly one-way; round-trip fidelity is not yet measured.
-- No Review Studio UI, no autonomous candidate scoring loop, no signed plugin admission, and no enterprise signoff policy.
-- No claim of fabrication readiness, production readiness, manufacturer approval, or fully autonomous correctness.
+The README status table and this section are the source of truth; no claim of
+fabrication or production readiness is made.
 
-## M0 / v0.2.3 — Verification Gate Stabilization
+## The Gap to the Vision
 
-**Goal:** make the current feature set auditable and release-gated before expanding autonomy.
+Seven gaps separate "broad pipeline that runs" from "agent completes a
+professional board end to end." The milestones below are organized around
+closing them. Detailed technical design lives in
+[docs/design/autonomous-synthesis.md](design/autonomous-synthesis.md).
 
-Primary issues:
+1. **From-scratch synthesis** — replace template selection with requirement-driven
+   parametric block composition (topology + values), beyond the power path.
+2. **Simulation as a gate** — make DC/transient SPICE a bundled, blocking check,
+   not an optional skip; add the device models the orchestrator lacks.
+3. **Professional routing** — differential pairs, length matching, controlled
+   impedance, and push-and-shove inside the routing loop.
+4. **Convergent self-correction** — ERC/DRC/sim failure → automatic patch →
+   re-verify, with measured convergence, not just a diagram.
+5. **Authoritative internal engines** — internal ERC/DRC/sim become the
+   authority so KiCad is an optional second opinion, removing the dependency.
+6. **Library depth + live supply** — thousands of IPC-7351-compliant parts and
+   live distributor data behind the existing provider interface.
+7. **A benchmark that measures "flawless"** — a release-blocking harness scoring
+   pass-rate against real, fabricable reference designs.
 
-- Reconcile README, ROADMAP, CHANGELOG, audit docs, and old issue status.
-- Add GitHub issue templates, triage policy, and release-board conventions.
-- Define the v0.2.3 verification gate matrix and blocker criteria.
-- Add MCP and REST threat-model tests, scoped capability allowlists, and audit evidence.
-- Make KiCad Oracle evidence mandatory-or-explicitly-skipped in CI and proof packs.
-- Define canonical hardware IR and constraint graph.
-- Add transaction-safe design state, diff, and rollback.
-- Define agent permission model and capability levels.
-- Define KiCad import and round-trip fidelity.
+## Milestones
 
-Exit criteria:
+### M1 — Synthesis & Simulation Loop (closes gaps 1, 2, 4)
 
-- Every release-critical check has an owner, command, expected evidence artifact, and blocking policy.
-- Skipped external checks are explicit, visible, and not silently treated as pass.
-- Open and closed issue status matches the actual code and documentation state.
-- P0 issue templates and triage labels are used consistently.
+**Goal:** an agent states an intent and gets a *complete, simulated* candidate
+design back, not a template.
 
-## M1 / v0.3 — Manufacturing Intelligence and Review Studio
+- Requirement-driven block-composition synthesis beyond the power tree
+  (signal-chain, MCU support circuitry, interface blocks).
+- Bundled ngspice path (container) with a curated device-model set; DC + transient
+  operating checks promoted to a **blocking** evidence gate.
+- Closed synthesize → ERC → sim → patch → re-verify loop with a measured
+  convergence rate and a hard iteration/termination policy.
 
-**Goal:** move from local generation to reviewable manufacturing evidence.
+**Exit:** for a bounded class of boards, the loop produces a candidate that
+passes internal ERC and DC/transient sim without human edits, with a decision
+log explaining every value and stage.
 
-Primary issues:
+### M2 — Routing & Manufacturing Fidelity (closes gaps 3, 5)
 
-- BOM intelligence provider interface.
-- ODB++ / IPC-2581 manufacturing evidence exports.
-- Review Studio product spec.
-- ESP32 benchmark project 001 agent flow.
-- KiCad round-trip fidelity scorecard corpus.
-- External manufacturing evidence adapters.
-- BOM provenance, alternates, cache, and lifecycle risk model.
-- Release-blocking ESP32 benchmark harness.
+**Goal:** layouts and outputs are professional-grade and self-authoritative.
 
-Exit criteria:
+- Routing upgrades: differential-pair routing, length matching, controlled
+  impedance fed from the IPC-2141 engine, and push-and-shove or rip-up-and-retry.
+- Internal ERC/DRC/sim declared the authority; KiCad Oracle reframed as an
+  optional cross-check, with fidelity scorecards instead of a dependency.
+- IPC-2581 / ODB++ evidence exports hardened from foundation to release-ready.
 
-- A bounded professional benchmark can produce schematic, PCB, BOM, manufacturing outputs, and proof-pack evidence.
-- Manufacturing evidence is generated as evidence, not a guarantee.
-- Review Studio has a clear evidence model and UX specification.
+**Exit:** a routed board passes internal DRC and a controlled-impedance check;
+KiCad Oracle, when present, agrees within a recorded tolerance.
 
-## M2 / v0.4 — Autonomous Candidate Generation
+### M3 — Library, Supply & Benchmark (closes gaps 6, 7)
 
-**Goal:** generate and compare multiple design candidates safely.
+**Goal:** breadth and proof that the engine is actually good.
 
-Primary issues:
+- Library scaled toward professional breadth with IPC-7351-compliant footprints
+  and provenance.
+- Live distributor adapters behind the existing provider interface, with
+  lifecycle/alternates/cache and a BOM risk gate.
+- A release-blocking benchmark harness scoring complete designs against
+  fabricable reference projects (pass-rate, not a single smoke test).
 
-- Specialist agent orchestration and candidate generation.
-- Long-running agent workflow checkpoint, resume, and failure recovery.
-- Signed plugin manifest, tool admission, and deny-by-default permissions.
-- Plugin API and external integrations.
+**Exit:** the benchmark runs in CI as a release gate; regressions in synthesis,
+routing, or verification quality block a release.
 
-Exit criteria:
+### M4 — Autonomy & Sign-off Discipline
 
-- Agents generate multiple candidates with bounded permissions, checkpointing, and rollback.
-- Candidates are scored using verifiable evidence rather than opaque claims.
-- Plugin/tool admission defaults to deny and records an audit trail.
+**Goal:** multiple candidates, bounded permissions, enterprise-grade evidence.
 
-## M3 / v1.0 — Enterprise Signoff and Cross-EDA Readiness
+- Specialist-agent orchestration generating and scoring multiple candidates on
+  verifiable evidence.
+- Long-running workflow checkpoint/resume/rollback; deny-by-default signed plugin
+  admission with an audit trail.
+- Sign-off policy separating pass/fail evidence, warnings, skipped checks, and
+  mandatory human-review items.
 
-**Goal:** make ZapTrace usable in enterprise human-reviewed workflows.
-
-Primary issues:
-
-- Signal integrity and EMC heuristics.
-- Enterprise signoff and cross-EDA readiness epic.
-- Altium, Eagle, and EasyEDA import-export fidelity targets and degradation reports.
-
-Exit criteria:
-
-- Signoff policy separates pass/fail evidence, warnings, skipped checks, and human-review requirements.
-- Cross-EDA conversions have fidelity metrics and known-degradation reports.
-- Public messaging remains verification-first and avoids fabrication-ready or no-review claims.
+**Exit:** an agent produces scored candidates under bounded permissions, and the
+proof pack cleanly separates what was verified from what still needs a human.
 
 ## Non-Goals
 
 ZapTrace will not claim to be:
 
-- A full replacement for KiCad, Altium, or Eagle.
-- A fully autonomous production signoff authority.
-- A SPICE simulator.
+- A full replacement for an interactive PCB editor (KiCad, Altium, Eagle) — it is
+  a backend engine, not a GUI.
+- A fully autonomous production sign-off authority.
+- A field solver or a substitute for lab compliance testing.
 - A substitute for human engineering review.
 - A manufacturer approval system.
 
 ## Milestone Table
 
-| Milestone | Status | Theme |
-|-----------|--------|-------|
-| v0.2.0 | ✅ Complete | Core EDA/export foundation |
-| v0.2.1 | ✅ Complete | Proof-pack scaffold and CI hardening |
-| v0.2.2 | ✅ Complete | Verification foundation and safety hardening |
-| M0 / v0.2.3 | Active | Verification gate stabilization |
-| M1 / v0.3 | Planned | Manufacturing intelligence and Review Studio |
-| M2 / v0.4 | Planned | Autonomous candidate generation |
-| M3 / v1.0 | Planned | Enterprise signoff and cross-EDA readiness |
+| Milestone | Status | Theme | Closes gaps |
+|-----------|--------|-------|-------------|
+| Foundation | ✅ Shipped | Full pipeline, exports, MCP/REST/CLI, proof-pack scaffold | — |
+| M1 | ▶ Active | Synthesis & simulation loop | 1, 2, 4 |
+| M2 | Planned | Routing & manufacturing fidelity | 3, 5 |
+| M3 | Planned | Library, supply & benchmark | 6, 7 |
+| M4 | Planned | Autonomy & sign-off discipline | — |
 
 ## How to Contribute
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) and [docs/strategy/triage-policy.md](strategy/triage-policy.md). For release-blocking work, use [docs/releases/v0.2.3-verification-gate.md](releases/v0.2.3-verification-gate.md).
+See [CONTRIBUTING.md](../CONTRIBUTING.md) and
+[docs/strategy/triage-policy.md](strategy/triage-policy.md). For the technical
+design behind the milestones, see
+[docs/design/autonomous-synthesis.md](design/autonomous-synthesis.md).
