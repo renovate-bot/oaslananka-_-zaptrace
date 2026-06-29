@@ -198,6 +198,15 @@ def plan_architecture(requirements: Requirements) -> ArchitecturePlan:
                 calculator="usb_c_cc_termination",
             )
         )
+        plan.blocks.append(
+            PlannedBlock(
+                block_id="J_USB_C",
+                kind="connector",
+                rationale="USB-C receptacle: the board's physical power input",
+                contract=BlockContract(provides=("net:VBUS",), requires=("net:GND",)),
+                realized=True,
+            )
+        )
     for stage in power["stages"]:
         if stage["stage"] != "regulator":
             continue
@@ -355,6 +364,12 @@ def build_architecture_design(
             log.record(
                 "topology", block.block_id, "USB-C CC Rd", rationale=block.rationale, calculator="usb_c_cc_termination"
             )
+
+        elif block.kind == "connector":  # USB-C receptacle
+            from zaptrace.synthesis.connectors import instantiate_usb_c_connector
+
+            ref = instantiate_usb_c_connector(design, vbus_net=input_net)
+            log.record("topology", block.block_id, f"USB-C receptacle {ref}", rationale=block.rationale)
 
         elif block.kind == "regulator":
             rail_v = block.params["rail_v"]

@@ -27,7 +27,7 @@ closure**, not missing stages. What exists today, characterized honestly:
 | Stage | What is real today | Honest limitation |
 |-------|--------------------|-------------------|
 | Intent → requirements | Structured requirements extraction, assumption register, conflict detector, freeze gate | Heuristic NL parsing; not a planner |
-| Synthesis | **Template selection** + block-composition synthesis (power + interface support + **functional core** MCU + **real peripherals**: I2C sensors and an SPI flash on the MCU-mastered bus) + **IPC-7351 footprint geometry**, provides/requires contracts, calculator library | I2C sensors + SPI flash only (UART peripherals, RF, signal-chain still deferred); module/custom land patterns (MCU modules, some sensors) have no geometry generator yet |
+| Synthesis | **Template selection** + block-composition synthesis (power + **USB-C connector** + interface support + **functional core** MCU + **real peripherals**: I2C sensors and an SPI flash on the MCU-mastered bus) + **IPC-7351 footprint geometry**, provides/requires contracts, calculator library | I2C sensors + SPI flash only (UART peripherals, RF, signal-chain still deferred); module/sensor land patterns (MCU modules, DFN/LGA sensors) have no geometry generator yet |
 | ERC | 29 connectivity-precise rules over an electrical graph, coverage reporting | Rules catch known faults only; no functional/timing proof |
 | Placement / routing | Constraint-aware placement, grid + net-aware routing, copper pour | Grid router; no push-and-shove, length-match, or controlled-impedance routing in the loop |
 | DRC | 16 geometric rules, fab-profile-aware | Geometry only; not a manufacturability guarantee |

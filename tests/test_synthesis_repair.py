@@ -101,11 +101,13 @@ class TestEnableTieRepair:
         assert any(p.rule_id == "ERC012" and "pull-up" in p.new_value for p in repair.patches)
 
     def test_non_enable_single_pin_net_is_left_for_human(self) -> None:
-        # A USB-C CC net is single-pin too, but must NOT be auto-tied to anything.
-        out = synthesize_and_repair("USB-C powered board, 3.3V rail")
-        design, repair = out["design"], out["repair"]
-        assert len(design.nets["CC1"].nodes) == 1
-        assert any(v["rule_id"] == "ERC012" and "CC1" in v["net_refs"] for v in repair.remaining)
+        # A buck's feedback net is single-pin too, but must NOT be auto-tied —
+        # only enable nets are. FB needs a divider a human supplies.
+        out = synthesize_and_repair("industrial board, 12V input, 3.3V rail at 1A")
+        repair = out["repair"]
+        assert any(v["rule_id"] == "ERC012" and "FB_VDD_3V3" in v["net_refs"] for v in repair.remaining)
+        # the enable net, by contrast, was tied
+        assert any(p.rule_id == "ERC012" and "EN_VDD_3V3" in p.new_value for p in repair.patches)
 
     def test_enable_tie_is_marked_a_default_choice(self) -> None:
         out = synthesize_and_repair("industrial board, 12V input, 3.3V rail at 1A")

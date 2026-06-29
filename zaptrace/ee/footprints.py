@@ -587,9 +587,10 @@ def generate_footprint_for_component(
         m = re.match(r"(\d+)p", pkg, re.IGNORECASE)
         if m:
             return footprint_header(rows=1, cols=int(m.group(1)))
-    if "usb-a" in ctype or "usb_a" in ctype:
+    pkg_lower = pkg.lower()
+    if "usb-a" in ctype or "usb_a" in ctype or "usb-a" in pkg_lower:
         return footprint_usb_a(layer)
-    if "usb-c" in ctype or "usb_c" in ctype:
+    if "usb-c" in ctype or "usb_c" in ctype or "usb-c" in pkg_lower:
         return footprint_usb_c(layer)
     if "jst" in ctype or "ph" in ctype:
         return footprint_jst_ph()
