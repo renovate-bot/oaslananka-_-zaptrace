@@ -11,6 +11,7 @@
 
 ### Analysis / verification
 
+- **Board completeness scorecard** — `zaptrace/synthesis/scorecard.py` turns the synthesis artifacts (block graph, repair result, footprint resolution) into a weighted 0-100 completeness score across four dimensions: functional-core (is the MCU placed/realized), composition (all planned blocks realized, no unmet requirement), electrical (did the repair loop converge to a clean ERC), and manufacturability (do parts carry footprint geometry). Surfaced via the `synthesize_board_score` MCP tool. It measures how finished the *automated* steps are — explicitly not a correctness or safety claim.
 - **DC operating-point simulation gate** — `zaptrace/analysis/sim_gate.py` wraps the SPICE orchestrator as a blocking gate with two disciplines from the design note: an explicit skip (ngspice absent) is recorded as `skipped`, never a silent pass, and in `strict` mode it blocks; a run with no expected voltages is `no_reference`, distinct from a verified `pass`. `expected_rail_voltages()` derives references from the synthesis rail-net convention (`VDD_3V3` → 3.3 V). ngspice is now bundled in the container image so a skip in CI signals an environment fault, not an accepted gap. (Device models for the synthesized ICs are still pending, so rail checks currently skip even with ngspice present.)
 
 ### Synthesis / requirements

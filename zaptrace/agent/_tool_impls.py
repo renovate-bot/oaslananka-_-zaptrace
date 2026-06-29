@@ -1264,6 +1264,31 @@ def tool_simulation_gate(design_name: str, strict: bool = False, session_id: str
     return {"design": design_name, **result.to_dict()}
 
 
+def tool_synthesize_board_score(intent: str, session_id: str = "default") -> dict[str, Any]:
+    """Synthesize a board end to end and score its completeness (0-100).
+
+    Runs the full flow (block composition + functional core + sensors + repair +
+    footprint geometry), stores the design, and returns a weighted completeness
+    score across functional-core, composition, electrical, and manufacturability
+    dimensions. The score tracks how finished the *automated* steps are — it is
+    not a correctness or safety claim; human review still applies.
+    """
+    from zaptrace.synthesis.repair import synthesize_and_repair
+    from zaptrace.synthesis.scorecard import score_board
+
+    out = synthesize_and_repair(intent)
+    design = out["design"]
+    session = _get_session(session_id)
+    session["designs"][design.meta.name] = design
+    card = score_board(design, out["plan"], out["repair"], out["footprints"])
+    return {
+        "intent": intent,
+        "design_name": design.meta.name,
+        "component_count": len(design.components),
+        **card.to_dict(),
+    }
+
+
 def tool_compliance_checklist(intent: str) -> dict[str, Any]:
     """Produce a product-class compliance pre-check checklist for a design intent.
 
@@ -2457,6 +2482,15 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "name": "synthesize_board_repair",
         "description": "Synthesize a board then run the convergent ERC -> patch -> re-verify self-correction loop",
         "fn": tool_synthesize_board_repair,
+        "params": {
+            "intent": {"type": "string", "description": "Design intent description"},
+            "session_id": {"type": "string", "description": "Session identifier"},
+        },
+    },
+    "synthesize_board_score": {
+        "name": "synthesize_board_score",
+        "description": "Synthesize a board end to end and score its completeness (0-100) across four dimensions",
+        "fn": tool_synthesize_board_score,
         "params": {
             "intent": {"type": "string", "description": "Design intent description"},
             "session_id": {"type": "string", "description": "Session identifier"},

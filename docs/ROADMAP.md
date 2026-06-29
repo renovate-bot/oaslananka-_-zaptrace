@@ -36,7 +36,7 @@ closure**, not missing stages. What exists today, characterized honestly:
 | Supply | BOM intelligence provider interface; DigiKey/Mouser/TME/Farnell adapters | Fixture-backed, not live API |
 | Export | Gerber, Excellon, BOM, PnP, KiCad, SVG, IPC-2581/ODB++ foundation | KiCad export one-way |
 | Verification evidence | Proof-pack runner + manifest, KiCad Oracle (optional), fab profiles | Proof pack experimental; oracle skippable |
-| Surfaces | Python SDK, CLI, REST API, MCP server (83 tools) | — |
+| Surfaces | Python SDK, CLI, REST API, MCP server (84 tools) | — |
 | Library | ~82 parts | Far short of professional breadth |
 
 The README status table and this section are the source of truth; no claim of

@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 83
+> Total tools: 84
 
 ---
 
@@ -992,6 +992,17 @@ Synthesize an intent's whole board into a netlist and run ERC on it in one step
 ### `synthesize_board_repair`
 
 Synthesize a board then run the convergent ERC -> patch -> re-verify self-correction loop
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `intent` | `string` | Design intent description |
+| `session_id` | `string` | Session identifier |
+
+### `synthesize_board_score`
+
+Synthesize a board end to end and score its completeness (0-100) across four dimensions
 
 **Parameters:**
 
