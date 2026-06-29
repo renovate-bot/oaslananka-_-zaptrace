@@ -507,24 +507,27 @@ class GridRouter:
     def _nearest_free(
         obs: ObstacleMap,
         pos: GridPos,
-        max_radius: int = 10,
+        max_radius: int = 48,
     ) -> GridPos | None:
-        """BFS for nearest free cell within *max_radius*."""
-        visited: set[tuple[int, int, int]] = set()
+        """BFS for nearest free cell within *max_radius*.
+
+        The radius must be large enough to escape a whole component courtyard
+        (a net endpoint sits at the component centre): a 7×7 mm part at 0.25 mm
+        resolution is ~14 cells from its edge, plus clearance dilation.
+        """
+        visited: set[tuple[int, int, int]] = {(pos.x, pos.y, pos.layer)}
         q: deque[tuple[GridPos, int]] = deque([(pos, 0)])
         while q:
             current, dist = q.popleft()
-            if dist > max_radius:
-                return None
             if obs.is_free(current):
                 return current
-            key = (current.x, current.y, current.layer)
-            if key in visited:
+            if dist >= max_radius:
                 continue
-            visited.add(key)
             for dx, dy, _ in DIRECTIONS_8:
                 np = GridPos(current.x + dx, current.y + dy, current.layer)
-                if obs.in_bounds(np):
+                key = (np.x, np.y, np.layer)
+                if obs.in_bounds(np) and key not in visited:
+                    visited.add(key)
                     q.append((np, dist + 1))
         return None
 

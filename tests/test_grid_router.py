@@ -535,3 +535,29 @@ class TestLayerAwareRouting:
         assert result.routed_net_count == 1
         for t in result.traces:
             assert t.layer == "layer_1", f"SIGNAL trace on {t.layer} not layer_1"
+
+
+class TestEndpointsInCourtyards:
+    def test_routes_when_endpoints_sit_inside_component_courtyards(self) -> None:
+        """A net endpoint is the component centre, inside its blocked courtyard;
+        the router must escape the courtyard (nearest-free) and still route.
+
+        Regression: with a too-small nearest-free radius the A* router returned
+        no path for any net whose parts carried a real (large) footprint.
+        """
+        from zaptrace.core.models import BoardConfig, Component, Design, DesignMeta, Net, NetNode
+        from zaptrace.ee.footprints import generate_footprint_for_component
+
+        d = Design(meta=DesignMeta(name="courtyard"), board=BoardConfig(width_mm=60, height_mm=40))
+        for cid, ref in (("c1", "U1"), ("c2", "U2")):
+            comp = Component(id=cid, ref=ref, type="ic", footprint="LQFP-48")
+            comp.footprint_def = generate_footprint_for_component("LQFP-48", "ic")
+            d.components[cid] = comp
+        d.nets["n1"] = Net(
+            id="n1",
+            name="SIG",
+            nodes=[NetNode(component_ref="U1", pin_name="1"), NetNode(component_ref="U2", pin_name="1")],
+        )
+        result = GridRouter(resolution_mm=0.25).route(d, {"c1": (15, 20), "c2": (45, 20)})
+        assert result.routed_net_count == 1
+        assert result.traces
