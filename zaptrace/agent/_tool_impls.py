@@ -1197,6 +1197,37 @@ def tool_synthesize_board_and_check(intent: str, session_id: str = "default") ->
     }
 
 
+def tool_synthesize_board_repair(intent: str, session_id: str = "default") -> dict[str, Any]:
+    """Synthesize a board, run the convergent ERC -> patch -> re-verify loop, and store it.
+
+    Closes the full self-correction loop: build the block-composition netlist, then
+    repair every auto-fixable ERC violation (e.g. missing footprints) until a fixed
+    point, reporting what was patched and what still needs a human (e.g. single-pin
+    nets that require a real connector).
+    """
+    from zaptrace.synthesis.repair import synthesize_and_repair
+
+    out = synthesize_and_repair(intent)
+    design = out["design"]
+    plan = out["plan"]
+    repair = out["repair"]
+    session = _get_session(session_id)
+    session["designs"][design.meta.name] = design
+    return {
+        "intent": intent,
+        "design_name": design.meta.name,
+        "component_count": len(design.components),
+        "net_count": len(design.nets),
+        "converged": repair.converged,
+        "fully_clean": repair.fully_clean,
+        "patch_count": len(repair.patches),
+        "patches": [p.to_dict() for p in repair.patches],
+        "remaining": repair.remaining,
+        "unrealized_blocks": [b.block_id for b in plan.unrealized_blocks],
+        "method": "block_composition_synthesis_with_self_repair",
+    }
+
+
 def tool_compliance_checklist(intent: str) -> dict[str, Any]:
     """Produce a product-class compliance pre-check checklist for a design intent.
 
@@ -2381,6 +2412,15 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "name": "synthesize_board_and_check",
         "description": "Synthesize an intent's whole board into a netlist and run ERC on it in one step",
         "fn": tool_synthesize_board_and_check,
+        "params": {
+            "intent": {"type": "string", "description": "Design intent description"},
+            "session_id": {"type": "string", "description": "Session identifier"},
+        },
+    },
+    "synthesize_board_repair": {
+        "name": "synthesize_board_repair",
+        "description": "Synthesize a board then run the convergent ERC -> patch -> re-verify self-correction loop",
+        "fn": tool_synthesize_board_repair,
         "params": {
             "intent": {"type": "string", "description": "Design intent description"},
             "session_id": {"type": "string", "description": "Session identifier"},

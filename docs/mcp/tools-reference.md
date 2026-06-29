@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 80
+> Total tools: 81
 
 ---
 
@@ -958,6 +958,17 @@ Emit a real netlist for an intent's whole board via block composition and store 
 ### `synthesize_board_and_check`
 
 Synthesize an intent's whole board into a netlist and run ERC on it in one step
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `intent` | `string` | Design intent description |
+| `session_id` | `string` | Session identifier |
+
+### `synthesize_board_repair`
+
+Synthesize a board then run the convergent ERC -> patch -> re-verify self-correction loop
 
 **Parameters:**
 
