@@ -99,7 +99,11 @@ _IC_DIMENSIONS: dict[str, tuple[float, float, float, int]] = {
     "QFN-28": (4.0, 4.0, 0.5, 28),
     "QFN-32": (5.0, 5.0, 0.5, 32),
     "QFN-48": (7.0, 7.0, 0.5, 48),
+    "QFN-56": (7.0, 7.0, 0.4, 56),
     "QFP-32": (7.0, 7.0, 0.8, 32),
+    "LQFP-48": (7.0, 7.0, 0.5, 48),
+    "LQFP-64": (10.0, 10.0, 0.5, 64),
+    "LQFP-100": (14.0, 14.0, 0.5, 100),
     "QFP-44": (10.0, 10.0, 0.8, 44),
     "QFP-64": (10.0, 10.0, 0.5, 64),
     "QFP-100": (14.0, 14.0, 0.5, 100),
@@ -539,8 +543,8 @@ def generate_footprint(
         fp = footprint_qfn(key, layer=layer)
         if fp is not None:
             return fp
-    # Try QFP
-    if key.startswith("QFP"):
+    # Try QFP (LQFP / TQFP are gull-wing QFPs with the same land pattern)
+    if any(key.startswith(p) for p in ("QFP", "LQFP", "TQFP")):
         fp = footprint_qfp(key, layer=layer)
         if fp is not None:
             return fp
@@ -577,17 +581,19 @@ def generate_footprint_for_component(
     ctype = component_type.strip().lower()
 
     # Connectors
-    if "header" in ctype or "pin" in ctype:
-        # Try to parse pin count from package, e.g. "1x4" or "2x8"
+    pkg_lower = pkg.lower()
+    is_header = "header" in ctype or "pin" in ctype or "pinhead" in pkg_lower or "header" in pkg_lower
+    is_terminal = "terminal" in ctype or "terminal" in pkg_lower
+    if is_header or is_terminal:
+        # Parse pin count from the package/footprint name, e.g. "1x4", "2x8", "2P".
         import re
 
-        m = re.match(r"(\d+)x(\d+)", pkg, re.IGNORECASE)
+        m = re.search(r"(\d+)x(\d+)", pkg, re.IGNORECASE)
         if m:
             return footprint_header(rows=int(m.group(1)), cols=int(m.group(2)))
-        m = re.match(r"(\d+)p", pkg, re.IGNORECASE)
+        m = re.search(r"(\d+)p\b", pkg, re.IGNORECASE)
         if m:
             return footprint_header(rows=1, cols=int(m.group(1)))
-    pkg_lower = pkg.lower()
     if "usb-a" in ctype or "usb_a" in ctype or "usb-a" in pkg_lower:
         return footprint_usb_a(layer)
     if "usb-c" in ctype or "usb_c" in ctype or "usb-c" in pkg_lower:

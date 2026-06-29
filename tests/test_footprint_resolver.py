@@ -30,6 +30,21 @@ class TestResolution:
         assert design.components["U1"].footprint_def is not None
         assert len(design.components["U1"].footprint_def.pads) == 3
 
+    def test_lqfp_resolves_via_package_fallback(self) -> None:
+        # STM32F103 has a custom footprint name but a standard LQFP-48 package.
+        design = _design_with(
+            Component(
+                id="U1", ref="U1", type="mcu", value="STM32", footprint="STM32F103C8T6-LQFP48", mpn="STM32F103C8T6"
+            )
+        )
+        resolve_footprints(design)
+        assert design.components["U1"].footprint_def is not None
+        assert len(design.components["U1"].footprint_def.pads) == 48
+
+    def test_bare_mcu_board_is_fully_manufacturable(self) -> None:
+        out = synthesize_and_repair("STM32 3.3V board, RS485 modbus node")
+        assert out["footprints"].fully_resolved
+
     def test_module_package_is_unresolved_not_faked(self) -> None:
         design = _design_with(Component(id="U1", ref="U1", type="mcu", value="ESP32", footprint="ESP32-C3-MINI-1"))
         result = resolve_footprints(design)

@@ -51,6 +51,7 @@ def resolve_footprints(design: Design) -> FootprintResolution:
     generator is recorded in ``unresolved`` (a real, visible fab blocker), never
     given invented pads.
     """
+    package_by_mpn = _package_by_mpn()
     result = FootprintResolution()
     for comp in design.components.values():
         if comp.footprint_def is not None:
@@ -61,7 +62,13 @@ def resolve_footprints(design: Design) -> FootprintResolution:
                 {"ref": comp.ref, "footprint": "", "type": comp.type, "reason": "no footprint name to resolve from"}
             )
             continue
+        # Try the part-specific footprint name first; fall back to its standard
+        # package (e.g. "LQFP-48") when the custom name has no generator.
         footprint_def = generate_footprint_for_component(comp.footprint, comp.type)
+        if footprint_def is None and comp.mpn:
+            package = package_by_mpn.get(comp.mpn)
+            if package:
+                footprint_def = generate_footprint_for_component(package, comp.type)
         if footprint_def is not None:
             comp.footprint_def = footprint_def
             result.resolved.append(comp.ref)
@@ -75,3 +82,10 @@ def resolve_footprints(design: Design) -> FootprintResolution:
                 }
             )
     return result
+
+
+def _package_by_mpn() -> dict[str, str]:
+    """Map each library part's MPN to its standard package name, for fallback."""
+    from zaptrace.library.loader import LibraryLoader
+
+    return {spec.mpn: spec.package for spec in LibraryLoader().load_all().values() if spec.mpn and spec.package}
