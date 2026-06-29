@@ -38,11 +38,18 @@ class TestComposition:
 
 class TestHonesty:
     def test_unrealized_interface_is_kept_not_dropped(self) -> None:
+        # BLE has no RF front-end block yet: it must stay in the plan, not vanish.
+        plan = _plan("nRF52 board, 3.3V rail, BLE sensor")
+        ble = next(b for b in plan.blocks if b.block_id == "IF_BLE")
+        assert ble.realized is False
+        assert ble in plan.unrealized_blocks
+        assert "rf" in ble.rationale.lower()
+
+    def test_rs485_is_realized_with_a_transceiver_block(self) -> None:
         plan = _plan("STM32 board, 3.3V rail, RS485 modbus node")
         rs485 = next(b for b in plan.blocks if b.block_id == "IF_RS485")
-        assert rs485.realized is False
-        assert rs485 in plan.unrealized_blocks
-        assert "transceiver" in rs485.rationale.lower()
+        assert rs485.realized is True
+        assert "rail:VDD_3V3" in rs485.contract.requires
 
     def test_boost_regulator_is_unrealized(self) -> None:
         # A rail above the system voltage needs a boost, which has no block yet.
@@ -60,13 +67,14 @@ class TestHonesty:
 
 class TestNetlistEmission:
     def test_emits_realized_blocks_only(self) -> None:
-        req = parse_requirements("USB-C powered board, 3.3V rail, I2C sensor, RS485 modbus")
+        req = parse_requirements("USB-C powered board, 3.3V rail, I2C sensor, RS485 modbus, BLE radio")
         design, _plan, _log = build_architecture_design(req)
         emitted = {b.id for b in design.blocks}
-        # Realized power + I2C blocks are emitted; the unrealized RS485 is not.
+        # Realized power + I2C + RS485 blocks are emitted; the unrealized BLE is not.
         assert "PB_REG_VDD_3V3" in emitted
         assert "IF_I2C" in emitted
-        assert "IF_RS485" not in emitted
+        assert "IF_RS485" in emitted
+        assert "IF_BLE" not in emitted
         assert design.components  # something was emitted
 
     def test_deterministic_across_runs(self) -> None:
@@ -77,10 +85,10 @@ class TestNetlistEmission:
         assert sorted(d1.nets) == sorted(d2.nets)
 
     def test_decision_log_records_gaps_and_values(self) -> None:
-        req = parse_requirements("USB-C powered board, 3.3V rail, I2C sensor, RS485 modbus")
+        req = parse_requirements("USB-C powered board, 3.3V rail, I2C sensor, BLE radio")
         _design, _plan, log = build_architecture_design(req)
         cats = {d.category for d in log.decisions}
-        assert "gap" in cats  # RS485 recorded as a gap
+        assert "gap" in cats  # BLE (no RF block yet) recorded as a gap
         assert "value" in cats  # a computed value (I2C pull-ups / buck)
 
     def test_buck_value_is_computed_for_large_drop(self) -> None:

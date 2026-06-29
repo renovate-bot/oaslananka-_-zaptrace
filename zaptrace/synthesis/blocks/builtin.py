@@ -388,3 +388,100 @@ def instantiate_ldo(
     block = Block(id=block_id, name="LDO_Regulator", components=components)
     design.blocks.append(block)
     return block
+
+
+def instantiate_rs485_transceiver(
+    design: Design,
+    block_id: str,
+    rail_net: str = "3V3",
+    gnd_net: str = "GND",
+    a_net: str = "RS485_A",
+    b_net: str = "RS485_B",
+    ro_net: str = "RS485_RO",
+    di_net: str = "RS485_DI",
+    re_net: str = "RS485_nRE",
+    de_net: str = "RS485_DE",
+    *,
+    termination: bool = True,
+    dnp: bool = False,
+    variants: dict[str, bool] | None = None,
+) -> Block:
+    """Half-duplex RS-485 transceiver (MAX3485, 3.3 V) with decoupling and termination.
+
+    SOIC-8 pinout (75176-family): 1=RO, 2=/RE, 3=DE, 4=DI, 5=GND, 6=A, 7=B, 8=VCC.
+    A 100 nF bypass sits on the rail, and a 120 Ω resistor terminates the A/B pair
+    at the bus end when ``termination`` is set.
+    """
+    components: list[str] = []
+    u_ref = _add_component(design, "U", "ic", "MAX3485", dnp=dnp, variants=variants, mpn="MAX3485")
+    components.append(u_ref)
+    _connect_pin(design, ro_net, u_ref, "1")
+    _connect_pin(design, re_net, u_ref, "2")
+    _connect_pin(design, de_net, u_ref, "3")
+    _connect_pin(design, di_net, u_ref, "4")
+    _connect_pin(design, gnd_net, u_ref, "5")
+    _connect_pin(design, a_net, u_ref, "6")
+    _connect_pin(design, b_net, u_ref, "7")
+    _connect_pin(design, rail_net, u_ref, "8")
+
+    c_ref = _add_component(design, "C", "capacitor", "100nF", dnp=dnp, variants=variants)
+    components.append(c_ref)
+    _connect_pin(design, rail_net, c_ref, "1")
+    _connect_pin(design, gnd_net, c_ref, "2")
+
+    if termination:
+        r_ref = _add_component(design, "R", "resistor", "120", dnp=dnp, variants=variants)
+        components.append(r_ref)
+        _connect_pin(design, a_net, r_ref, "1")
+        _connect_pin(design, b_net, r_ref, "2")
+
+    block = Block(id=block_id, name="RS485_Transceiver", components=components)
+    design.blocks.append(block)
+    return block
+
+
+def instantiate_can_transceiver(
+    design: Design,
+    block_id: str,
+    rail_net: str = "3V3",
+    gnd_net: str = "GND",
+    canh_net: str = "CANH",
+    canl_net: str = "CANL",
+    txd_net: str = "CAN_TXD",
+    rxd_net: str = "CAN_RXD",
+    *,
+    termination: bool = True,
+    dnp: bool = False,
+    variants: dict[str, bool] | None = None,
+) -> Block:
+    """CAN transceiver (SN65HVD230, 3.3 V) with decoupling and bus termination.
+
+    SOIC-8 pinout: 1=TXD, 2=GND, 3=VCC, 4=RXD, 6=CANL, 7=CANH, 8=Rs. Rs is tied to
+    GND for high-speed mode. A 100 nF bypass sits on the rail, and a 120 Ω resistor
+    terminates the CANH/CANL pair when ``termination`` is set.
+    """
+    components: list[str] = []
+    u_ref = _add_component(design, "U", "ic", "SN65HVD230", dnp=dnp, variants=variants, mpn="SN65HVD230")
+    components.append(u_ref)
+    _connect_pin(design, txd_net, u_ref, "1")
+    _connect_pin(design, gnd_net, u_ref, "2")
+    _connect_pin(design, rail_net, u_ref, "3")
+    _connect_pin(design, rxd_net, u_ref, "4")
+    _connect_pin(design, canl_net, u_ref, "6")
+    _connect_pin(design, canh_net, u_ref, "7")
+    _connect_pin(design, gnd_net, u_ref, "8")  # Rs -> GND: high-speed mode
+
+    c_ref = _add_component(design, "C", "capacitor", "100nF", dnp=dnp, variants=variants)
+    components.append(c_ref)
+    _connect_pin(design, rail_net, c_ref, "1")
+    _connect_pin(design, gnd_net, c_ref, "2")
+
+    if termination:
+        r_ref = _add_component(design, "R", "resistor", "120", dnp=dnp, variants=variants)
+        components.append(r_ref)
+        _connect_pin(design, canh_net, r_ref, "1")
+        _connect_pin(design, canl_net, r_ref, "2")
+
+    block = Block(id=block_id, name="CAN_Transceiver", components=components)
+    design.blocks.append(block)
+    return block

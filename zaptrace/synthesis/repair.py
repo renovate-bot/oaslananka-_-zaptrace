@@ -123,6 +123,8 @@ def _default_footprint(comp: Component) -> tuple[str, float] | None:
         return ("LED-0603", 1.0)
     if "TLV62569" in value:
         return ("SOT-23-5", 1.0)
+    if value in ("MAX3485", "SN65HVD230"):
+        return ("SOIC-8", 1.0)
     if ctype == "ldo" or value.startswith("LDO_"):
         return ("SOT-23-3", 0.9)
     return None  # unknown part: leave for human escalation, do not guess

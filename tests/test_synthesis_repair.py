@@ -36,6 +36,15 @@ class TestFootprintRepair:
         repair_design(design)
         assert design.components["U1"].footprint == "SOT-23-5"
 
+    def test_transceiver_ics_get_soic8(self) -> None:
+        design = _design_with(
+            Component(id="U1", ref="U1", type="ic", value="MAX3485"),
+            Component(id="U2", ref="U2", type="ic", value="SN65HVD230"),
+        )
+        repair_design(design)
+        assert design.components["U1"].footprint == "SOIC-8"
+        assert design.components["U2"].footprint == "SOIC-8"
+
     def test_unknown_component_is_escalated_not_guessed(self) -> None:
         design = _design_with(Component(id="U1", ref="U1", type="ic", value="MYSTERY-XYZ"))
         result = repair_design(design)

@@ -115,6 +115,7 @@ class ArchitecturePlan:
 # ``support`` semantics:
 #   "rail-pullups"  needs the logic rail (e.g. I2C SDA/SCL pull-ups)
 #   "gnd-only"      needs only GND (e.g. USB-C CC Rd termination)
+#   "transceiver"   needs the logic rail + a transceiver IC (e.g. RS-485, CAN)
 #   "none"          a digital bus needing no passive support block
 #   "deferred"      needs a block (transceiver/PHY) not yet implemented
 _INTERFACE_SUPPORT: dict[str, dict[str, Any]] = {
@@ -136,14 +137,14 @@ _INTERFACE_SUPPORT: dict[str, dict[str, Any]] = {
         "rationale": "UART is point-to-point; no passive support block required",
     },
     "rs485": {
-        "support": "deferred",
-        "realized": False,
-        "rationale": "RS-485 needs a transceiver + bias/termination block (not yet implemented)",
+        "support": "transceiver",
+        "realized": True,
+        "rationale": "RS-485 needs a transceiver + 120Ω bus termination",
     },
     "can": {
-        "support": "deferred",
-        "realized": False,
-        "rationale": "CAN needs a transceiver + termination block (not yet implemented)",
+        "support": "transceiver",
+        "realized": True,
+        "rationale": "CAN needs a transceiver + 120Ω bus termination",
     },
     "ble": {
         "support": "deferred",
@@ -280,9 +281,11 @@ def build_architecture_design(
     """
     from zaptrace.core.models import Design, DesignMeta
     from zaptrace.synthesis.blocks import (
+        instantiate_can_transceiver,
         instantiate_i2c_pullups,
         instantiate_ldo,
         instantiate_rj45_bob_smith,
+        instantiate_rs485_transceiver,
         instantiate_sync_buck_tlv62569,
         instantiate_usb_c_ufp_cc,
     )
@@ -354,6 +357,12 @@ def build_architecture_design(
             elif support == "gnd-only" and block.block_id == "IF_USB":
                 # USB-C CC already emitted as the power_input block; nothing extra.
                 log.record("topology", block.block_id, "covered by USB-C input", rationale=block.rationale)
+            elif support == "transceiver" and block.block_id == "IF_RS485":
+                instantiate_rs485_transceiver(design, block.block_id, rail_net=logic_rail)
+                log.record("topology", block.block_id, "RS-485 transceiver (MAX3485)", rationale=block.rationale)
+            elif support == "transceiver" and block.block_id == "IF_CAN":
+                instantiate_can_transceiver(design, block.block_id, rail_net=logic_rail)
+                log.record("topology", block.block_id, "CAN transceiver (SN65HVD230)", rationale=block.rationale)
             else:  # support == "none" (SPI/UART): no components, recorded for scope
                 log.record("note", block.block_id, "no support block required", rationale=block.rationale)
 
