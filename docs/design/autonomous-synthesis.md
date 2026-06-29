@@ -7,8 +7,8 @@ to end. It is the technical backing for milestones M1–M2 in
 
 ## Problem statement
 
-Today an agent can call 77 tools, but the core creative step — *deciding the
-circuit* — is template selection. `synthesize_with_provenance()` keyword-scores
+Today an agent can call dozens of tools, but the core creative step — *deciding
+the circuit* — is template selection. `synthesize_with_provenance()` keyword-scores
 the YAML templates in `zaptrace/synthesis/templates/` and loads the closest
 match (`zaptrace/synthesis/engine.py`, `method="template_selection"`). The only
 genuinely synthesized path is the power tree

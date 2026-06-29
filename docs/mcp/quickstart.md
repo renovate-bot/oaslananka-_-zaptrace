@@ -1,15 +1,15 @@
 # MCP Server Quickstart
 
 > **ZapTrace MCP** enables LLMs (Claude, Copilot, Codex, Gemini) to design PCBs through
-> the Model Context Protocol. 47+ tools available.
+> the Model Context Protocol. 87 tools available.
 
 ---
 
 ## 1. Starting the Server
 
 ```bash
-# Install
-pip install zaptrace
+# Install from source (pre-1.0, not yet on PyPI)
+git clone https://github.com/oaslananka/zaptrace.git && cd zaptrace && uv sync --all-extras
 
 # Start MCP server (stdio transport)
 zaptrace mcp

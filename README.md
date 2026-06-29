@@ -6,6 +6,16 @@
 
 # ⚡ ZapTrace — Prompt-to-Fab
 
+<p align="center">
+  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/quality.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/quality.yml/badge.svg" alt="Quality" /></a>
+  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/security-scan.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/security-scan.yml/badge.svg" alt="Security" /></a>
+  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/docs.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/docs.yml/badge.svg" alt="Docs" /></a>
+  <a href="https://oaslananka.github.io/zaptrace"><img src="https://img.shields.io/badge/docs-mkdocs-blue.svg" alt="Documentation" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+" />
+  <img src="https://img.shields.io/badge/status-pre--1.0-orange.svg" alt="Pre-1.0" />
+</p>
+
 **ZapTrace** is an AI-native, verification-first, open-source electronic design automation (EDA) kernel for agents and engineers.
 
 > **Pre-1.0.** All outputs require human engineering review before fabrication or use.
@@ -86,15 +96,9 @@ No EDA dependency required, excellent EDA interoperability.
 
 ## Quickstart
 
-```bash
-# Install
-uv pip install zaptrace
-```
-
-The PyPI distribution is `zaptrace`; the Python import package and CLI commands remain `zaptrace`.
+ZapTrace is pre-1.0 and not yet published to PyPI — install from source:
 
 ```bash
-# Or from source
 git clone https://github.com/oaslananka/zaptrace.git
 cd zaptrace
 uv sync --all-extras

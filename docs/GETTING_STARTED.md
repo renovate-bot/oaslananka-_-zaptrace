@@ -6,21 +6,17 @@
 - Python 3.12 or 3.13
 - [uv](https://docs.astral.sh/uv/) (recommended) or pip
 
-### Install with uv
-
-```bash
-uv pip install zaptrace
-```
-
-The PyPI distribution is `zaptrace`; the Python import package and CLI commands remain `zaptrace`.
-
 ### Install from source
+
+ZapTrace is pre-1.0 and not yet published to PyPI; install from source:
 
 ```bash
 git clone https://github.com/oaslananka/zaptrace.git
 cd zaptrace
 uv sync --all-extras
 ```
+
+Once published, `uv pip install zaptrace` will install the `zaptrace` distribution; the import package and CLI commands are `zaptrace`.
 
 ### Optional: Rust Extension
 
