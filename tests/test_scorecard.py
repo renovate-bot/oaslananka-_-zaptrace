@@ -48,6 +48,13 @@ class TestScoring:
         assert core.status == "n/a"
         assert core.score == 1.0
 
+    def test_advisory_only_board_passes_electrical(self) -> None:
+        # A board whose only remaining ERC items are info-level DfT suggestions
+        # (test points, idle pull-ups) is electrically sound and should pass.
+        card = _score("nRF52 3.3V board, I2C temperature and pressure sensors")
+        electrical = next(d for d in card.dimensions if d.name == "electrical")
+        assert electrical.status == "pass"
+
     def test_unrealized_block_lowers_composition(self) -> None:
         # A 5V rail on a battery board needs a boost stage, which has no block yet.
         card = _score("ESP32-C3 battery board, single Li-ion cell, 5V rail")

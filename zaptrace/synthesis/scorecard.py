@@ -114,13 +114,16 @@ def _electrical(repair: RepairResult, dc_bias: DcBiasResult | None) -> Dimension
     if dc_bias is not None and dc_bias.undriven_rails:
         rails = ", ".join(dc_bias.undriven_rails)
         return Dimension("electrical", 0.2, "fail", f"undriven rail(s): {rails}")
-    if repair.fully_clean:
-        return Dimension("electrical", 1.0, "pass", "ERC converged clean, rails driven")
-    if repair.converged:
-        return Dimension(
-            "electrical", 0.6, "partial", f"converged with {len(repair.remaining)} violation(s) for review"
-        )
-    return Dimension("electrical", 0.2, "fail", "repair loop did not converge")
+    if not repair.converged:
+        return Dimension("electrical", 0.2, "fail", "repair loop did not converge")
+    # Info-level items (test-point / pull-up *suggestions*) do not make a board
+    # electrically unsound; only errors and warnings count against this dimension.
+    hard = [v for v in repair.remaining if v.get("severity") in ("error", "warning")]
+    advisories = len(repair.remaining) - len(hard)
+    if not hard:
+        detail = "no ERC errors or warnings" + (f"; {advisories} advisory note(s)" if advisories else "")
+        return Dimension("electrical", 1.0, "pass", detail)
+    return Dimension("electrical", 0.6, "partial", f"{len(hard)} error/warning(s) for review")
 
 
 def _manufacturability(design: Design, footprints: FootprintResolution) -> Dimension:

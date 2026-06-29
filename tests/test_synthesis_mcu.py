@@ -91,6 +91,20 @@ class TestInstantiateMcu:
         out = synthesize_and_repair("STM32 3.3V board, RS485 modbus node")
         assert out["repair"].fully_clean
 
+    def test_swd_debug_header_is_placed_and_clock_wired(self) -> None:
+        # nRF52 exposes SWD pins; a debug header must connect the SWD clock.
+        design = _board_with_i2c_nets()
+        instantiate_mcu(design, "nrf52", ["i2c"], rail_net="VDD_3V3")
+        headers = [c for c in design.components.values() if c.value == "SWD Debug Header"]
+        assert len(headers) == 1
+        assert "SWDCLK" in design.nets and len(design.nets["SWDCLK"].nodes) >= 2  # MCU + header
+
+    def test_swd_pins_are_not_used_as_interface_gpio(self) -> None:
+        design = _board_with_i2c_nets()
+        result = instantiate_mcu(design, "nrf52", ["i2c"], rail_net="VDD_3V3")
+        assigned = {a.net for a in result.assignments}
+        assert "SDA" in assigned  # I2C still wired from real GPIOs, not SWD pins
+
     def test_unknown_family_is_not_faked(self) -> None:
         design = _board_with_i2c_nets()
         result = instantiate_mcu(design, "samd", ["i2c"], rail_net="VDD_3V3")

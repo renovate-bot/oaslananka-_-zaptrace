@@ -57,7 +57,11 @@ _INTERFACE_ORDER = ("i2c", "spi", "uart", "rs485", "can")
 
 _GROUND_NAMES = {"GND", "VSS", "VSSA", "AGND", "DGND"}
 _ENABLE_NAMES = {"EN", "NRST", "RESET", "RST"}
-_NON_GPIO_NAMES = {"USB_DP", "USB_DM", "USB_D+", "USB_D-"}
+_SWD_DATA_NAMES = {"SWDIO", "SWDIO_TMS"}
+_SWD_CLK_NAMES = {"SWDCLK", "SWCLK", "SWCLK_TCK"}
+# SWD pins go to the debug header, never to an interface, so keep them out of the
+# GPIO pool alongside the USB analog pins.
+_NON_GPIO_NAMES = {"USB_DP", "USB_DM", "USB_D+", "USB_D-"} | _SWD_DATA_NAMES | _SWD_CLK_NAMES
 
 # Per-family boot/config straps so the part boots and runs: pin -> how to tie it.
 # "pulldown"/"pullup" add a 10 kΩ resistor; "gnd"/"rail" tie directly.
@@ -161,6 +165,50 @@ def _next_ref(design: Design, prefix: str) -> str:
     return f"{prefix}{idx}"
 
 
+def _find_pin(spec_pins: dict[str, dict[str, str]], names: set[str]) -> str | None:
+    for name in spec_pins:
+        if name.upper() in names:
+            return name
+    return None
+
+
+def _place_debug_header(
+    design: Design, mcu_ref: str, spec_pins: dict[str, dict[str, str]], *, rail_net: str, gnd_net: str
+) -> str | None:
+    """Place an SWD debug/programming header and wire SWDIO/SWCLK + power.
+
+    Every real board needs a way to flash and debug it; this also connects the
+    MCU's otherwise-floating SWD clock pin. Returns the header ref, or None when
+    the part exposes no SWD pins.
+    """
+    from zaptrace.core.models import Component
+
+    swdio = _find_pin(spec_pins, _SWD_DATA_NAMES)
+    swclk = _find_pin(spec_pins, _SWD_CLK_NAMES)
+    if swdio is None or swclk is None:
+        return None
+
+    spec = LibraryLoader().get("header-1x4")
+    ref = _next_ref(design, "J")
+    design.components[ref] = Component(
+        id=ref,
+        ref=ref,
+        type="connector",
+        value="SWD Debug Header",
+        mpn=spec.mpn,
+        footprint=spec.footprint,
+        pins={name: Pin(name=name, type=_pin_type(raw)) for name, raw in spec.pins.items()},
+    )
+    # 1x4 SWD pinout: VCC, SWDIO, SWCLK, GND.
+    _connect(design, rail_net, ref, "P1")
+    _connect(design, "SWDIO", ref, "P2")
+    _connect(design, "SWDIO", mcu_ref, swdio)
+    _connect(design, "SWDCLK", ref, "P3")
+    _connect(design, "SWDCLK", mcu_ref, swclk)
+    _connect(design, gnd_net, ref, "P4")
+    return ref
+
+
 def _apply_straps(
     design: Design, ref: str, family: str, spec_pins: dict[str, dict[str, str]], *, rail_net: str, gnd_net: str
 ) -> list[PinAssignment]:
@@ -238,6 +286,7 @@ def instantiate_mcu(
         _connect(design, rail_net, ref, enable_pin)
         assignments.append(PinAssignment(enable_pin, rail_net, "enable"))
     assignments.extend(_apply_straps(design, ref, family, spec.pins, rail_net=rail_net, gnd_net=gnd_net))
+    _place_debug_header(design, ref, spec.pins, rail_net=rail_net, gnd_net=gnd_net)
 
     unconnected: list[str] = []
     available = list(gpios)
