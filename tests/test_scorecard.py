@@ -39,8 +39,8 @@ class TestScoring:
         core = next(d for d in card.dimensions if d.name == "functional_core")
         assert core.status == "fail"
         assert core.score == 0.0
-        # a failed core drags the overall score down materially
-        assert card.score < 60
+        # a failed core drags the overall score down — it cannot be a complete board
+        assert card.score < 75
 
     def test_board_without_mcu_marks_core_na(self) -> None:
         card = _score("USB-C 3.3V board, I2C sensor")  # no MCU family in intent

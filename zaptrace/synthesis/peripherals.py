@@ -42,11 +42,12 @@ _STORAGE_RULES: list[tuple[tuple[str, ...], str, str]] = [
     (("flash", "nor flash", "storage", "spi memory", "datalog", "data log", "logger"), "w25q128jv", "SPI NOR flash"),
 ]
 
-_SUPPLY_NAMES = {"VDD", "VCC"}
+_SUPPLY_NAMES = {"VDD", "VCC", "VDDIO"}
 _GROUND_NAMES = {"GND", "VSS"}
 _I2C_DATA_NAMES = {"SDA", "SDI"}
 _I2C_CLK_NAMES = {"SCL", "SCK"}
-_I2C_ADDR_NAMES = {"ADDR", "SA0"}  # tie to GND for the default I2C address
+_I2C_ADDR_NAMES = {"ADDR", "SA0", "SDO"}  # address-select: tie to GND (default address)
+_I2C_MODE_HIGH_NAMES = {"CSB", "CS"}  # tie high to select I2C mode on dual-mode parts
 # Active-low reset inputs: tie high to the rail so the part runs (not held in reset).
 _ACTIVE_LOW_RESET_NAMES = {"NRESET", "NRST", "RESET_N", "RST_N", "RESET#", "RST#"}
 _SPI_CLK_NAMES = {"CLK", "SCK", "SCLK"}
@@ -176,13 +177,19 @@ def instantiate_sensor(
         footprint=spec.footprint,
         pins={name: Pin(name=name, type=_pin_type(raw)) for name, raw in spec.pins.items()},
     )
-    _connect(design, rail_net, ref, supply_pin)
-    _connect(design, gnd_net, ref, ground_pin)
+    # Every power pin (VDD, VDDIO, ...) reaches the rail; grounds reach GND.
+    for name, raw in spec.pins.items():
+        if raw.get("type") != "power":
+            continue
+        _connect(design, gnd_net if name.upper() in _GROUND_NAMES else rail_net, ref, name)
     _connect(design, sda_net, ref, data_pin)
     _connect(design, scl_net, ref, clock_pin)
     addr_pin = _find_pin(spec.pins, _I2C_ADDR_NAMES)
     if addr_pin is not None:
-        _connect(design, gnd_net, ref, addr_pin)
+        _connect(design, gnd_net, ref, addr_pin)  # default I2C address
+    mode_pin = _find_pin(spec.pins, _I2C_MODE_HIGH_NAMES)
+    if mode_pin is not None:
+        _connect(design, rail_net, ref, mode_pin)  # CS/CSB high selects I2C mode
     reset_pin = _find_pin(spec.pins, _ACTIVE_LOW_RESET_NAMES)
     if reset_pin is not None:
         _connect(design, rail_net, ref, reset_pin)  # active-low reset held high

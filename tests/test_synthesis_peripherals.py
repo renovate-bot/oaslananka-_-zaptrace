@@ -91,6 +91,20 @@ class TestInstantiateSensor:
         ref = instantiate_sensor(design, "bmp390", rail_net="VDD_3V3")
         assert any(n.component_ref == ref for n in design.nets["SCL"].nodes)
 
+    def test_all_sensor_power_pins_connected(self) -> None:
+        # bmp390 has a separate VDDIO; a floating I/O supply breaks the part.
+        design = self._bus()
+        ref = instantiate_sensor(design, "bmp390", rail_net="VDD_3V3")
+        rail_pins = {n.pin_name for n in design.nets["VDD_3V3"].nodes if n.component_ref == ref}
+        assert {"VDD", "VDDIO"} <= rail_pins
+
+    def test_chip_select_tied_high_for_i2c_mode(self) -> None:
+        # bme280's CSB must be high to select I2C (not SPI).
+        design = self._bus()
+        ref = instantiate_sensor(design, "bme280", rail_net="VDD_3V3")
+        rail_pins = {n.pin_name for n in design.nets["VDD_3V3"].nodes if n.component_ref == ref}
+        assert "CSB" in rail_pins
+
     def test_active_low_reset_is_tied_high(self) -> None:
         # sht31-dis has an active-low nRESET; it must be held high, not left floating.
         design = self._bus()
