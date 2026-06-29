@@ -40,13 +40,18 @@ _FAMILY_PART: dict[str, str] = {
 }
 
 # Interface -> the signals the MCU must drive, paired with the support-block net
-# each one connects to (the names architecture synthesis emits). Interfaces with
-# no support block (SPI/UART have no peripheral yet) are left unassigned.
+# each one connects to. For a bus with a support block (I2C, RS-485, CAN) the net
+# is one architecture synthesis already emitted; for a point-to-point bus the MCU
+# masters (SPI), the net is created here for a peripheral to join.
 _INTERFACE_SIGNALS: dict[str, list[tuple[str, str]]] = {
     "i2c": [("SDA", "SDA"), ("SCL", "SCL")],
+    "spi": [("SCK", "SPI_SCK"), ("MOSI", "SPI_MOSI"), ("MISO", "SPI_MISO"), ("CS", "SPI_CS")],
     "rs485": [("RO", "RS485_RO"), ("DI", "RS485_DI"), ("nRE", "RS485_nRE"), ("DE", "RS485_DE")],
     "can": [("TXD", "CAN_TXD"), ("RXD", "CAN_RXD")],
 }
+# Buses whose nets must already exist (their support block created them); other
+# interfaces (SPI) have the MCU create the nets.
+_REQUIRES_SUPPORT_NET = frozenset({"i2c", "rs485", "can"})
 # Deterministic interface order for pin assignment.
 _INTERFACE_ORDER = ("i2c", "spi", "uart", "rs485", "can")
 
@@ -202,7 +207,9 @@ def instantiate_mcu(
         if signals is None:
             unconnected.append(iface)  # recognized but no peripheral block yet
             continue
-        if any(net not in design.nets for _, net in signals) or len(available) < len(signals):
+        needs_existing = iface in _REQUIRES_SUPPORT_NET
+        missing_support = needs_existing and any(net not in design.nets for _, net in signals)
+        if missing_support or len(available) < len(signals):
             unconnected.append(iface)
             continue
         for signal, net in signals:

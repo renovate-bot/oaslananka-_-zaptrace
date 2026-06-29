@@ -57,10 +57,17 @@ class TestInstantiateMcu:
         assert result.ref != "U1"
         assert design.components["U1"].type == "ldo"  # untouched
 
-    def test_interface_without_support_net_is_unconnected(self) -> None:
-        design = _board_with_i2c_nets()  # has I2C nets, but no SPI
+    def test_spi_creates_its_own_bus_nets(self) -> None:
+        design = _board_with_i2c_nets()  # has I2C nets, no SPI nets
         result = instantiate_mcu(design, "esp32", ["i2c", "spi"], rail_net="VDD_3V3")
-        assert "spi" in result.unconnected_interfaces  # no peripheral block to wire to
+        # SPI has no support block, so the MCU masters it by creating the bus nets.
+        assert any(a.function == "spi:SCK" for a in result.assignments)
+        assert "SPI_SCK" in design.nets
+
+    def test_bus_missing_its_support_net_is_unconnected(self) -> None:
+        design = _board_with_i2c_nets()  # I2C nets exist, RS-485 nets do not
+        result = instantiate_mcu(design, "esp32", ["i2c", "rs485"], rail_net="VDD_3V3")
+        assert "rs485" in result.unconnected_interfaces
         assert any(a.function == "i2c:SDA" for a in result.assignments)
 
     def test_unknown_family_is_not_faked(self) -> None:

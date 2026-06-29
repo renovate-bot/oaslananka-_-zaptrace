@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from zaptrace.core.models import Design, DesignMeta, Net
 from zaptrace.synthesis.architecture import build_architecture_design
-from zaptrace.synthesis.peripherals import instantiate_sensor, plan_sensors
+from zaptrace.synthesis.peripherals import instantiate_sensor, instantiate_spi_flash, plan_sensors, plan_storage
 from zaptrace.synthesis.requirements import parse_requirements
 
 
@@ -35,6 +35,37 @@ class TestSensorSelection:
 
     def test_no_sensor_keyword_means_no_sensor(self) -> None:
         assert _plan("ESP32 3.3V board, I2C bus") == []
+
+
+class TestStorageSelection:
+    def test_spi_flash_intent_picks_w25q(self) -> None:
+        choices = plan_storage(parse_requirements("ESP32 3.3V board, SPI flash storage"))
+        assert [c.part_id for c in choices] == ["w25q128jv"]
+        assert choices[0].bus == "spi"
+
+    def test_no_spi_bus_means_no_flash(self) -> None:
+        assert plan_storage(parse_requirements("I2C board with flash mention")) == []
+
+    def test_no_flash_keyword_means_no_storage(self) -> None:
+        assert plan_storage(parse_requirements("ESP32 3.3V board, SPI display")) == []
+
+
+class TestInstantiateSpiFlash:
+    def _spi_bus(self) -> Design:
+        design = Design(meta=DesignMeta(name="spi_test"))
+        for net in ("VDD_3V3", "GND", "SPI_SCK", "SPI_MOSI", "SPI_MISO", "SPI_CS"):
+            design.nets[net] = Net(id=net, name=net)
+        return design
+
+    def test_wires_spi_bus_and_holds_wp_high(self) -> None:
+        design = self._spi_bus()
+        ref = instantiate_spi_flash(design, "w25q128jv", rail_net="VDD_3V3")
+        assert ref is not None
+        for net in ("SPI_SCK", "SPI_MOSI", "SPI_MISO", "SPI_CS"):
+            assert any(n.component_ref == ref for n in design.nets[net].nodes)
+        # WP# and HOLD# are tied to the rail for normal (non-quad) operation
+        rail_pins = {n.pin_name for n in design.nets["VDD_3V3"].nodes if n.component_ref == ref}
+        assert {"WP", "HOLD"} <= rail_pins
 
 
 class TestInstantiateSensor:
@@ -85,3 +116,12 @@ class TestIntegration:
     def test_no_sensor_block_without_a_sensor_intent(self) -> None:
         _design, plan, _log = build_architecture_design(parse_requirements("ESP32-C3 3.3V board, I2C bus"))
         assert not any(b.kind == "peripheral" for b in plan.blocks)
+
+    def test_spi_flash_joins_the_mcu_mastered_bus(self) -> None:
+        design, _plan, _log = build_architecture_design(
+            parse_requirements("ESP32-C3 3.3V board, SPI flash storage")
+        )
+        mcu = next(c for c in design.components.values() if c.type == "mcu")
+        flash = next(c for c in design.components.values() if c.type == "memory")
+        sck = {n.component_ref for n in design.nets["SPI_SCK"].nodes}
+        assert mcu.ref in sck and flash.ref in sck

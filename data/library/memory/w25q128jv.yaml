@@ -1,0 +1,24 @@
+id: "w25q128jv"
+name: "W25Q128JVSIQ"
+category: memory
+manufacturer: "Winbond"
+mpn: "W25Q128JVSIQ"
+description: "128 Mbit (16 MB) SPI/Quad-SPI NOR flash memory"
+datasheet: "https://www.winbond.com/resource-files/w25q128jv_dtr%20revc%2003272018%20plus.pdf"
+package: "SOIC-8"
+footprint: "SOIC-8"
+lifecycle: "active"
+voltage_supply: "3.3"
+pins:
+  CS: {type: "input", description: "Chip select (active low)"}
+  DO: {type: "bidirectional", description: "Data out / IO1 (MISO)"}
+  WP: {type: "input", description: "Write protect / IO2 (active low)"}
+  GND: {type: "power", description: "Ground"}
+  DI: {type: "bidirectional", description: "Data in / IO0 (MOSI)"}
+  CLK: {type: "input", description: "Serial clock"}
+  HOLD: {type: "input", description: "Hold / IO3 (active low)"}
+  VCC: {type: "power", description: "2.7-3.6V supply"}
+properties:
+  interface: ["spi"]
+  capacity_mbit: 128
+  max_clock_mhz: 133

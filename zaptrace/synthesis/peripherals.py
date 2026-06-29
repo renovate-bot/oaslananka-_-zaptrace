@@ -14,7 +14,7 @@ intent with no I2C bus to hang a sensor on, is reported, never faked.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from zaptrace.core.models import Component, Net, NetNode, Pin, PinType
@@ -37,43 +37,44 @@ _SENSOR_RULES: list[tuple[tuple[str, ...], str, str]] = [
 # A bare "sensor" mention with an I2C bus but no specific measurement.
 _DEFAULT_I2C_SENSOR = ("bme280", "environmental")
 
+# Keyword sets -> the SPI peripheral to place. Requires an SPI bus to hang on.
+_STORAGE_RULES: list[tuple[tuple[str, ...], str, str]] = [
+    (("flash", "nor flash", "storage", "spi memory", "datalog", "data log", "logger"), "w25q128jv", "SPI NOR flash"),
+]
+
 _SUPPLY_NAMES = {"VDD", "VCC"}
 _GROUND_NAMES = {"GND", "VSS"}
 _I2C_DATA_NAMES = {"SDA", "SDI"}
 _I2C_CLK_NAMES = {"SCL", "SCK"}
 _I2C_ADDR_NAMES = {"ADDR", "SA0"}  # tie to GND for the default I2C address
+_SPI_CLK_NAMES = {"CLK", "SCK", "SCLK"}
+_SPI_MOSI_NAMES = {"DI", "MOSI", "SI", "IO0"}
+_SPI_MISO_NAMES = {"DO", "MISO", "SO", "IO1"}
+_SPI_CS_NAMES = {"CS", "NCS", "SS"}
+_SPI_HOLD_HIGH_NAMES = {"WP", "HOLD"}  # tie high for normal (non-quad) operation
 
 
 @dataclass(frozen=True)
-class SensorChoice:
-    """A sensor the planner decided to place, and why."""
+class PeripheralChoice:
+    """A peripheral the planner decided to place, and why."""
 
     part_id: str
     function: str
+    bus: str  # "i2c" | "spi"
     realized: bool
     reason: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        return {"part_id": self.part_id, "function": self.function, "realized": self.realized, "reason": self.reason}
-
-
-@dataclass
-class PeripheralResult:
-    """Outcome of peripheral synthesis."""
-
-    sensors: list[SensorChoice] = field(default_factory=list)
-    placed_refs: list[str] = field(default_factory=list)
-    notes: list[str] = field(default_factory=list)
-
-    def to_dict(self) -> dict[str, Any]:
         return {
-            "sensors": [s.to_dict() for s in self.sensors],
-            "placed_refs": self.placed_refs,
-            "notes": self.notes,
+            "part_id": self.part_id,
+            "function": self.function,
+            "bus": self.bus,
+            "realized": self.realized,
+            "reason": self.reason,
         }
 
 
-def plan_sensors(requirements: Requirements) -> list[SensorChoice]:
+def plan_sensors(requirements: Requirements) -> list[PeripheralChoice]:
     """Pick the I2C sensors an intent calls for (deduplicated, deterministic).
 
     Returns an empty list when there is no I2C bus to hang a sensor on, so a
@@ -82,15 +83,29 @@ def plan_sensors(requirements: Requirements) -> list[SensorChoice]:
     if "i2c" not in requirements.interfaces:
         return []
     text = requirements.raw_intent.lower()
-    chosen: list[SensorChoice] = []
+    chosen: list[PeripheralChoice] = []
     seen: set[str] = set()
     for keywords, part_id, function in _SENSOR_RULES:
         if any(kw in text for kw in keywords) and part_id not in seen:
             seen.add(part_id)
-            chosen.append(SensorChoice(part_id=part_id, function=function, realized=_part_exists(part_id)))
+            chosen.append(PeripheralChoice(part_id, function, "i2c", _part_exists(part_id)))
     if not chosen and "sensor" in text:
         part_id, function = _DEFAULT_I2C_SENSOR
-        chosen.append(SensorChoice(part_id=part_id, function=function, realized=_part_exists(part_id)))
+        chosen.append(PeripheralChoice(part_id, function, "i2c", _part_exists(part_id)))
+    return chosen
+
+
+def plan_storage(requirements: Requirements) -> list[PeripheralChoice]:
+    """Pick the SPI storage an intent calls for. Needs an SPI bus to hang on."""
+    if "spi" not in requirements.interfaces:
+        return []
+    text = requirements.raw_intent.lower()
+    chosen: list[PeripheralChoice] = []
+    seen: set[str] = set()
+    for keywords, part_id, function in _STORAGE_RULES:
+        if any(kw in text for kw in keywords) and part_id not in seen:
+            seen.add(part_id)
+            chosen.append(PeripheralChoice(part_id, function, "spi", _part_exists(part_id)))
     return chosen
 
 
@@ -175,22 +190,55 @@ def instantiate_sensor(
     return ref
 
 
-def instantiate_peripherals(
+def instantiate_spi_flash(
     design: Design,
-    requirements: Requirements,
+    part_id: str,
     *,
     rail_net: str,
     gnd_net: str = "GND",
-) -> PeripheralResult:
-    """Place every sensor :func:`plan_sensors` selects and wire it to the I2C bus."""
-    result = PeripheralResult(sensors=plan_sensors(requirements))
-    for choice in result.sensors:
-        if not choice.realized:
-            result.notes.append(f"sensor '{choice.part_id}' ({choice.function}) has no library part")
-            continue
-        ref = instantiate_sensor(design, choice.part_id, rail_net=rail_net, gnd_net=gnd_net)
-        if ref is None:
-            result.notes.append(f"sensor '{choice.part_id}' could not be wired as I2C (missing SDA/SCL/power pins)")
-        else:
-            result.placed_refs.append(ref)
-    return result
+    sck_net: str = "SPI_SCK",
+    mosi_net: str = "SPI_MOSI",
+    miso_net: str = "SPI_MISO",
+    cs_net: str = "SPI_CS",
+) -> str | None:
+    """Place one SPI flash and wire it to the MCU's SPI bus. Returns its ref.
+
+    Clock/data/CS pins (named CLK/DI/DO/CS or SCK/MOSI/MISO/SS across parts) join
+    the SPI bus nets the MCU mastered; write-protect and hold pins are tied high
+    for normal operation; a 100 nF bypass is added on the rail.
+    """
+    spec = LibraryLoader().get(part_id)
+    supply_pin = _find_pin(spec.pins, _SUPPLY_NAMES)
+    ground_pin = _find_pin(spec.pins, _GROUND_NAMES)
+    clk_pin = _find_pin(spec.pins, _SPI_CLK_NAMES)
+    mosi_pin = _find_pin(spec.pins, _SPI_MOSI_NAMES)
+    miso_pin = _find_pin(spec.pins, _SPI_MISO_NAMES)
+    cs_pin = _find_pin(spec.pins, _SPI_CS_NAMES)
+    if not all((supply_pin, ground_pin, clk_pin, mosi_pin, miso_pin, cs_pin)):
+        return None  # not an SPI part we can wire confidently
+
+    ref = _next_ref(design, "U")
+    design.components[ref] = Component(
+        id=ref,
+        ref=ref,
+        type="memory",
+        value=spec.name,
+        mpn=spec.mpn,
+        footprint=spec.footprint,
+        pins={name: Pin(name=name, type=_pin_type(raw)) for name, raw in spec.pins.items()},
+    )
+    _connect(design, rail_net, ref, supply_pin)
+    _connect(design, gnd_net, ref, ground_pin)
+    _connect(design, sck_net, ref, clk_pin)
+    _connect(design, mosi_net, ref, mosi_pin)
+    _connect(design, miso_net, ref, miso_pin)
+    _connect(design, cs_net, ref, cs_pin)
+    for name in spec.pins:
+        if name.upper() in _SPI_HOLD_HIGH_NAMES:
+            _connect(design, rail_net, ref, name)  # WP#/HOLD# tied high
+
+    cap_ref = _next_ref(design, "C")
+    design.components[cap_ref] = Component(id=cap_ref, ref=cap_ref, type="capacitor", value="100nF")
+    _connect(design, rail_net, cap_ref, "1")
+    _connect(design, gnd_net, cap_ref, "2")
+    return ref
