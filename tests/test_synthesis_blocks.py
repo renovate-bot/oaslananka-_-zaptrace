@@ -51,7 +51,7 @@ def test_sync_buck_tlv62569(empty_design: Design) -> None:
 
     comps = [empty_design.components[ref] for ref in block.components]
     types = sorted([c.type for c in comps])
-    assert types == sorted(["ic", "capacitor", "capacitor", "inductor"])
+    assert types == sorted(["regulator", "capacitor", "capacitor", "inductor"])
 
     assert "TLV62569" in [c.value for c in comps]
     assert "2.2uH" in [c.value for c in comps]

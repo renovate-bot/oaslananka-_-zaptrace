@@ -236,20 +236,18 @@ def rule_ERC006(design: Design) -> list[ERCViolation]:
 
 
 def rule_ERC007(design: Design) -> list[ERCViolation]:
-    """Check power nets have at least one driving output."""
+    """Check power nets have at least one driving source.
+
+    A power net is driven if it has an output pin, a regulator/power-source
+    component, or an input connector on it — the same sources ERC027 recognizes,
+    so a rail fed directly by a DC connector is not falsely flagged. Power-sink-
+    only nets (e.g. an MCU VCC with nothing feeding it) are reported.
+    """
     violations: list[ERCViolation] = []
     for net in design.nets.values():
         if net.type != NetType.POWER:
             continue
-        has_output = False
-        for node in net.nodes:
-            comp = design.get_component(node.component_ref)
-            if comp:
-                pin = comp.pins.get(node.pin_name)
-                if pin and pin.type.value == "output":
-                    has_output = True
-                    break
-        if not has_output:
+        if not _power_net_has_source(design, net.id):
             violations.append(
                 ERCViolation(
                     rule_id="ERC007",
@@ -901,6 +899,56 @@ _REGULATOR_TYPE_KEYWORDS = (
     "mcp",
 )
 
+# Magnetics that pass a switching-regulator output to its filter cap / load.
+_INDUCTOR_KEYWORDS = ("inductor", "choke", "ferrite")
+
+
+def _is_power_source_component(comp: Component, pin_name: str) -> bool:
+    """True if *comp* can drive a power net through *pin_name*.
+
+    A driver is an explicit output pin, a regulator/power-source component, or an
+    input connector — the same notions ERC007 and ERC027 share.
+    """
+    pin = comp.pins.get(pin_name)
+    if pin is not None and pin.type.value == "output":
+        return True
+    type_lower = comp.type.lower()
+    if any(kw in type_lower for kw in _REGULATOR_TYPE_KEYWORDS):
+        return True
+    return "connector" in type_lower or "header" in type_lower or "jack" in type_lower
+
+
+def _power_net_has_source(design: Design, net_id: str) -> bool:
+    """Whether a power net is driven by some source.
+
+    Directly: an output pin, regulator, or connector on the net. Indirectly, for
+    a switching-regulator output: through an inductor whose other terminal sits
+    on the regulator's switch node (a net that is itself regulator-driven). The
+    indirect case is why a buck's filtered output rail is not falsely flagged.
+    """
+    net = design.nets.get(net_id)
+    if net is None:
+        return False
+    for node in net.nodes:
+        comp = design.get_component(node.component_ref)
+        if comp is not None and _is_power_source_component(comp, node.pin_name):
+            return True
+    # Buck/boost output: follow an inductor to the regulator's switch node.
+    for node in net.nodes:
+        comp = design.get_component(node.component_ref)
+        if comp is None or not any(kw in comp.type.lower() for kw in _INDUCTOR_KEYWORDS):
+            continue
+        for other in design.nets.values():
+            if other.id == net_id:
+                continue
+            if not any(nn.component_ref == node.component_ref for nn in other.nodes):
+                continue
+            for nn in other.nodes:
+                neighbor = design.get_component(nn.component_ref)
+                if neighbor is not None and any(kw in neighbor.type.lower() for kw in _REGULATOR_TYPE_KEYWORDS):
+                    return True
+    return False
+
 
 def rule_ERC027(design: Design) -> list[ERCViolation]:
     """Check power-tree completeness: every power net needs a source.
@@ -914,9 +962,6 @@ def rule_ERC027(design: Design) -> list[ERCViolation]:
     current. (power-tree completeness.)
     """
     violations: list[ERCViolation] = []
-    from zaptrace.erc.graph import ElectricalGraph  # noqa: PLC0415
-
-    graph = ElectricalGraph.from_design(design)
 
     for net in design.nets.values():
         if net.type == NetType.GROUND:
@@ -924,26 +969,7 @@ def rule_ERC027(design: Design) -> list[ERCViolation]:
         if net.type != NetType.POWER:
             continue
 
-        has_output = False
-        has_regulator = False
-        has_connector_source = False
-
-        for endpoint in graph.endpoints(net.id):
-            comp = design.get_component(endpoint.component_ref)
-            if comp is None:
-                continue
-            pin = comp.pins.get(endpoint.pin_name)
-            if pin is None:
-                continue
-            if pin.type.value == "output":
-                has_output = True
-            type_lower = comp.type.lower()
-            if any(kw in type_lower for kw in _REGULATOR_TYPE_KEYWORDS):
-                has_regulator = True
-            if "connector" in type_lower or "header" in type_lower or "jack" in type_lower:
-                has_connector_source = True
-
-        if not (has_output or has_regulator or has_connector_source):
+        if not _power_net_has_source(design, net.id):
             violations.append(
                 ERCViolation(
                     rule_id="ERC027",

@@ -95,7 +95,7 @@ def instantiate_sync_buck_tlv62569(
     """
     components = []
 
-    u_ref = _add_component(design, "U", "ic", "TLV62569", dnp=dnp, variants=variants, mpn="TLV62569")
+    u_ref = _add_component(design, "U", "regulator", "TLV62569", dnp=dnp, variants=variants, mpn="TLV62569")
     components.append(u_ref)
 
     cin_ref = _add_component(design, "C", "capacitor", cin_val, dnp=dnp, variants=variants)
