@@ -4,9 +4,14 @@
 
 ### Agent tools
 
+- **Simulation gate MCP tool** — `simulation_gate` runs the DC operating-point gate on a stored design and returns a blocking verdict. Rail references are derived from the design's power-rail net names. When ngspice is unavailable the gate is `skipped` (recorded as evidence, never a silent pass); `strict=True` makes a skip blocking. Tool catalog → 82.
 - **Self-correcting synthesis MCP tool** — `synthesize_board_repair` runs the convergent ERC → patch → re-verify loop after synthesis: it assigns standard footprints to fix `ERC020` violations, re-runs ERC each round until a fixed point, and reports both what it patched and what it cannot fix (e.g. single-pin nets needing a real connector). Tool catalog → 81.
 - **Board-level synthesis MCP tools** — `board_plan` composes a justified board block graph (power + interface support) from an intent; `synthesize_board` emits the full board netlist via block composition and stores it in the session; `synthesize_board_and_check` runs ERC on the result in one step. Each regulator block *provides* a rail, each interface support block *requires* one, and unrealized/unmet items are reported instead of silently dropped. Tool catalog → 80.
 - **Requirements & compliance MCP tools** — `requirements_parse` extracts structured machine-readable requirements (rails, current, interfaces, MCU, USB-C, battery) from a design intent; `compliance_checklist` turns those into a product-class compliance pre-check (RoHS/REACH, USB-C, battery, etc.) flagged as evidence-ready, not certified. Tool catalog → 69.
+
+### Analysis / verification
+
+- **DC operating-point simulation gate** — `zaptrace/analysis/sim_gate.py` wraps the SPICE orchestrator as a blocking gate with two disciplines from the design note: an explicit skip (ngspice absent) is recorded as `skipped`, never a silent pass, and in `strict` mode it blocks; a run with no expected voltages is `no_reference`, distinct from a verified `pass`. `expected_rail_voltages()` derives references from the synthesis rail-net convention (`VDD_3V3` → 3.3 V). ngspice is now bundled in the container image so a skip in CI signals an environment fault, not an accepted gap. (Device models for the synthesized ICs are still pending, so rail checks currently skip even with ngspice present.)
 
 ### Synthesis / requirements
 

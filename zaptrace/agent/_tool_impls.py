@@ -1228,6 +1228,23 @@ def tool_synthesize_board_repair(intent: str, session_id: str = "default") -> di
     }
 
 
+def tool_simulation_gate(design_name: str, strict: bool = False, session_id: str = "default") -> dict[str, Any]:
+    """Run the DC operating-point simulation gate on a stored design.
+
+    Returns a blocking verdict. Rail references are derived from the design's
+    power-rail net names. When ngspice is unavailable the gate is `skipped`
+    (recorded as evidence, never a silent pass); with `strict=True` a skip blocks.
+    """
+    from zaptrace.analysis.sim_gate import run_simulation_gate
+
+    session = _get_session(session_id)
+    design = session.get("designs", {}).get(design_name)
+    if design is None:
+        raise ValueError(f"Design '{design_name}' not found")
+    result = run_simulation_gate(design, strict=strict)
+    return {"design": design_name, **result.to_dict()}
+
+
 def tool_compliance_checklist(intent: str) -> dict[str, Any]:
     """Produce a product-class compliance pre-check checklist for a design intent.
 
@@ -2423,6 +2440,16 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "fn": tool_synthesize_board_repair,
         "params": {
             "intent": {"type": "string", "description": "Design intent description"},
+            "session_id": {"type": "string", "description": "Session identifier"},
+        },
+    },
+    "simulation_gate": {
+        "name": "simulation_gate",
+        "description": "Run the DC operating-point simulation gate on a stored design (skip-aware, strict-blocking)",
+        "fn": tool_simulation_gate,
+        "params": {
+            "design_name": {"type": "string", "description": "Design name"},
+            "strict": {"type": "boolean", "description": "Treat a skipped simulation as blocking"},
             "session_id": {"type": "string", "description": "Session identifier"},
         },
     },

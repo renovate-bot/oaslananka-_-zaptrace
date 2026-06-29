@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 81
+> Total tools: 82
 
 ---
 
@@ -642,6 +642,18 @@ Plan a justified power tree (sources, charger, power-path, per-rail regulators) 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `intent` | `string` | Design intent description |
+
+### `simulation_gate`
+
+Run the DC operating-point simulation gate on a stored design (skip-aware, strict-blocking)
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `design_name` | `string` | Design name |
+| `strict` | `boolean` | Treat a skipped simulation as blocking |
+| `session_id` | `string` | Session identifier |
 
 ### `compliance_checklist`
 

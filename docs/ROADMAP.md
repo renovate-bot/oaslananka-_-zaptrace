@@ -32,11 +32,11 @@ closure**, not missing stages. What exists today, characterized honestly:
 | Placement / routing | Constraint-aware placement, grid + net-aware routing, copper pour | Grid router; no push-and-shove, length-match, or controlled-impedance routing in the loop |
 | DRC | 16 geometric rules, fab-profile-aware | Geometry only; not a manufacturability guarantee |
 | Analysis | Deterministic textbook SI timing, thermal, impedance (IPC-2141), DfT, mechanical, EMC pre-check | Estimates, not field solvers or CFD |
-| Simulation | ngspice **DC operating-point**, skip-aware orchestrator | No transient/AC; device models absent; optional, not a gate |
+| Simulation | ngspice **DC operating-point** as a skip-aware **blocking gate** (strict mode blocks a skip), ngspice bundled in the container | No transient/AC; device models still absent, so rail checks on synthesized ICs cannot run yet |
 | Supply | BOM intelligence provider interface; DigiKey/Mouser/TME/Farnell adapters | Fixture-backed, not live API |
 | Export | Gerber, Excellon, BOM, PnP, KiCad, SVG, IPC-2581/ODB++ foundation | KiCad export one-way |
 | Verification evidence | Proof-pack runner + manifest, KiCad Oracle (optional), fab profiles | Proof pack experimental; oracle skippable |
-| Surfaces | Python SDK, CLI, REST API, MCP server (81 tools) | — |
+| Surfaces | Python SDK, CLI, REST API, MCP server (82 tools) | — |
 | Library | ~82 parts | Far short of professional breadth |
 
 The README status table and this section are the source of truth; no claim of

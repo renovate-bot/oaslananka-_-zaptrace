@@ -9,6 +9,10 @@ RUN maturin build --release --out dist --manifest-path zaptrace_core/Cargo.toml
 
 FROM python:3.12-slim
 WORKDIR /app
+# Bundle ngspice so the DC operating-point simulation gate is real in the
+# container/CI: a skipped gate then means an environment fault, not an accepted gap.
+RUN apt-get update && apt-get install -y --no-install-recommends ngspice && \
+    rm -rf /var/lib/apt/lists/*
 COPY --from=builder /build/dist/*.whl /app/dist/
 RUN mkdir -p /workspace && \
     WHEEL="$(find /app/dist -name '*.whl' -print -quit)" && \
