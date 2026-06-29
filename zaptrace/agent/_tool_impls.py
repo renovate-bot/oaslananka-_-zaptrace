@@ -1131,6 +1131,72 @@ def tool_synthesize_and_check(intent: str, session_id: str = "default") -> dict[
     }
 
 
+def tool_board_plan(intent: str) -> dict[str, Any]:
+    """Plan a justified board block graph (power + interface support) from an intent."""
+    from zaptrace.synthesis.architecture import plan_architecture
+    from zaptrace.synthesis.requirements import parse_requirements
+
+    requirements = parse_requirements(intent)
+    return {"intent": intent, "architecture": plan_architecture(requirements).to_dict()}
+
+
+def tool_synthesize_board(intent: str, session_id: str = "default") -> dict[str, Any]:
+    """Emit a real netlist (power + interface blocks) for an intent's board and store it.
+
+    Generalizes power-tree synthesis to the whole board via block composition:
+    each regulator provides a rail, each interface support block requires one,
+    and unrealized/unmet items are reported instead of silently dropped.
+    """
+    from zaptrace.synthesis.architecture import build_architecture_design
+    from zaptrace.synthesis.requirements import parse_requirements
+
+    requirements = parse_requirements(intent)
+    design, plan, log = build_architecture_design(requirements)
+    session = _get_session(session_id)
+    session["designs"][design.meta.name] = design
+    return {
+        "intent": intent,
+        "design_name": design.meta.name,
+        "component_count": len(design.components),
+        "net_count": len(design.nets),
+        "blocks": [b.name for b in design.blocks],
+        "unrealized_blocks": [b.block_id for b in plan.unrealized_blocks],
+        "unmet_requirements": [{"block_id": u.block_id, "token": u.token} for u in plan.unmet],
+        "decisions": log.to_dicts(),
+        "method": "block_composition_synthesis",
+    }
+
+
+def tool_synthesize_board_and_check(intent: str, session_id: str = "default") -> dict[str, Any]:
+    """Synthesize an intent's full board into a netlist and run ERC on it in one step.
+
+    Closes the intent -> block graph -> netlist -> verification loop for the whole
+    board, not just the power tree.
+    """
+    synth = tool_synthesize_board(intent, session_id=session_id)
+    session = _get_session(session_id)
+    design = session["designs"][synth["design_name"]]
+    result = ERCRunner().run(design)
+    session["erc_results"] = {**session.get("erc_results", {}), synth["design_name"]: result}
+    return {
+        "intent": intent,
+        "design_name": synth["design_name"],
+        "component_count": synth["component_count"],
+        "net_count": synth["net_count"],
+        "blocks": synth["blocks"],
+        "unrealized_blocks": synth["unrealized_blocks"],
+        "unmet_requirements": synth["unmet_requirements"],
+        "erc": {
+            "passed": result.passed,
+            "total_errors": result.total_errors,
+            "total_warnings": result.total_warnings,
+            "violations": [
+                {"rule_id": v.rule_id, "severity": v.severity.value, "message": v.message} for v in result.violations
+            ],
+        },
+    }
+
+
 def tool_compliance_checklist(intent: str) -> dict[str, Any]:
     """Produce a product-class compliance pre-check checklist for a design intent.
 
@@ -2289,6 +2355,32 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "name": "synthesize_and_check",
         "description": "Synthesize an intent's power tree into a netlist and run ERC on it in one step",
         "fn": tool_synthesize_and_check,
+        "params": {
+            "intent": {"type": "string", "description": "Design intent description"},
+            "session_id": {"type": "string", "description": "Session identifier"},
+        },
+    },
+    "board_plan": {
+        "name": "board_plan",
+        "description": "Plan a justified board block graph (power + interface support) from an intent",
+        "fn": tool_board_plan,
+        "params": {
+            "intent": {"type": "string", "description": "Design intent description"},
+        },
+    },
+    "synthesize_board": {
+        "name": "synthesize_board",
+        "description": "Emit a real netlist for an intent's whole board via block composition and store it",
+        "fn": tool_synthesize_board,
+        "params": {
+            "intent": {"type": "string", "description": "Design intent description"},
+            "session_id": {"type": "string", "description": "Session identifier"},
+        },
+    },
+    "synthesize_board_and_check": {
+        "name": "synthesize_board_and_check",
+        "description": "Synthesize an intent's whole board into a netlist and run ERC on it in one step",
+        "fn": tool_synthesize_board_and_check,
         "params": {
             "intent": {"type": "string", "description": "Design intent description"},
             "session_id": {"type": "string", "description": "Session identifier"},

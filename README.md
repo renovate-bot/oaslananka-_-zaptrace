@@ -29,7 +29,7 @@ No EDA dependency required, excellent EDA interoperability.
 
 - **A Python SDK** for programmatic electronics design — parse, validate, place, route, export.
 - **A CLI** (`zaptrace`) for quick design iteration from the terminal.
-- **An MCP server** (`zaptrace-mcp`) that exposes 77 agent-facing tools to AI agents.
+- **An MCP server** (`zaptrace-mcp`) that exposes 80 agent-facing tools to AI agents.
 - **A REST API** for web-based design workflows.
 - **A verification engine** — Electrical Rule Checking (ERC) + Design Rule Checking (DRC) baked in.
 - **A manufacturing export pipeline** — Gerber RS-274X, Excellon drill, BOM, pick-and-place, KiCad.
@@ -69,7 +69,7 @@ No EDA dependency required, excellent EDA interoperability.
 | KiCad schematic export | ✅ Implemented |
 | SVG schematic rendering | ✅ Implemented |
 | Manufacturing ZIP bundle | ✅ Implemented |
-| MCP server (77 tools) | ✅ Implemented |
+| MCP server (80 tools) | ✅ Implemented |
 | Power-tree architecture planner + netlist emit | ✅ Implemented |
 | REST API server | ✅ Implemented |
 | Design diff | ✅ Implemented |

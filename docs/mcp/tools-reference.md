@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 77
+> Total tools: 80
 
 ---
 
@@ -22,6 +22,16 @@ Update board configuration parameters
 | `width_mm` | `number` | Board width in mm |
 | `height_mm` | `number` | Board height in mm |
 | `layers` | `integer` | Number of copper layers |
+
+### `board_plan`
+
+Plan a justified board block graph (power + interface support) from an intent
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `intent` | `string` | Design intent description |
 
 ### `board_classify_nets`
 
@@ -926,6 +936,28 @@ Emit a real netlist (USB-C CC, regulators, I2C pull-ups) for an intent's power t
 ### `synthesize_and_check`
 
 Synthesize an intent's power tree into a netlist and run ERC on it in one step
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `intent` | `string` | Design intent description |
+| `session_id` | `string` | Session identifier |
+
+### `synthesize_board`
+
+Emit a real netlist for an intent's whole board via block composition and store it
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `intent` | `string` | Design intent description |
+| `session_id` | `string` | Session identifier |
+
+### `synthesize_board_and_check`
+
+Synthesize an intent's whole board into a netlist and run ERC on it in one step
 
 **Parameters:**
 
