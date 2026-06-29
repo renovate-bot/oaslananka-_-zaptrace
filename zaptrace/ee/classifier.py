@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 
-from zaptrace.core.models import Component, Design, NetClass
+from zaptrace.core.models import Component, Design, NetClass, NetType
 
 # ---------------------------------------------------------------------------
 # Name-based pattern scoring
@@ -58,7 +58,7 @@ _NAME_RULES: list[tuple[str, NetClass, str]] = [
     (r"^(TX|RX|RTS|CTS|TXD|RXD)$", NetClass.SIGNAL_LOW, "uart_pins"),
     (r"_TX$|_RX$", NetClass.SIGNAL_LOW, "uart_suffix"),
     # Power rails — voltage-prefixed vs named
-    (r"^(VCC|VDD|VDDIO|VBAT|VUSB|VIN|VOUT|VDD_|VCC_)", NetClass.POWER_MED, "power_rail"),
+    (r"^(VCC|VDD|VDDIO|VBAT|VBUS|VUSB|VIN|VOUT|VDD_|VCC_)", NetClass.POWER_MED, "power_rail"),
     (r"^(3V3|3\.3V|1V8|1\.8V|2V5|2\.5V|5V|12V)", NetClass.POWER_MED, "voltage_power"),
     (r"^(VREF|VREFP|VREFN)", NetClass.POWER_LOW, "reference_voltage"),
     (r"_VDD$|_VCC$|_VIN$", NetClass.POWER_MED, "power_suffix"),
@@ -252,6 +252,55 @@ def get_net_class(design: Design, net_id: str) -> NetClass:
     # classify_design always sets design.net_classes
     assert design.net_classes is not None
     return design.net_classes.get(net_id, NetClass.SIGNAL_LOW)
+
+
+# ---------------------------------------------------------------------------
+# Coarse NetType (ground / power / signal) from the same name rules
+# ---------------------------------------------------------------------------
+
+# The fine-grained NetClass drives routing; the coarse NetType on each Net is
+# what type-driven consumers read (ERC, DC-bias, SPICE export, test-point
+# insertion). Deriving one from the other keeps the two from ever disagreeing.
+_NETCLASS_TO_NETTYPE: dict[NetClass, NetType] = {
+    NetClass.GROUND: NetType.GROUND,
+    NetClass.POWER_LOW: NetType.POWER,
+    NetClass.POWER_MED: NetType.POWER,
+    NetClass.POWER_HIGH: NetType.POWER,
+}
+
+
+def classify_net_type(net_name: str) -> NetType:
+    """Classify a net's coarse :class:`NetType` from its name.
+
+    Reuses the name-based :class:`NetClass` rules so ground and power rails are
+    recognized identically to the routing classifier; everything else is
+    :attr:`NetType.SIGNAL`.
+    """
+    name = net_name.strip()
+    net_class = _classify_by_name(name)
+    if net_class is None:
+        # Fall back to the voltage heuristic only when the name *itself* is a
+        # voltage rail (starts with the voltage token, e.g. "24V", "48V_BUS").
+        # A signal that merely embeds a rail name (EN_VDD_3V3, SW_5V, FB_3V3) is
+        # not a power net — anchoring the match keeps those classified as signal.
+        if _VOLTAGE_PATTERN.match(name) and _classify_power_by_voltage(name) is not None:
+            return NetType.POWER
+        return NetType.SIGNAL
+    return _NETCLASS_TO_NETTYPE.get(net_class, NetType.SIGNAL)
+
+
+def assign_net_types(design: Design) -> Design:
+    """Set every net's coarse :class:`NetType` from its name, in place.
+
+    Synthesis emits all nets with the default :attr:`NetType.SIGNAL`; this fixes
+    ground and power rails so type-driven consumers see them correctly. Only the
+    default type is refined — a net already given a more specific type (e.g.
+    ``CLOCK``, ``ANALOG``) is left untouched. Name-based and idempotent.
+    """
+    for net in design.nets.values():
+        if net.type == NetType.SIGNAL:
+            net.type = classify_net_type(net.name)
+    return design
 
 
 def summarize_classification(design: Design) -> dict[str, list[str]]:

@@ -490,4 +490,11 @@ def build_architecture_design(
             else:
                 log.record("note", block.block_id, f"{part_id} not wired as {bus.upper()}", confidence=0.0)
 
+    # Classify every emitted net's coarse type (ground/power/signal) from its
+    # name, so type-driven consumers (ERC, DC-bias, SPICE export, test points)
+    # see the real rails instead of the uniform default SIGNAL.
+    from zaptrace.ee.classifier import assign_net_types
+
+    assign_net_types(design)
+
     return design, plan, log
