@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from zaptrace.synthesis.mcu import has_mcu_part
+from zaptrace.synthesis.peripherals import plan_sensors
 from zaptrace.synthesis.power_tree import _rail_net, plan_power_tree
 
 if TYPE_CHECKING:
@@ -266,6 +267,24 @@ def plan_architecture(requirements: Requirements) -> ArchitecturePlan:
         if not realized:
             plan.notes.append(f"MCU family '{requirements.mcu}' has no library part yet")
 
+    # --- Peripherals: the sensors the intent asks for, on the I2C bus. -------
+    for sensor in plan_sensors(requirements):
+        plan.blocks.append(
+            PlannedBlock(
+                block_id=f"SENS_{sensor.part_id.upper().replace('-', '_')}",
+                kind="peripheral",
+                rationale=f"{sensor.function} sensor ({sensor.part_id}) on the I2C bus",
+                contract=BlockContract(
+                    provides=(f"sensor:{sensor.function}",),
+                    requires=(f"rail:{logic_rail}", "net:GND", "iface:i2c"),
+                ),
+                realized=sensor.realized,
+                params={"part_id": sensor.part_id},
+            )
+        )
+        if not sensor.realized:
+            plan.notes.append(f"sensor '{sensor.part_id}' ({sensor.function}) has no library part")
+
     _check_composition(plan)
     return plan
 
@@ -401,5 +420,15 @@ def build_architecture_design(
                     f"{iface} not wired (no support net / no spare GPIO)",
                     confidence=0.0,
                 )
+
+        elif block.kind == "peripheral":
+            from zaptrace.synthesis.peripherals import instantiate_sensor
+
+            part_id = block.params["part_id"]
+            ref = instantiate_sensor(design, part_id, rail_net=logic_rail)
+            if ref is not None:
+                log.record("topology", block.block_id, f"{part_id} on I2C bus", rationale=block.rationale)
+            else:
+                log.record("note", block.block_id, f"{part_id} not wired as I2C", confidence=0.0)
 
     return design, plan, log

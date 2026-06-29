@@ -52,7 +52,8 @@ class TestResolution:
 
 class TestEndToEnd:
     def test_synthesized_board_gets_geometry_except_module(self) -> None:
-        out = synthesize_and_repair("ESP32-C3 USB-C 3.3V board, I2C sensor, RS485 modbus")
+        # No I2C sensor here, so the only custom-package part is the MCU module.
+        out = synthesize_and_repair("ESP32-C3 USB-C 3.3V board, RS485 modbus")
         design, footprints = out["design"], out["footprints"]
         with_geometry = [c for c in design.components.values() if c.footprint_def and c.footprint_def.pads]
         # Every passive/IC resolves; only the MCU module is the honest gap.
