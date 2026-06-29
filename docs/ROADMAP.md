@@ -27,7 +27,7 @@ closure**, not missing stages. What exists today, characterized honestly:
 | Stage | What is real today | Honest limitation |
 |-------|--------------------|-------------------|
 | Intent → requirements | Structured requirements extraction, assumption register, conflict detector, freeze gate | Heuristic NL parsing; not a planner |
-| Synthesis | **Template selection** + block-composition synthesis (power + interface support with provides/requires contracts), parametric blocks, calculator library | Composition covers power and common interface support; transceiver/RF/signal-chain blocks still deferred |
+| Synthesis | **Template selection** + block-composition synthesis (power + interface support + **functional core**: a real MCU placed and pin-wired to the interfaces), provides/requires contracts, calculator library | MCU power+I2C/RS-485/CAN wiring only; SPI/UART peripherals, sensors, RF, and signal-chain blocks still deferred; footprints are names, not yet IPC-7351 geometry |
 | ERC | 29 connectivity-precise rules over an electrical graph, coverage reporting | Rules catch known faults only; no functional/timing proof |
 | Placement / routing | Constraint-aware placement, grid + net-aware routing, copper pour | Grid router; no push-and-shove, length-match, or controlled-impedance routing in the loop |
 | DRC | 16 geometric rules, fab-profile-aware | Geometry only; not a manufacturability guarantee |

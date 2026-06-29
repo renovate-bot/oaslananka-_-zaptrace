@@ -22,6 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from zaptrace.synthesis.mcu import has_mcu_part
 from zaptrace.synthesis.power_tree import _rail_net, plan_power_tree
 
 if TYPE_CHECKING:
@@ -248,6 +249,23 @@ def plan_architecture(requirements: Requirements) -> ArchitecturePlan:
             )
         )
 
+    # --- Functional core: the MCU, wired to the rail and the interfaces. -----
+    # Appended last so it emits after the support nets it connects to exist.
+    if requirements.mcu:
+        realized = has_mcu_part(requirements.mcu)
+        plan.blocks.append(
+            PlannedBlock(
+                block_id="CORE_MCU",
+                kind="mcu",
+                rationale=f"{requirements.mcu} is the functional core; drives the board's interfaces",
+                contract=BlockContract(provides=("core",), requires=(f"rail:{logic_rail}", "net:GND")),
+                realized=realized,
+                params={"family": requirements.mcu},
+            )
+        )
+        if not realized:
+            plan.notes.append(f"MCU family '{requirements.mcu}' has no library part yet")
+
     _check_composition(plan)
     return plan
 
@@ -365,5 +383,23 @@ def build_architecture_design(
                 log.record("topology", block.block_id, "CAN transceiver (SN65HVD230)", rationale=block.rationale)
             else:  # support == "none" (SPI/UART): no components, recorded for scope
                 log.record("note", block.block_id, "no support block required", rationale=block.rationale)
+
+        elif block.kind == "mcu":
+            from zaptrace.synthesis.mcu import instantiate_mcu
+
+            result = instantiate_mcu(design, block.params["family"], requirements.interfaces, rail_net=logic_rail)
+            log.record(
+                "topology",
+                block.block_id,
+                f"{result.part_id} core, {len(result.assignments)} pins wired",
+                rationale=block.rationale,
+            )
+            for iface in result.unconnected_interfaces:
+                log.record(
+                    "note",
+                    block.block_id,
+                    f"{iface} not wired (no support net / no spare GPIO)",
+                    confidence=0.0,
+                )
 
     return design, plan, log
