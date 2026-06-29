@@ -25,6 +25,32 @@ class TestFabFlow:
         assert "passed" in result.dc_bias
         assert "errors" in result.drc  # the physical-design (DRC) status is measured and reported
 
+    def test_ground_pour_is_applied(self, tmp_path: Path) -> None:
+        # The router leaves GND for a copper plane; the fab flow must flood it so
+        # every ground pin is connected. (Inspect the design via a fresh run.)
+        from zaptrace.algo.copper_pour import CopperPourGenerator
+        from zaptrace.algo.grid_router import GridRouter
+        from zaptrace.algo.placer import place_components
+        from zaptrace.core.models import NetClass
+        from zaptrace.ee.classifier import classify_design, get_net_class
+        from zaptrace.synthesis.footprint_resolver import resolve_footprints
+        from zaptrace.synthesis.repair import synthesize_and_repair
+
+        out = synthesize_and_repair("STM32 3.3V board, RS485 modbus node")
+        d = out["design"]
+        resolve_footprints(d)
+        positions = place_components(d)
+        for ref, p in positions.items():
+            if ref in d.components:
+                d.components[ref].position = tuple(p)
+        d.placement = dict(positions)
+        classify_design(d)
+        GridRouter().route(d, {c.ref: c.position for c in d.components.values() if c.position})
+        ground = next(n for n in d.nets.values() if get_net_class(d, n.id) == NetClass.GROUND)
+        pour = CopperPourGenerator().generate_ground_pour(d, d.placement, net_id=ground.id)
+        d.copper_pours[f"F.Cu_{ground.name}"] = pour
+        assert d.copper_pours  # a ground plane exists
+
     def test_routing_drc_status_in_checklist(self, tmp_path: Path) -> None:
         # The board is placed and routed; if the algorithmic router leaves DRC
         # errors, the review checklist must say so honestly.

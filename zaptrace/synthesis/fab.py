@@ -86,11 +86,13 @@ def _review_checklist(
 
 def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: str = "SynthesizedBoard") -> FabResult:
     """Synthesize a board from intent and emit a manufacturing bundle plus evidence."""
+    from zaptrace.algo.copper_pour import CopperPourGenerator
     from zaptrace.algo.grid_router import GridRouter
     from zaptrace.algo.placer import place_components
     from zaptrace.algo.router import route_design_smart
     from zaptrace.analysis.dc_bias import resolve_dc_bias
-    from zaptrace.ee.classifier import classify_design
+    from zaptrace.core.models import NetClass
+    from zaptrace.ee.classifier import classify_design, get_net_class
     from zaptrace.ee.drc.engine import DRCEngine
     from zaptrace.export.manufacturing import generate_manufacturing_bundle
     from zaptrace.synthesis.repair import synthesize_and_repair
@@ -113,6 +115,14 @@ def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: st
         design.routing = grid_result
     else:
         _, design.routing = route_design_smart(design, placement)
+
+    # Flood the ground net as a copper pour (the router leaves GND for the plane),
+    # so every ground pin is connected through the fill. Identify it by net class
+    # (what the router uses), not the raw type field.
+    ground = next((n for n in design.nets.values() if get_net_class(design, n.id) == NetClass.GROUND), None)
+    if ground is not None:
+        pour = CopperPourGenerator().generate_ground_pour(design, placement, layer="F.Cu", net_id=ground.id)
+        design.copper_pours[f"F.Cu_{ground.name}"] = pour
 
     drc = DRCEngine().run(design)
 
