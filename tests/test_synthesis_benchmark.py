@@ -25,9 +25,7 @@ class TestBenchmark:
         assert report.worst_case in {c.name for c in report.cases}
         # the worst case has the lowest score
         assert report.cases  # non-empty
-        assert min(c.score for c in report.cases) == next(
-            c.score for c in report.cases if c.name == report.worst_case
-        )
+        assert min(c.score for c in report.cases) == next(c.score for c in report.cases if c.name == report.worst_case)
 
     def test_custom_corpus(self) -> None:
         report = run_benchmark((BenchmarkCase("one", "ESP32-C3 3.3V board, I2C sensor"),))

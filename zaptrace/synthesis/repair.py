@@ -200,9 +200,7 @@ def _repair_floating_enable(design: Design, violations: list[ERCViolation]) -> l
             if not net_id.upper().startswith("EN_"):
                 continue  # only regulator-enable nets; everything else escalates
             ref = _next_ref(design, "R")
-            design.components[ref] = Component(
-                id=ref, ref=ref, type="resistor", value="100k", footprint="0402"
-            )
+            design.components[ref] = Component(id=ref, ref=ref, type="resistor", value="100k", footprint="0402")
             net.nodes.append(NetNode(component_ref=ref, pin_name="2"))
             design.nets.setdefault(input_net, Net(id=input_net, name=input_net)).nodes.append(
                 NetNode(component_ref=ref, pin_name="1")

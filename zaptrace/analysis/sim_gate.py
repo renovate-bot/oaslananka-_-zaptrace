@@ -113,9 +113,7 @@ def run_simulation_gate(
         timeout_s=timeout_s,
     )
     has_checks = any(check.passed is not None for check in orchestration.checks)
-    status, blocking, reason = _gate_verdict(
-        orchestration.status, orchestration.all_checks_passed, has_checks, strict
-    )
+    status, blocking, reason = _gate_verdict(orchestration.status, orchestration.all_checks_passed, has_checks, strict)
     return SimulationGateResult(
         status=status,
         blocking=blocking,

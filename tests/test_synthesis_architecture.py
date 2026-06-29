@@ -108,8 +108,6 @@ class TestSerialization:
         assert all({"block_id", "provides", "requires", "realized"} <= set(b) for b in data["blocks"])
 
     def test_block_contract_defaults_are_empty(self) -> None:
-        block = PlannedBlock(
-            block_id="X", kind="interface", rationale="r", contract=BlockContract(), realized=True
-        )
+        block = PlannedBlock(block_id="X", kind="interface", rationale="r", contract=BlockContract(), realized=True)
         assert block.contract.provides == ()
         assert block.contract.requires == ()

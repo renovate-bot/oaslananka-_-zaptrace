@@ -163,7 +163,7 @@ def instantiate_sensor(
     ground_pin = _find_pin(spec.pins, _GROUND_NAMES)
     data_pin = _find_pin(spec.pins, _I2C_DATA_NAMES)
     clock_pin = _find_pin(spec.pins, _I2C_CLK_NAMES)
-    if not all((supply_pin, ground_pin, data_pin, clock_pin)):
+    if supply_pin is None or ground_pin is None or data_pin is None or clock_pin is None:
         return None  # not an I2C part we can wire confidently
 
     ref = _next_ref(design, "U")
@@ -219,7 +219,14 @@ def instantiate_spi_flash(
     mosi_pin = _find_pin(spec.pins, _SPI_MOSI_NAMES)
     miso_pin = _find_pin(spec.pins, _SPI_MISO_NAMES)
     cs_pin = _find_pin(spec.pins, _SPI_CS_NAMES)
-    if not all((supply_pin, ground_pin, clk_pin, mosi_pin, miso_pin, cs_pin)):
+    if (
+        supply_pin is None
+        or ground_pin is None
+        or clk_pin is None
+        or mosi_pin is None
+        or miso_pin is None
+        or cs_pin is None
+    ):
         return None  # not an SPI part we can wire confidently
 
     ref = _next_ref(design, "U")

@@ -322,7 +322,7 @@ _GLOBAL_NETS = ("net:GND",)
 
 def _check_composition(plan: ArchitecturePlan) -> None:
     """Flag any ``requires`` token not satisfied by some block's ``provides``."""
-    provided = set(_GLOBAL_NETS)
+    provided: set[str] = set(_GLOBAL_NETS)
     for block in plan.blocks:
         provided.update(block.contract.provides)
     for block in plan.blocks:

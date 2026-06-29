@@ -1317,9 +1317,7 @@ def tool_synthesize_board_score(intent: str, session_id: str = "default") -> dic
     }
 
 
-def tool_synthesize_board_manufacture(
-    intent: str, output_dir: str, session_id: str = "default"
-) -> dict[str, Any]:
+def tool_synthesize_board_manufacture(intent: str, output_dir: str, session_id: str = "default") -> dict[str, Any]:
     """Synthesize a board from intent and emit a full manufacturing bundle + evidence.
 
     Runs the whole chain — block composition, functional core, peripherals, repair,

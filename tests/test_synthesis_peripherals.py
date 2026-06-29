@@ -96,8 +96,7 @@ class TestInstantiateSensor:
         design = self._bus()
         ref = instantiate_sensor(design, "sht31-dis", rail_net="VDD_3V3")
         reset_on_rail = any(
-            n.component_ref == ref and n.pin_name.upper() in {"NRESET", "NRST"}
-            for n in design.nets["VDD_3V3"].nodes
+            n.component_ref == ref and n.pin_name.upper() in {"NRESET", "NRST"} for n in design.nets["VDD_3V3"].nodes
         )
         assert reset_on_rail
 
@@ -136,9 +135,7 @@ class TestIntegration:
         assert out["repair"].fully_clean
 
     def test_spi_flash_joins_the_mcu_mastered_bus(self) -> None:
-        design, _plan, _log = build_architecture_design(
-            parse_requirements("ESP32-C3 3.3V board, SPI flash storage")
-        )
+        design, _plan, _log = build_architecture_design(parse_requirements("ESP32-C3 3.3V board, SPI flash storage"))
         mcu = next(c for c in design.components.values() if c.type == "mcu")
         flash = next(c for c in design.components.values() if c.type == "memory")
         sck = {n.component_ref for n in design.nets["SPI_SCK"].nodes}
