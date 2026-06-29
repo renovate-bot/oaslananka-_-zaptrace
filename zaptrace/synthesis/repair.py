@@ -157,10 +157,75 @@ def _repair_missing_footprint(design: Design, violations: list[ERCViolation]) ->
     return patches
 
 
+# Board input nets in priority order: a regulator's enable ties to whichever
+# input the board actually has.
+_INPUT_NET_PRIORITY = ("VBUS", "VBAT", "VIN")
+
+
+def _board_input_net(design: Design) -> str | None:
+    for name in _INPUT_NET_PRIORITY:
+        if name in design.nets:
+            return name
+    return None
+
+
+def _next_ref(design: Design, prefix: str) -> str:
+    idx = 1
+    while f"{prefix}{idx}" in design.components:
+        idx += 1
+    return f"{prefix}{idx}"
+
+
+def _repair_floating_enable(design: Design, violations: list[ERCViolation]) -> list[Patch]:
+    """ERC012 handler: tie a floating regulator-enable net high with a pull-up.
+
+    Only acts on nets following the synthesis enable convention (``EN_<rail>``): a
+    floating enable means the regulator would never turn on. Adds a 100 kΩ pull-up
+    to the board input so the rail is enabled by default. All other single-pin
+    nets (data lines, connector pins, feedback) are left for a human — this never
+    invents a connection it cannot justify.
+    """
+    from zaptrace.core.models import Component, Net, NetNode
+
+    input_net = _board_input_net(design)
+    if input_net is None:
+        return []
+
+    patches: list[Patch] = []
+    for violation in violations:
+        for net_id in violation.net_refs:
+            net = design.nets.get(net_id)
+            if net is None or len(net.nodes) >= 2:
+                continue
+            if not net_id.upper().startswith("EN_"):
+                continue  # only regulator-enable nets; everything else escalates
+            ref = _next_ref(design, "R")
+            design.components[ref] = Component(
+                id=ref, ref=ref, type="resistor", value="100k", footprint="0402"
+            )
+            net.nodes.append(NetNode(component_ref=ref, pin_name="2"))
+            design.nets.setdefault(input_net, Net(id=input_net, name=input_net)).nodes.append(
+                NetNode(component_ref=ref, pin_name="1")
+            )
+            patches.append(
+                Patch(
+                    rule_id="ERC012",
+                    component_ref=ref,
+                    field="net",
+                    old_value="",
+                    new_value=f"100k pull-up {net_id} -> {input_net}",
+                    rationale=f"tie floating enable {net_id} high to {input_net} (always-on)",
+                    confidence=0.8,
+                )
+            )
+    return patches
+
+
 # rule_id -> handler. Each handler mutates the design in place and returns the
 # patches it made. A rule with no handler is, by definition, escalated.
 _HANDLERS: dict[str, Callable[[Design, list[ERCViolation]], list[Patch]]] = {
     "ERC020": _repair_missing_footprint,
+    "ERC012": _repair_floating_enable,
 }
 
 
@@ -170,6 +235,7 @@ def _violation_dict(violation: ERCViolation) -> dict[str, Any]:
         "severity": violation.severity.value,
         "message": violation.message,
         "component_refs": list(violation.component_refs),
+        "net_refs": list(violation.net_refs),
     }
 
 

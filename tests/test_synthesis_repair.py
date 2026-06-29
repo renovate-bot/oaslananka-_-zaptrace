@@ -90,6 +90,29 @@ class TestLoopBehaviour:
         assert isinstance(result, RepairResult)
 
 
+class TestEnableTieRepair:
+    def test_floating_buck_enable_is_tied_high(self) -> None:
+        out = synthesize_and_repair("industrial board, 12V input, 3.3V rail at 1A")
+        design, repair = out["design"], out["repair"]
+        enable_nets = [n for n in design.nets if n.upper().startswith("EN_")]
+        assert enable_nets  # a buck was synthesized, so it has an enable net
+        for net_id in enable_nets:
+            assert len(design.nets[net_id].nodes) >= 2  # no longer floating
+        assert any(p.rule_id == "ERC012" and "pull-up" in p.new_value for p in repair.patches)
+
+    def test_non_enable_single_pin_net_is_left_for_human(self) -> None:
+        # A USB-C CC net is single-pin too, but must NOT be auto-tied to anything.
+        out = synthesize_and_repair("USB-C powered board, 3.3V rail")
+        design, repair = out["design"], out["repair"]
+        assert len(design.nets["CC1"].nodes) == 1
+        assert any(v["rule_id"] == "ERC012" and "CC1" in v["net_refs"] for v in repair.remaining)
+
+    def test_enable_tie_is_marked_a_default_choice(self) -> None:
+        out = synthesize_and_repair("industrial board, 12V input, 3.3V rail at 1A")
+        en_patch = next(p for p in out["repair"].patches if p.rule_id == "ERC012")
+        assert en_patch.confidence < 1.0  # always-on default, a human may want sequencing
+
+
 class TestSynthesizeAndRepair:
     def test_converges_and_escalates_single_pin_nets(self) -> None:
         out = synthesize_and_repair("industrial board, 12V input, 3.3V rail at 1A, I2C, ethernet")
