@@ -82,7 +82,9 @@ def orchestrate_spice(
         When ngspice is not installed, ``status="skipped"`` is returned and
         no checks are run — the result is still recordable as evidence.
     """
-    netlist = export_spice_netlist(design)
+    from zaptrace.analysis.dc_bias import behavioral_source_cards
+
+    netlist = export_spice_netlist(design, extra_cards=behavioral_source_cards(design))
     lines = netlist.count("\n")
     skipped_count = sum(1 for line in netlist.splitlines() if line.startswith("* Unsupported:"))
 

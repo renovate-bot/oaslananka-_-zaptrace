@@ -1247,6 +1247,21 @@ def tool_resolve_footprints(design_name: str, session_id: str = "default") -> di
     return {"design": design_name, **resolution.to_dict()}
 
 
+def tool_dc_bias_check(design_name: str, session_id: str = "default") -> dict[str, Any]:
+    """Check power-rail bias on a stored design (always available, no ngspice).
+
+    Assigns each power net its nominal DC voltage and flags any rail that loads
+    depend on but no regulator drives (a floating-rail bug ERC cannot catch).
+    """
+    from zaptrace.analysis.dc_bias import resolve_dc_bias
+
+    session = _get_session(session_id)
+    design = session.get("designs", {}).get(design_name)
+    if design is None:
+        raise ValueError(f"Design '{design_name}' not found")
+    return {"design": design_name, **resolve_dc_bias(design).to_dict()}
+
+
 def tool_simulation_gate(design_name: str, strict: bool = False, session_id: str = "default") -> dict[str, Any]:
     """Run the DC operating-point simulation gate on a stored design.
 
@@ -1273,6 +1288,7 @@ def tool_synthesize_board_score(intent: str, session_id: str = "default") -> dic
     dimensions. The score tracks how finished the *automated* steps are — it is
     not a correctness or safety claim; human review still applies.
     """
+    from zaptrace.analysis.dc_bias import resolve_dc_bias
     from zaptrace.synthesis.repair import synthesize_and_repair
     from zaptrace.synthesis.scorecard import score_board
 
@@ -1280,7 +1296,7 @@ def tool_synthesize_board_score(intent: str, session_id: str = "default") -> dic
     design = out["design"]
     session = _get_session(session_id)
     session["designs"][design.meta.name] = design
-    card = score_board(design, out["plan"], out["repair"], out["footprints"])
+    card = score_board(design, out["plan"], out["repair"], out["footprints"], resolve_dc_bias(design))
     return {
         "intent": intent,
         "design_name": design.meta.name,
@@ -2500,6 +2516,15 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "name": "resolve_footprints",
         "description": "Attach real IPC-7351 pad geometry to a stored design's components (reports gaps)",
         "fn": tool_resolve_footprints,
+        "params": {
+            "design_name": {"type": "string", "description": "Design name"},
+            "session_id": {"type": "string", "description": "Session identifier"},
+        },
+    },
+    "dc_bias_check": {
+        "name": "dc_bias_check",
+        "description": "Check power-rail DC bias on a stored design and flag undriven rails (always available)",
+        "fn": tool_dc_bias_check,
         "params": {
             "design_name": {"type": "string", "description": "Design name"},
             "session_id": {"type": "string", "description": "Session identifier"},

@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from zaptrace.analysis.dc_bias import DcBiasResult
     from zaptrace.core.models import Design
     from zaptrace.synthesis.architecture import ArchitecturePlan
     from zaptrace.synthesis.footprint_resolver import FootprintResolution
@@ -107,9 +108,14 @@ def _composition(plan: ArchitecturePlan) -> Dimension:
     return Dimension("composition", score, _status(score), detail)
 
 
-def _electrical(repair: RepairResult) -> Dimension:
+def _electrical(repair: RepairResult, dc_bias: DcBiasResult | None) -> Dimension:
+    # A floating rail (loads depend on it, no regulator drives it) is a hard
+    # defect that outranks ERC convergence.
+    if dc_bias is not None and dc_bias.undriven_rails:
+        rails = ", ".join(dc_bias.undriven_rails)
+        return Dimension("electrical", 0.2, "fail", f"undriven rail(s): {rails}")
     if repair.fully_clean:
-        return Dimension("electrical", 1.0, "pass", "ERC converged clean")
+        return Dimension("electrical", 1.0, "pass", "ERC converged clean, rails driven")
     if repair.converged:
         return Dimension(
             "electrical", 0.6, "partial", f"converged with {len(repair.remaining)} violation(s) for review"
@@ -132,12 +138,13 @@ def score_board(
     plan: ArchitecturePlan,
     repair: RepairResult,
     footprints: FootprintResolution,
+    dc_bias: DcBiasResult | None = None,
 ) -> BoardScorecard:
     """Score a synthesized board's completeness from its synthesis artifacts."""
     dims = [
         _functional_core(design, plan),
         _composition(plan),
-        _electrical(repair),
+        _electrical(repair, dc_bias),
         _manufacturability(design, footprints),
     ]
     by_key = {

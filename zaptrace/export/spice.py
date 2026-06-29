@@ -121,12 +121,20 @@ def _diode_terminals(comp: Component) -> tuple[str, str] | None:
 # ---------------------------------------------------------------------------
 
 
-def export_spice_netlist(design: Design, *, title: str | None = None) -> str:
+def export_spice_netlist(
+    design: Design,
+    *,
+    title: str | None = None,
+    extra_cards: list[str] | None = None,
+) -> str:
     """Render *design* as a SPICE netlist string.
 
     Args:
         design: Design to export.
         title: Optional title line; defaults to the design name.
+        extra_cards: Optional SPICE cards (e.g. behavioral source models) injected
+            before ``.end`` — used to drive an otherwise-modelless netlist for a
+            DC operating-point.
 
     Returns:
         SPICE netlist text (title card, element cards, models, ``.end``).
@@ -179,6 +187,10 @@ def export_spice_netlist(design: Design, *, title: str | None = None) -> str:
 
     if skipped:
         lines.append(f"* {len(skipped)} component(s) not simulated (no SPICE model or value).")
+
+    if extra_cards:
+        lines.append("* Behavioral DC bias models (ideal sources):")
+        lines.extend(extra_cards)
 
     lines.append(".end")
     return "\n".join(lines) + "\n"
