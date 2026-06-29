@@ -105,6 +105,26 @@ class TestInstantiateMcu:
         assigned = {a.net for a in result.assignments}
         assert "SDA" in assigned  # I2C still wired from real GPIOs, not SWD pins
 
+    def test_crystal_placed_with_load_caps_for_bare_mcu(self) -> None:
+        # RP2040 has no internal precision oscillator — it needs an external crystal.
+        design = _board_with_i2c_nets()
+        instantiate_mcu(design, "rp2040", ["i2c"], rail_net="VDD_3V3")
+        crystals = [c for c in design.components.values() if c.type == "crystal"]
+        assert len(crystals) == 1
+        # two 18pF load caps on the crystal nets
+        cap_nets = {"XTAL_IN", "XTAL_OUT"}
+        for net in cap_nets:
+            caps = [n for n in design.nets[net].nodes if design.components[n.component_ref].type == "capacitor"]
+            assert caps
+
+    def test_rp2040_board_is_electrically_clean(self) -> None:
+        from zaptrace.erc.runner import ERCRunner
+        from zaptrace.synthesis.repair import synthesize_and_repair
+
+        out = synthesize_and_repair("RP2040 3.3V board, CAN bus node")
+        result = ERCRunner().run(out["design"])
+        assert result.total_errors == 0 and result.total_warnings == 0
+
     def test_unknown_family_is_not_faked(self) -> None:
         design = _board_with_i2c_nets()
         result = instantiate_mcu(design, "samd", ["i2c"], rail_net="VDD_3V3")

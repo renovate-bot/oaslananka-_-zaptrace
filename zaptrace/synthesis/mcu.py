@@ -209,6 +209,49 @@ def _place_debug_header(
     return ref
 
 
+_XTAL_IN_NAMES = {"XIN", "OSC_IN", "OSCIN", "HSE_IN"}
+_XTAL_OUT_NAMES = {"XOUT", "OSC_OUT", "OSCOUT", "HSE_OUT"}
+
+
+def _place_crystal(design: Design, mcu_ref: str, spec_pins: dict[str, dict[str, str]], *, gnd_net: str) -> str | None:
+    """Place an external crystal with load caps across the MCU's XIN/XOUT pins.
+
+    A part like the RP2040 has no internal precision oscillator, so its crystal
+    input would otherwise float. Returns the crystal ref, or None when the part
+    has no crystal pins (modules with an integrated oscillator).
+    """
+    from zaptrace.core.models import Component
+
+    xin = _find_pin(spec_pins, _XTAL_IN_NAMES)
+    xout = _find_pin(spec_pins, _XTAL_OUT_NAMES)
+    if xin is None or xout is None:
+        return None
+
+    spec = LibraryLoader().get("crystal-12mhz")
+    ref = _next_ref(design, "Y")
+    design.components[ref] = Component(
+        id=ref,
+        ref=ref,
+        type="crystal",
+        value=spec.name,
+        mpn=spec.mpn,
+        footprint=spec.footprint,
+        pins={name: Pin(name=name, type=_pin_type(raw)) for name, raw in spec.pins.items()},
+    )
+    in_net, out_net = "XTAL_IN", "XTAL_OUT"
+    _connect(design, in_net, mcu_ref, xin)
+    _connect(design, in_net, ref, "XI")
+    _connect(design, out_net, mcu_ref, xout)
+    _connect(design, out_net, ref, "XO")
+    # Two 18 pF load capacitors to ground (footprints assigned by repair).
+    for net in (in_net, out_net):
+        cap = _next_ref(design, "C")
+        design.components[cap] = Component(id=cap, ref=cap, type="capacitor", value="18pF")
+        _connect(design, net, cap, "1")
+        _connect(design, gnd_net, cap, "2")
+    return ref
+
+
 def _apply_straps(
     design: Design, ref: str, family: str, spec_pins: dict[str, dict[str, str]], *, rail_net: str, gnd_net: str
 ) -> list[PinAssignment]:
@@ -287,6 +330,7 @@ def instantiate_mcu(
         assignments.append(PinAssignment(enable_pin, rail_net, "enable"))
     assignments.extend(_apply_straps(design, ref, family, spec.pins, rail_net=rail_net, gnd_net=gnd_net))
     _place_debug_header(design, ref, spec.pins, rail_net=rail_net, gnd_net=gnd_net)
+    _place_crystal(design, ref, spec.pins, gnd_net=gnd_net)
 
     unconnected: list[str] = []
     available = list(gpios)

@@ -340,7 +340,7 @@ def rule_ERC010(design: Design) -> list[ERCViolation]:
                         for other_node in net.nodes:
                             if other_node.component_ref != comp.ref:
                                 other = design.get_component(other_node.component_ref)
-                                if other and other.type in ("CAP", "CAPACITOR"):
+                                if other and other.type.lower() in ("cap", "capacitor"):
                                     nearby_caps += 1
             if nearby_caps < 2:
                 violations.append(
