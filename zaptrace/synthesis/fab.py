@@ -34,6 +34,7 @@ class FabResult:
     net_count: int
     scorecard: dict[str, Any]
     dc_bias: dict[str, Any]
+    drc: dict[str, Any] = field(default_factory=dict)
     artifacts: list[str] = field(default_factory=list)
     review_checklist: list[str] = field(default_factory=list)
     output_dir: str = ""
@@ -46,6 +47,7 @@ class FabResult:
             "net_count": self.net_count,
             "scorecard": self.scorecard,
             "dc_bias": self.dc_bias,
+            "drc": self.drc,
             "artifacts": self.artifacts,
             "review_checklist": self.review_checklist,
             "output_dir": self.output_dir,
@@ -58,6 +60,7 @@ def _review_checklist(
     footprints: FootprintResolution,
     dc_bias: DcBiasResult,
     unrealized_blocks: list[str],
+    drc_errors: int,
 ) -> list[str]:
     """The honest hand-off: everything a human must still resolve."""
     items: list[str] = []
@@ -70,6 +73,11 @@ def _review_checklist(
         )
     if repair.remaining:
         items.append(f"ERC: {len(repair.remaining)} violation(s) left for review (e.g. connector/strapping nets).")
+    if drc_errors:
+        items.append(
+            f"Routing: {drc_errors} DRC error(s) — the algorithmic router does not yet produce a "
+            "clean professional layout; manual or improved routing is required."
+        )
     for block_id in unrealized_blocks:
         items.append(f"Synthesis: block {block_id} was planned but not realized — complete it by hand.")
     items.append("Run a full ERC/DRC and a real simulation, and have a qualified engineer review before fabrication.")
@@ -78,9 +86,12 @@ def _review_checklist(
 
 def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: str = "SynthesizedBoard") -> FabResult:
     """Synthesize a board from intent and emit a manufacturing bundle plus evidence."""
+    from zaptrace.algo.grid_router import GridRouter
     from zaptrace.algo.placer import place_components
     from zaptrace.algo.router import route_design_smart
     from zaptrace.analysis.dc_bias import resolve_dc_bias
+    from zaptrace.ee.classifier import classify_design
+    from zaptrace.ee.drc.engine import DRCEngine
     from zaptrace.export.manufacturing import generate_manufacturing_bundle
     from zaptrace.synthesis.repair import synthesize_and_repair
     from zaptrace.synthesis.scorecard import score_board
@@ -93,7 +104,17 @@ def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: st
         if ref in design.components:
             design.components[ref].position = tuple(pos) if not isinstance(pos, tuple) else pos
     design.placement = dict(positions)
-    route_design_smart(design, {c.ref: c.position for c in design.components.values() if c.position})
+    classify_design(design)  # set power/ground/signal net classes before routing
+    # Obstacle-aware A* grid router for collision-free, manufacturable traces;
+    # the MST/L-shape router is only a fallback when A* routes nothing.
+    placement = {c.ref: c.position for c in design.components.values() if c.position}
+    grid_result = GridRouter().route(design, placement)
+    if grid_result.routed_net_count > 0:
+        design.routing = grid_result
+    else:
+        _, design.routing = route_design_smart(design, placement)
+
+    drc = DRCEngine().run(design)
 
     out_path = Path(output_dir)
     generate_manufacturing_bundle(design, out_path)
@@ -107,6 +128,7 @@ def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: st
         out["footprints"],
         bias,
         [b.block_id for b in out["plan"].unrealized_blocks],
+        drc.errors,
     )
 
     return FabResult(
@@ -116,6 +138,7 @@ def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: st
         net_count=len(design.nets),
         scorecard=card.to_dict(),
         dc_bias=bias.to_dict(),
+        drc={"passed": drc.passed, "errors": drc.errors, "warnings": drc.warnings, "violations": drc.total_violations},
         artifacts=artifacts,
         review_checklist=checklist,
         output_dir=str(out_path),

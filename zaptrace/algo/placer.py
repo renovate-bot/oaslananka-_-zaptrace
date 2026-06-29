@@ -33,6 +33,16 @@ def place_components(design: Design) -> dict[str, tuple[float, float]]:
         return _place_python(design)
 
 
+_POWER_NET_PREFIXES = ("GND", "VSS", "VDD", "VCC", "VBUS", "VBAT", "VIN", "AGND", "DGND")
+
+
+def _is_power_net(name: str) -> bool:
+    """Power/ground nets fan out to nearly every part; they steer placement
+    nowhere useful and go to copper pour, so they are excluded from the springs."""
+    upper = name.upper()
+    return any(upper.startswith(p) for p in _POWER_NET_PREFIXES)
+
+
 def _build_connections(design: Design) -> list[tuple[int, int]]:
     # Build index from component ref (designator) to position in component list
     ref_to_idx: dict[str, int] = {}
@@ -41,7 +51,16 @@ def _build_connections(design: Design) -> list[tuple[int, int]]:
             ref_to_idx[c.ref] = len(ref_to_idx)
     connections: list[tuple[int, int]] = []
     for net in design.nets.values():
+        if _is_power_net(net.name):
+            continue
         refs = [n.component_ref for n in net.nodes]
+        # A high-fan-out net (a bus) connected all-pairs would over-attract; wire
+        # it as a star to its first node instead.
+        if len(refs) > 4:
+            for k in range(1, len(refs)):
+                if refs[0] in ref_to_idx and refs[k] in ref_to_idx:
+                    connections.append((ref_to_idx[refs[0]], ref_to_idx[refs[k]]))
+            continue
         for i in range(len(refs)):
             for j in range(i + 1, len(refs)):
                 if refs[i] in ref_to_idx and refs[j] in ref_to_idx:
@@ -79,17 +98,23 @@ def _place_python(design: Design) -> dict[str, tuple[float, float]]:
     for _ in range(20):
         forces: dict[str, list[float]] = {cid: [0.0, 0.0] for cid in comp_ids}
 
+        rest_length = 8.0  # target spacing between connected parts (no collapse)
         for a_idx, b_idx in connections:
             aid, bid = comp_ids_list[a_idx], comp_ids_list[b_idx]
             ax, ay = positions[aid]
             bx, by = positions[bid]
             dx, dy = bx - ax, by - ay
             dist = max(math.sqrt(dx**2 + dy**2), 0.1)
+            # Spring with a rest length: attract past `rest_length`, push apart
+            # within it, so highly-connected parts settle near (not on top of)
+            # each other instead of collapsing to a point.
             k = 0.05
-            forces[aid][0] += k * dx
-            forces[aid][1] += k * dy
-            forces[bid][0] -= k * dx
-            forces[bid][1] -= k * dy
+            stretch = dist - rest_length
+            ux, uy = dx / dist, dy / dist
+            forces[aid][0] += k * stretch * ux
+            forces[aid][1] += k * stretch * uy
+            forces[bid][0] -= k * stretch * ux
+            forces[bid][1] -= k * stretch * uy
 
         for i, cid_i in enumerate(comp_ids):
             for j, cid_j in enumerate(comp_ids):

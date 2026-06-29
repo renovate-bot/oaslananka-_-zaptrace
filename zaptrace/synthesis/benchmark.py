@@ -90,8 +90,9 @@ def _score_case(case: BenchmarkCase) -> CaseResult:
     out = synthesize_and_repair(case.intent)
     bias = resolve_dc_bias(out["design"])
     card = score_board(out["design"], out["plan"], out["repair"], out["footprints"], bias)
+    # The benchmark scores synthesis only (no place/route), so DRC errors are 0 here.
     review = _review_checklist(
-        out["design"], out["repair"], out["footprints"], bias, [b.block_id for b in out["plan"].unrealized_blocks]
+        out["design"], out["repair"], out["footprints"], bias, [b.block_id for b in out["plan"].unrealized_blocks], 0
     )
     return CaseResult(
         name=case.name,

@@ -23,6 +23,14 @@ class TestFabFlow:
         result = synthesize_to_manufacturing("ESP32-C3 USB-C 3.3V board, I2C sensor", tmp_path)
         assert 0 <= result.scorecard["score"] <= 100
         assert "passed" in result.dc_bias
+        assert "errors" in result.drc  # the physical-design (DRC) status is measured and reported
+
+    def test_routing_drc_status_in_checklist(self, tmp_path: Path) -> None:
+        # The board is placed and routed; if the algorithmic router leaves DRC
+        # errors, the review checklist must say so honestly.
+        result = synthesize_to_manufacturing("STM32 3.3V board, RS485 modbus node", tmp_path)
+        if result.drc["errors"]:
+            assert any("DRC error" in item for item in result.review_checklist)
 
     def test_review_checklist_flags_unresolved_footprints_and_mandates_review(self, tmp_path: Path) -> None:
         result = synthesize_to_manufacturing("ESP32-C3 USB-C 3.3V board, I2C temperature sensor", tmp_path)
@@ -46,6 +54,7 @@ class TestFabFlow:
             "net_count",
             "scorecard",
             "dc_bias",
+            "drc",
             "artifacts",
             "review_checklist",
             "output_dir",
