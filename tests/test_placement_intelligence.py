@@ -353,3 +353,96 @@ class TestPlacementAnalysisStructure:
         assert "sensor1" in grouped_comps
         # j1 has no nets, so it's not grouped
         assert "j1" not in grouped_comps
+
+
+class TestPlacementScorecard:
+    def test_scorecard_is_machine_readable_and_covers_required_sections(self) -> None:
+        from zaptrace.synthesis.placement import build_placement_scorecard
+
+        d = _make_design(
+            placement_data={
+                "u1": (50.0, 40.0),
+                "c1": (52.0, 42.0),
+                "c2": (48.0, 38.0),
+                "r1": (10.0, 10.0),
+                "j1": (50.0, 2.0),
+                "sensor1": (80.0, 60.0),
+            }
+        )
+        d.constraints.placement.append(PlacementIntent(component="J*", edge="bottom", reason="connector on edge"))
+
+        card = build_placement_scorecard(d)
+        payload = card.model_dump(mode="json")
+        sections = {section["name"] for section in payload["section_scores"]}
+
+        assert payload["schema_version"] == "1.0"
+        assert 0.0 <= payload["overall_score"] <= 1.0
+        assert sections >= {
+            "block_grouping",
+            "connector_constraints",
+            "decoupling_proximity",
+            "keepouts",
+            "thermal_spacing",
+        }
+        assert payload["component_count"] == len(d.components)
+
+    def test_scorecard_records_connector_decoupling_keepout_and_thermal_warnings(self) -> None:
+        from zaptrace.synthesis.placement import build_placement_scorecard
+
+        d = _make_design(
+            placement_data={
+                "u1": (50.0, 40.0),
+                "c1": (10.0, 10.0),
+                "c2": (15.0, 10.0),
+                "r1": (10.0, 10.0),
+                "j1": (50.0, 40.0),
+                "sensor1": (52.0, 40.0),
+            }
+        )
+        d.components["u1"].properties["thermal_power_w"] = 1.0
+        d.components["reg1"] = Component(id="reg1", ref="U3", type="regulator", properties={"power_w": 1.0})
+        assert d.placement is not None
+        d.placement["reg1"] = (53.0, 40.0)
+        d.constraints.placement.append(PlacementIntent(component="J*", edge="bottom", reason="connector on edge"))
+        d.constraints.placement.append(PlacementIntent(component="C*", near="U1", max_distance_mm=5.0, reason="decaps"))
+
+        card = build_placement_scorecard(d)
+        section_status = {section.name: section.status for section in card.section_scores}
+        categories = {obs["category"] for obs in card.observations}
+
+        assert card.status in {"warning", "fail"}
+        assert section_status["connector_constraints"] == "warning"
+        assert section_status["decoupling_proximity"] == "warning"
+        assert section_status["keepouts"] == "warning"
+        assert section_status["thermal_spacing"] == "warning"
+        assert {"edge", "proximity", "keepout", "thermal_spacing"} <= categories
+
+    def test_scorecard_blocks_when_below_autonomous_threshold(self) -> None:
+        from zaptrace.synthesis.placement import build_placement_scorecard
+
+        d = _make_design(placement_data={"u1": (50.0, 40.0)})
+        card = build_placement_scorecard(d, min_autonomous_score=0.95, min_review_score=0.98)
+
+        assert card.blocked is True
+        assert card.status == "fail"
+        assert card.overall_score < 0.95
+
+    def test_scorecard_human_review_when_warning_but_not_blocked(self) -> None:
+        from zaptrace.synthesis.placement import build_placement_scorecard
+
+        d = _make_design(
+            placement_data={
+                "u1": (50.0, 40.0),
+                "c1": (52.0, 42.0),
+                "c2": (48.0, 38.0),
+                "r1": (10.0, 10.0),
+                "j1": (50.0, 40.0),
+                "sensor1": (80.0, 60.0),
+            }
+        )
+        d.constraints.placement.append(PlacementIntent(component="J*", edge="bottom", reason="connector on edge"))
+        card = build_placement_scorecard(d, min_autonomous_score=0.1, min_review_score=0.99)
+
+        assert card.blocked is False
+        assert card.human_review_required is True
+        assert card.status == "warning"

@@ -14,8 +14,10 @@ as the rest of the synthesis module.
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from zaptrace.core.models import ConstraintSet, Design, PlacementIntent
 
@@ -65,6 +67,40 @@ class PlacementCandidate:
     reasons: list[str] = field(default_factory=list)
 
 
+class PlacementScoreSection(BaseModel):
+    """One machine-readable placement scorecard section."""
+
+    model_config = ConfigDict(strict=False)
+
+    name: str
+    score: float = Field(ge=0, le=1)
+    status: str
+    observation_count: int = Field(default=0, ge=0)
+    blocking_count: int = Field(default=0, ge=0)
+    summary: str = ""
+
+
+class PlacementScorecard(BaseModel):
+    """Machine-readable placement scorecard for proof-pack/release evidence."""
+
+    model_config = ConfigDict(strict=False)
+
+    schema_version: str = "1.0"
+    overall_score: float = Field(ge=0, le=1)
+    status: str
+    min_autonomous_score: float = Field(default=0.75, ge=0, le=1)
+    min_review_score: float = Field(default=0.9, ge=0, le=1)
+    group_count: int = Field(default=0, ge=0)
+    component_count: int = Field(default=0, ge=0)
+    placed_component_count: int = Field(default=0, ge=0)
+    section_scores: list[PlacementScoreSection]
+    observations: list[dict[str, Any]] = Field(default_factory=list)
+    blocking_observation_count: int = Field(default=0, ge=0)
+    warning_count: int = Field(default=0, ge=0)
+    human_review_required: bool = False
+    blocked: bool = False
+
+
 @dataclass(frozen=True)
 class PlacementAnalysis:
     """Full constraint-aware placement analysis result."""
@@ -73,6 +109,13 @@ class PlacementAnalysis:
     observations: list[PlacementObservation] = field(default_factory=list)
     candidates: list[PlacementCandidate] = field(default_factory=list)
     score: float = 1.0  # overall placement score (1.0 = all constraints met)
+
+
+def _observation_dict(observation: PlacementObservation) -> dict[str, Any]:
+    data = asdict(observation)
+    if observation.constraint is not None:
+        data["constraint"] = observation.constraint.model_dump(mode="json")
+    return data
 
 
 # ---------------------------------------------------------------------------
@@ -589,6 +632,44 @@ def _score_placement_for_component(
     )
 
 
+def _hot_component_ids(design: Design) -> list[str]:
+    ids: list[str] = []
+    for cid, comp in design.components.items():
+        props = comp.properties or {}
+        value = props.get("thermal_power_w") or props.get("power_w") or props.get("operating_power_w")
+        try:
+            if value is not None and float(value) >= 0.5:
+                ids.append(cid)
+                continue
+        except (TypeError, ValueError):
+            pass
+        if comp.type.lower() in ("regulator", "switcher", "dc-dc", "power"):
+            ids.append(cid)
+    return ids
+
+
+def _check_thermal_spacing(design: Design) -> list[PlacementObservation]:
+    placement = design.placement or {}
+    hot = [cid for cid in _hot_component_ids(design) if cid in placement]
+    out: list[PlacementObservation] = []
+    for i, a_id in enumerate(hot):
+        for b_id in hot[i + 1 :]:
+            dist = _distance_mm(placement[a_id], placement[b_id])
+            if dist < 8.0:
+                a = design.components[a_id]
+                b = design.components[b_id]
+                out.append(
+                    PlacementObservation(
+                        severity="warning",
+                        category="thermal_spacing",
+                        message=f"{a.ref} and {b.ref} thermal spacing is {dist:.1f} mm",
+                        component_ids=[a_id, b_id],
+                        suggestion="Increase spacing or add thermal evidence",
+                    )
+                )
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
@@ -611,6 +692,7 @@ def analyze_placement(design: Design) -> PlacementAnalysis:
     observations.extend(_check_keepouts(design, constraints))
     observations.extend(_check_decoupling_proximity(design))
     observations.extend(_check_analog_digital_separation(design))
+    observations.extend(_check_thermal_spacing(design))
 
     if not constraints.placement and design.placement:
         observations.append(
@@ -641,4 +723,104 @@ def analyze_placement(design: Design) -> PlacementAnalysis:
         observations=observations,
         candidates=candidates,
         score=overall,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Machine-readable scorecard
+# ---------------------------------------------------------------------------
+
+
+def _section_status(score: float, blocking_count: int) -> str:
+    if blocking_count:
+        return "fail"
+    if score < 0.9:
+        return "warning"
+    return "pass"
+
+
+def _score_section(
+    name: str, observations: list[PlacementObservation], *, base_score: float = 1.0
+) -> PlacementScoreSection:
+    warnings = sum(1 for item in observations if item.severity == "warning")
+    errors = sum(1 for item in observations if item.severity == "error")
+    score = max(0.0, min(1.0, base_score - warnings * 0.15 - errors * 0.35))
+    return PlacementScoreSection(
+        name=name,
+        score=round(score, 3),
+        status=_section_status(score, errors),
+        observation_count=len(observations),
+        blocking_count=errors,
+        summary=f"{len(observations)} observation(s), {errors} blocking error(s)",
+    )
+
+
+def build_placement_scorecard(
+    design: Design,
+    *,
+    min_autonomous_score: float = 0.75,
+    min_review_score: float = 0.9,
+) -> PlacementScorecard:
+    """Build a machine-readable scorecard from placement analysis evidence."""
+    analysis = analyze_placement(design)
+    observations = analysis.observations
+    categories = {
+        "connector_constraints": [item for item in observations if item.category == "edge"],
+        "decoupling_proximity": [item for item in observations if item.category == "proximity"],
+        "keepouts": [item for item in observations if item.category == "keepout"],
+        "thermal_spacing": [item for item in observations if item.category == "thermal_spacing"],
+    }
+    component_count = len(design.components)
+    placed_count = len(design.placement or {})
+    grouped = {cid for group in analysis.groups for cid in group.component_ids}
+    group_score = 1.0 if not component_count else max(0.0, min(1.0, len(grouped) / component_count))
+    sections = [
+        PlacementScoreSection(
+            name="block_grouping",
+            score=round(group_score, 3),
+            status=_section_status(group_score, 0),
+            observation_count=0,
+            blocking_count=0,
+            summary=f"{len(analysis.groups)} functional group(s) across {component_count} component(s)",
+        ),
+        _score_section("connector_constraints", categories["connector_constraints"]),
+        _score_section("decoupling_proximity", categories["decoupling_proximity"]),
+        _score_section("keepouts", categories["keepouts"]),
+        _score_section("thermal_spacing", categories["thermal_spacing"]),
+    ]
+    warning_count = sum(1 for item in observations if item.severity == "warning")
+    blocking_count = sum(1 for item in observations if item.severity == "error")
+    if placed_count < component_count:
+        missing = component_count - placed_count
+        warning_count += missing
+        coverage = round(placed_count / component_count, 3) if component_count else 1.0
+        sections.append(
+            PlacementScoreSection(
+                name="placement_coverage",
+                score=coverage,
+                status="warning" if component_count else "pass",
+                observation_count=missing,
+                blocking_count=0,
+                summary=f"{placed_count}/{component_count} component(s) have placement coordinates",
+            )
+        )
+    section_mean = sum(section.score for section in sections) / len(sections) if sections else 1.0
+    overall = max(0.0, min(1.0, analysis.score * 0.6 + section_mean * 0.4))
+    blocked = blocking_count > 0 or overall < min_autonomous_score
+    human_review = not blocked and (warning_count > 0 or overall < min_review_score)
+    status = "fail" if blocked else "warning" if human_review else "pass"
+    return PlacementScorecard(
+        overall_score=round(overall, 3),
+        status=status,
+        min_autonomous_score=min_autonomous_score,
+        min_review_score=min_review_score,
+        group_count=len(analysis.groups),
+        component_count=component_count,
+        placed_component_count=placed_count,
+        section_scores=sections,
+        observations=[_observation_dict(item) for item in observations],
+        blocking_observation_count=blocking_count,
+        warning_count=warning_count,
+        human_review_required=human_review,
+        blocked=blocked,
     )

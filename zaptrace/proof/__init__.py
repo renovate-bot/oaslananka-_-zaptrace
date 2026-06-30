@@ -35,6 +35,7 @@ from .manifest import (
     InputRecord,
     ManifestModel,
     NetlistParityEvidence,
+    PlacementScorecardEvidence,
     ProofManifest,
     RequirementsCoverageEvidence,
 )
@@ -57,6 +58,7 @@ __all__ = [
     "ComponentMetadataEvidence",
     "DatasheetProvenanceEvidence",
     "FootprintProofEvidence",
+    "PlacementScorecardEvidence",
     "DeratingEvidence",
     "NetlistParityEvidence",
     "RequirementsCoverageEvidence",

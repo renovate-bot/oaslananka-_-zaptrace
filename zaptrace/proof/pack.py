@@ -450,6 +450,7 @@ class ProofPack:
             + self._signoff_evidence_from_derating()
             + self._signoff_evidence_from_datasheet_provenance()
             + self._signoff_evidence_from_footprint_proof()
+            + self._signoff_evidence_from_placement_scorecard()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -609,6 +610,29 @@ class ProofPack:
                 summary=summary,
                 release_blocking=True,
                 evidence_required=True,
+            )
+        ]
+
+    def _signoff_evidence_from_placement_scorecard(self) -> list[SignoffEvidence]:
+        """Map placement scorecard evidence into sign-off evidence."""
+        scorecard = self.manifest.placement_scorecard
+        if scorecard is None:
+            return []
+        status = SignoffCheckStatus.PASS if scorecard.passed else SignoffCheckStatus.FAIL
+        if scorecard.human_review_required and scorecard.passed:
+            status = SignoffCheckStatus.WARNING
+        summary = scorecard.message or f"placement score {scorecard.overall_score:.3f}"
+        if scorecard.warning_count:
+            summary = f"{summary}; {scorecard.warning_count} placement warning(s)"
+        return [
+            SignoffEvidence(
+                name="placement-scorecard",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+                human_review_required=scorecard.human_review_required,
             )
         ]
 

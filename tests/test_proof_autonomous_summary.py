@@ -749,3 +749,57 @@ def test_passing_footprint_proof_does_not_block_autonomous_pass() -> None:
     report = json.loads(pack.report_json())
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
+
+
+def test_failed_placement_scorecard_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import PlacementScorecardEvidence
+
+    manifest = ProofManifest(
+        name="PlacementBlocked",
+        design_path="design.yaml",
+        placement_scorecard=PlacementScorecardEvidence(
+            report_path="placement-scorecard.json",
+            passed=False,
+            overall_score=0.55,
+            min_autonomous_score=0.75,
+            warning_count=4,
+            blocking_observation_count=0,
+            message="placement score below autonomous threshold",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["placement-scorecard"]
+
+
+def test_warning_placement_scorecard_requires_human_review() -> None:
+    from zaptrace.proof.manifest import PlacementScorecardEvidence
+
+    manifest = ProofManifest(
+        name="PlacementReview",
+        design_path="design.yaml",
+        placement_scorecard=PlacementScorecardEvidence(
+            report_path="placement-scorecard.json",
+            passed=True,
+            overall_score=0.86,
+            min_autonomous_score=0.75,
+            warning_count=2,
+            human_review_required=True,
+            message="placement score requires review",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
+    assert report["autonomous_signoff"]["human_review_checks"] == ["placement-scorecard"]

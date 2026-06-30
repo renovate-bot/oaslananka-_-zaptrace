@@ -218,6 +218,19 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class PlacementScorecardEvidence(BaseModel):
+    """Structured placement scorecard evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to placement scorecard JSON")
+    passed: bool = Field(description="Whether placement scorecard passed autonomous threshold")
+    overall_score: float = Field(default=0.0, ge=0, le=1, description="Overall placement score")
+    min_autonomous_score: float = Field(default=0.75, ge=0, le=1, description="Minimum score for autonomous-pass")
+    warning_count: int = Field(default=0, ge=0, description="Placement warning count")
+    blocking_observation_count: int = Field(default=0, ge=0, description="Blocking placement observation count")
+    human_review_required: bool = Field(default=False, description="Whether placement scorecard needs human review")
+    message: str = Field(default="", description="Human-readable placement scorecard summary")
+
+
 class FootprintProofEvidence(BaseModel):
     """Structured footprint proof validation evidence stored in a proof-pack manifest."""
 
@@ -443,6 +456,10 @@ class ProofManifest(BaseModel):
     footprint_proof: FootprintProofEvidence | None = Field(
         default=None,
         description="Footprint proof validation evidence metadata",
+    )
+    placement_scorecard: PlacementScorecardEvidence | None = Field(
+        default=None,
+        description="Constraint-aware placement scorecard evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(
