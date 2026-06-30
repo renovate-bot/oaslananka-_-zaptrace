@@ -97,3 +97,31 @@ Proof-pack `footprint_proof` evidence maps to sign-off as follows:
 passed=false -> footprint-proof fails and blocks autonomous-pass
 passed=true  -> footprint-proof passes
 ```
+
+## Risky package policy
+
+Risky package families require stricter footprint proof review:
+
+```text
+AQFN
+BGA
+DFN
+LGA
+QFN
+RJ45
+USB-C / USB_C
+```
+
+`validate_risky_package_policy()` requires:
+
+```text
+human-reviewed footprint proof or approval_id
+source SHA-256 or generator version
+pin-1 evidence
+non-zero courtyard
+complete pin_map
+```
+
+Unreviewed risky packages emit `unreviewed-risky-package` and should be attached to proof-pack `footprint_proof` with `passed=false`, which blocks autonomous sign-off through `footprint-proof`.
+
+Non-risky packages such as SOT/SOIC/passive chip packages can still be validated by the normal pad/pin/courtyard checks without the stricter review requirement.

@@ -171,3 +171,66 @@ def test_aggregate_footprint_validation_report() -> None:
     assert report.proof_count == 2
     assert report.blocked is True
     assert report.error_count >= 1
+
+
+def test_risky_package_classifier() -> None:
+    from zaptrace.ee.footprint_proof import classify_risky_package
+
+    assert classify_risky_package("QFN-32") == "QFN"
+    assert classify_risky_package("BME280-LGA8") == "LGA"
+    assert classify_risky_package("USB-C-16P-SMD") == "USB-C"
+    assert classify_risky_package("RJ45-8P8C-SHIELDED") == "RJ45"
+    assert classify_risky_package("SOT-23") == ""
+
+
+def test_unreviewed_risky_package_blocks_policy() -> None:
+    from zaptrace.ee.footprint_proof import validate_risky_package_policy
+
+    fp = footprint_qfn("QFN-16")
+    assert fp is not None
+    proof = build_footprint_proof("QFN-16", fp, expected_pin_count=16)
+
+    result = validate_risky_package_policy(proof)
+
+    assert result.risky is True
+    assert result.blocked is True
+    assert result.family == "QFN"
+    assert any(item.code == "unreviewed-risky-package" for item in result.diagnostics)
+    assert "human-reviewed footprint proof" in result.required_evidence
+
+
+def test_reviewed_risky_package_with_provenance_passes_policy() -> None:
+    from zaptrace.ee.footprint_proof import validate_risky_package_policy
+
+    name = "BME280-LGA8"
+    filename = VENDOR_FOOTPRINTS[name]
+    path = Path("data/footprints/vendor") / filename
+    fp = resolve_vendored_footprint(name)
+    assert fp is not None
+    source = FootprintSourceProvenance(
+        source_type=FootprintSourceType.VENDORED,
+        source_name=name,
+        source_path=str(path),
+        source_sha256=file_sha256(path),
+        attribution="data/footprints/vendor/ATTRIBUTION.md",
+    )
+    proof = build_footprint_proof(name, fp, source=source, expected_pin_count=8)
+
+    result = validate_risky_package_policy(proof, reviewed=True, approval_id="FP-REVIEW-1")
+
+    assert result.risky is True
+    assert result.blocked is False
+    assert result.approval_id == "FP-REVIEW-1"
+
+
+def test_non_risky_package_does_not_require_review() -> None:
+    from zaptrace.ee.footprint_proof import validate_risky_package_policy
+
+    fp = footprint_sot("SOT-23")
+    assert fp is not None
+    proof = build_footprint_proof("SOT-23", fp)
+
+    result = validate_risky_package_policy(proof)
+
+    assert result.risky is False
+    assert result.blocked is False

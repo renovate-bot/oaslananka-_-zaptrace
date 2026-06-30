@@ -203,6 +203,102 @@ class FootprintProofValidationReport(BaseModel):
     diagnostics: list[FootprintProofDiagnostic]
 
 
+RISKY_PACKAGE_FAMILIES: tuple[str, ...] = ("AQFN", "BGA", "DFN", "LGA", "QFN", "RJ45", "USB-C", "USB_C")
+
+
+class RiskyPackagePolicyResult(BaseModel):
+    """Risk policy result for a footprint proof."""
+
+    schema_version: str = "1.0"
+    package_id: str
+    risky: bool
+    family: str = ""
+    reviewed: bool = False
+    approval_id: str = ""
+    blocked: bool
+    required_evidence: list[str] = Field(default_factory=list)
+    diagnostics: list[FootprintProofDiagnostic] = Field(default_factory=list)
+
+
+def classify_risky_package(package_id: str, footprint_name: str = "") -> str:
+    """Return risky package family, or empty string when not in policy scope."""
+    text = f"{package_id} {footprint_name}".upper().replace("_", "-")
+    for family in RISKY_PACKAGE_FAMILIES:
+        if family.replace("_", "-") in text:
+            return family.replace("_", "-")
+    return ""
+
+
+def validate_risky_package_policy(
+    proof: FootprintProof,
+    *,
+    reviewed: bool = False,
+    approval_id: str = "",
+) -> RiskyPackagePolicyResult:
+    """Enforce stricter provenance/review policy for risky package families."""
+    family = classify_risky_package(proof.package_id, proof.footprint_name)
+    required = [
+        "human-reviewed footprint proof",
+        "source SHA-256 or generator version",
+        "pin-1 evidence",
+        "non-zero courtyard",
+        "complete pin_map",
+    ]
+    diagnostics: list[FootprintProofDiagnostic] = []
+    if not family:
+        return RiskyPackagePolicyResult(package_id=proof.package_id, risky=False, blocked=False)
+    if not reviewed and not approval_id:
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="unreviewed-risky-package",
+                severity=FootprintProofSeverity.ERROR,
+                message=f"{family} package requires human-reviewed footprint proof or approval_id",
+                expected="reviewed=true or approval_id",
+                observed="unreviewed",
+            )
+        )
+    if not proof.source.source_sha256 and not proof.source.generator_version:
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="risky-package-missing-source-provenance",
+                severity=FootprintProofSeverity.ERROR,
+                message=f"{family} package requires source hash or generator version provenance",
+                expected="source_sha256 or generator_version",
+                observed="missing",
+            )
+        )
+    if not proof.pin1.present:
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="risky-package-missing-pin1",
+                severity=FootprintProofSeverity.ERROR,
+                message=f"{family} package requires explicit pin-1 evidence",
+            )
+        )
+    if proof.courtyard_mm == (0.0, 0.0):
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="risky-package-missing-courtyard",
+                severity=FootprintProofSeverity.ERROR,
+                message=f"{family} package requires non-zero courtyard evidence",
+            )
+        )
+    return RiskyPackagePolicyResult(
+        package_id=proof.package_id,
+        risky=True,
+        family=family,
+        reviewed=reviewed,
+        approval_id=approval_id,
+        blocked=bool(diagnostics),
+        required_evidence=required,
+        diagnostics=diagnostics,
+    )
+
+
 def validate_footprint_proof(
     proof: FootprintProof,
     *,

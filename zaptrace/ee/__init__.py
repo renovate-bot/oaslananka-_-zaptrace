@@ -12,10 +12,13 @@ from zaptrace.ee.footprint_proof import (
     FootprintProofValidationReport,
     FootprintSourceProvenance,
     FootprintSourceType,
+    RiskyPackagePolicyResult,
     build_footprint_proof,
+    classify_risky_package,
     file_sha256,
     validate_footprint_proof,
     validate_footprint_proofs,
+    validate_risky_package_policy,
     write_footprint_proof,
 )
 from zaptrace.ee.footprints import (
@@ -42,6 +45,7 @@ __all__ = [
     "DEFAULT_VIA_SPECS",
     "STACKUP_PRESETS",
     "build_footprint_proof",
+    "classify_risky_package",
     "classify_design",
     "get_net_class",
     "summarize_classification",
@@ -54,6 +58,7 @@ __all__ = [
     "FootprintProofValidationReport",
     "FootprintSourceProvenance",
     "FootprintSourceType",
+    "RiskyPackagePolicyResult",
     "generate_footprint",
     "file_sha256",
     "generate_footprint_for_component",
@@ -61,5 +66,6 @@ __all__ = [
     "symbol_from_pins",
     "validate_footprint_proof",
     "validate_footprint_proofs",
+    "validate_risky_package_policy",
     "write_footprint_proof",
 ]
