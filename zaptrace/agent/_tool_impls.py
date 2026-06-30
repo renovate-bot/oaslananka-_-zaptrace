@@ -1932,6 +1932,7 @@ def tool_proof_run(path: str) -> dict[str, Any]:
         "failed_count": sum(1 for r in pack.results if not r.passed and r.status != "skip"),
         "skipped_count": sum(1 for r in pack.results if r.status == "skip"),
         "results": [r.to_dict() for r in pack.results],
+        "autonomous_signoff": pack.autonomous_signoff.to_evidence_record(),
         "summary": pack.summary,
     }
 

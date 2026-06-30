@@ -31,6 +31,7 @@ from .manifest import (
     KiCadOracleEvidence,
     ProofManifest,
 )
+from .signoff import AutonomousSignoffDecision, AutonomousSignoffPolicy, SignoffCheckStatus, SignoffEvidence
 
 # ---------------------------------------------------------------------------
 # Hashing utilities
@@ -240,12 +241,19 @@ class ProofPack:
         design = self.load_design()
         runner = ProofRunner(design)
         self.results = runner.run_checks(self.manifest.checks)
+        self.update_autonomous_signoff()
         return self.results
 
     @property
     def passed(self) -> bool:
         """True if all checks passed."""
         return all(r.passed for r in self.results)
+
+    @property
+    def autonomous_signoff(self) -> AutonomousSignoffDecision:
+        """Current conservative autonomous sign-off decision for this pack."""
+        self.update_autonomous_signoff()
+        return self.manifest.autonomous_signoff
 
     @property
     def summary(self) -> str:
@@ -263,7 +271,17 @@ class ProofPack:
         lines.append(f"Failed:  {failed}")
         lines.append(f"Errors:  {errors}")
         lines.append(f"Skipped: {skipped}")
+        decision = self.autonomous_signoff
         lines.append(f"Verdict: {'✓ PASS' if self.passed else '✗ FAIL'}")
+        lines.append(f"Autonomous status: {decision.status.value}")
+        if decision.blocking_checks:
+            lines.append(f"Blocking evidence: {', '.join(decision.blocking_checks)}")
+        if decision.human_review_checks:
+            lines.append(f"Human review: {', '.join(decision.human_review_checks)}")
+        if decision.unsupported_checks:
+            lines.append(f"Unsupported: {', '.join(decision.unsupported_checks)}")
+        if decision.unsafe_checks:
+            lines.append(f"Unsafe: {', '.join(decision.unsafe_checks)}")
         return "\n".join(lines)
 
     def report_json(self) -> str:
@@ -273,6 +291,7 @@ class ProofPack:
                 "name": self.manifest.name,
                 "version": self.manifest.version,
                 "passed": self.passed,
+                "autonomous_signoff": self.autonomous_signoff.to_evidence_record(),
                 "checks": [r.to_dict() for r in self.results],
             },
             indent=2,
@@ -311,6 +330,7 @@ class ProofPack:
             "bom_provenance",
             "manufacturing_evidence",
             "manufacturing_exports",
+            "autonomous_signoff",
         ):
             data.pop(runtime_key, None)
         data["design_path"] = Path(str(data.get("design_path", ""))).name
@@ -344,8 +364,9 @@ class ProofPack:
         if not self.manifest.kicad_oracle:
             self._capture_kicad_oracle_metadata()
 
-        # Add check records from results
+        # Add check records and sign-off evidence from results
         self._populate_check_records()
+        self.update_autonomous_signoff()
 
         artifact_records: list[ArtifactRecord] = []
 
@@ -410,6 +431,67 @@ class ProofPack:
             tmp.unlink(missing_ok=True)
 
         return out
+
+    def update_autonomous_signoff(self) -> AutonomousSignoffDecision:
+        """Recompute and store the autonomous sign-off decision."""
+        evidence = self._signoff_evidence_from_results() + self._signoff_evidence_from_oracles()
+        self.manifest.autonomous_signoff = AutonomousSignoffPolicy().evaluate(evidence)
+        return self.manifest.autonomous_signoff
+
+    def _signoff_evidence_from_results(self) -> list[SignoffEvidence]:
+        """Map ProofRunner results into sign-off evidence records."""
+        evidence: list[SignoffEvidence] = []
+        for result in self.results:
+            severity = result.check.severity.value
+            human_review_required = severity in {"warning", "info"} and result.status != CheckStatus.PASS
+            release_blocking = severity in {"critical", "error"}
+            if result.status == CheckStatus.PASS:
+                status = SignoffCheckStatus.PASS
+            elif result.status == CheckStatus.SKIP:
+                status = SignoffCheckStatus.SKIPPED
+            elif human_review_required:
+                status = SignoffCheckStatus.WARNING
+            else:
+                status = SignoffCheckStatus.FAIL
+            evidence.append(
+                SignoffEvidence(
+                    name=result.check.name,
+                    status=status,
+                    source="zaptrace",
+                    summary=result.message,
+                    release_blocking=release_blocking,
+                    evidence_required=True,
+                    human_review_required=human_review_required,
+                )
+            )
+        return evidence
+
+    def _signoff_evidence_from_oracles(self) -> list[SignoffEvidence]:
+        """Map manifest oracle records into sign-off evidence records."""
+        evidence: list[SignoffEvidence] = []
+        for oracle in self.manifest.kicad_oracle:
+            status_raw = oracle.status.strip().lower()
+            if status_raw in {"pass", "passed", "success"}:
+                status = SignoffCheckStatus.PASS
+            elif status_raw in {"fail", "failed", "error"}:
+                status = SignoffCheckStatus.FAIL
+            elif status_raw in {"skip", "skipped"}:
+                status = SignoffCheckStatus.SKIPPED
+            else:
+                status = SignoffCheckStatus.UNKNOWN
+            evidence.append(
+                SignoffEvidence(
+                    name=f"kicad:{oracle.check}",
+                    status=status,
+                    source="kicad",
+                    summary=oracle.message or oracle.skip_reason,
+                    release_blocking=True,
+                    evidence_required=True,
+                    human_review_required=status == SignoffCheckStatus.SKIPPED and bool(oracle.skip_reason),
+                    approval_id=oracle.skip_reason,
+                )
+            )
+        return evidence
 
     def _capture_final_state_hash(self) -> None:
         """Record a deterministic hash for the final design state."""

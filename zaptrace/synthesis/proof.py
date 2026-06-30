@@ -169,6 +169,7 @@ def generate_synthesis_proof(
     )
 
     pack = ProofPack(manifest=manifest, base_path=out_dir, results=results)
+    pack.update_autonomous_signoff()
     (out_dir / "proof.yaml").write_text(
         yaml.safe_dump(manifest.model_dump(mode="json"), sort_keys=False), encoding="utf-8"
     )

@@ -623,8 +623,13 @@ def proof_pack(design_path: str, output: str | None, verbose: bool, output_forma
         if output_format == "json":
             click.echo(_json.dumps(result, indent=2))
         else:
+            signoff = result.get("autonomous_signoff", {})
             print_summary(passed, f"Proof Pack: {result.get('name', '?')}")
             print_summary(passed, f"Checks: {passed_count}/{total} passed, {failed_count} failed")
+            print_summary(
+                signoff.get("status") == "autonomous-pass",
+                f"Autonomous status: {signoff.get('status', 'unknown')}",
+            )
             if verbose and result.get("results"):
                 for r in result["results"]:
                     icon = "✓" if r["status"] == "pass" else "✗"

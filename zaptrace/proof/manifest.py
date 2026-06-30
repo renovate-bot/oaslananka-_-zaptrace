@@ -17,6 +17,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .signoff import AutonomousSignoffDecision, AutonomousSignoffPolicy
+
 
 class CheckCategory(StrEnum):
     """Categories of proof checks."""
@@ -315,6 +317,11 @@ class ProofManifest(BaseModel):
     manufacturing_exports: list[ManufacturingExportEvidence] = Field(
         default_factory=list,
         description="Manufacturing export logs with artifact kinds, tool versions, warnings, and unsupported paths",
+    )
+
+    autonomous_signoff: AutonomousSignoffDecision = Field(
+        default_factory=lambda: AutonomousSignoffPolicy().evaluate([]),
+        description="Conservative autonomous sign-off decision derived from proof evidence",
     )
     final_state_hash: str = Field(default="", description="Final approved design state hash")
     transaction_history: list[dict[str, Any]] = Field(
