@@ -47,7 +47,7 @@ jobs:
       - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
 
       - name: Install semgrep
-        run: pip install semgrep==1.165.0
+        run: pip install semgrep==1.168.0
 
       - name: Run Semgrep
         run: semgrep scan --config p/default --error --sarif --output semgrep-results.sarif
