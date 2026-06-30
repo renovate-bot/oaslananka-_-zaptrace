@@ -69,6 +69,7 @@ class PipelineContext:
 
     design: Design | None = None
     source: str | None = None
+    synthesis: dict[str, Any] | None = None
     positions: dict[str, tuple[float, float]] | None = None
     routing: RoutingResult | None = None
     erc_result: ERCResult | None = None
@@ -238,7 +239,19 @@ class Autopilot:
         intent = ctx.source
         if not intent:
             raise PipelineHaltError("No intent provided for synthesis stage")
-        ctx.design = synthesize(intent)
+        # Prefer from-scratch composition synthesis (block graph → topology →
+        # values → bounded ERC repair); it carries net types, footprints, and
+        # provenance the legacy template selector cannot. Fall back to template
+        # selection only when composition composes nothing for this intent.
+        from zaptrace.synthesis.repair import synthesize_and_repair
+
+        result = synthesize_and_repair(intent)
+        design = result["design"]
+        if design.components:
+            ctx.design = design
+            ctx.synthesis = result
+        else:
+            ctx.design = synthesize(intent)
 
     def _stage_validate(self, ctx: PipelineContext) -> None:
         design = ctx.design
