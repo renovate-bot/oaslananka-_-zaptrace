@@ -175,3 +175,97 @@ def check_return_path_hints(nets: dict) -> list[ReturnPathCheck]:
             )
         )
     return results
+
+
+# ---------------------------------------------------------------------------
+# Impedance / return-path risk report
+# ---------------------------------------------------------------------------
+
+from enum import StrEnum  # noqa: E402
+
+from pydantic import BaseModel, ConfigDict, Field  # noqa: E402
+
+from zaptrace.core.models import Design  # noqa: E402
+
+
+class SiRiskStatus(StrEnum):
+    PASS = "pass"
+    HUMAN_REVIEW_REQUIRED = "human-review-required"
+    BLOCKED = "blocked"
+
+
+class ImpedanceAssumption(BaseModel):
+    model_config = ConfigDict(strict=False)
+
+    net_id: str
+    net_name: str
+    target_ohms: float
+    assumed_er: float = 4.2
+    assumed_copper_thickness_mm: float = 0.035
+    assumed_dielectric_height_mm: float = 0.18
+    method: str = "heuristic microstrip estimate, not field-solver signoff"
+
+
+class ReturnPathDiagnostic(BaseModel):
+    model_config = ConfigDict(strict=False)
+
+    net_id: str
+    net_name: str
+    risk: str
+    return_path_net: str | None = None
+    status: SiRiskStatus
+    message: str
+
+
+class ImpedanceReturnPathReport(BaseModel):
+    schema_version: str = "1.0"
+    assumption_count: int
+    diagnostic_count: int
+    blocked: bool
+    human_review_required: bool
+    assumptions: list[ImpedanceAssumption]
+    diagnostics: list[ReturnPathDiagnostic]
+    limitations: list[str] = Field(default_factory=list)
+
+
+def build_impedance_return_path_report(design: Design) -> ImpedanceReturnPathReport:
+    """Build explicit impedance-assumption and return-path continuity evidence."""
+    assumptions: list[ImpedanceAssumption] = []
+    for net_id, net in design.nets.items():
+        if net.constraints and net.constraints.impedance_target is not None:
+            assumptions.append(
+                ImpedanceAssumption(
+                    net_id=net_id,
+                    net_name=net.name,
+                    target_ohms=float(net.constraints.impedance_target),
+                )
+            )
+    diagnostics: list[ReturnPathDiagnostic] = []
+    for check in check_return_path_hints(design.nets):
+        status = SiRiskStatus.PASS
+        if check.risk == "high":
+            status = SiRiskStatus.HUMAN_REVIEW_REQUIRED
+        diagnostics.append(
+            ReturnPathDiagnostic(
+                net_id=check.net_id,
+                net_name=check.net_name,
+                risk=check.risk,
+                return_path_net=check.return_path_net,
+                status=status,
+                message=check.note,
+            )
+        )
+    human_review = any(item.status == SiRiskStatus.HUMAN_REVIEW_REQUIRED for item in diagnostics)
+    blocked = any(item.status == SiRiskStatus.BLOCKED for item in diagnostics)
+    return ImpedanceReturnPathReport(
+        assumption_count=len(assumptions),
+        diagnostic_count=len(diagnostics),
+        blocked=blocked,
+        human_review_required=human_review,
+        assumptions=assumptions,
+        diagnostics=diagnostics,
+        limitations=[
+            "Impedance assumptions are heuristic and require field-solver/fabricator stackup confirmation.",
+            "Return-path continuity uses constraints.return_path_net hints and cannot infer full plane geometry.",
+        ],
+    )

@@ -854,3 +854,57 @@ def test_passing_diffpair_length_does_not_block_autonomous_pass() -> None:
     report = json.loads(pack.report_json())
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
+
+
+def test_impedance_return_path_review_requires_human_review() -> None:
+    from zaptrace.proof.manifest import ImpedanceReturnPathEvidence
+
+    manifest = ProofManifest(
+        name="SiReview",
+        design_path="design.yaml",
+        impedance_return_path=ImpedanceReturnPathEvidence(
+            report_path="si-risk.json",
+            passed=True,
+            assumption_count=1,
+            diagnostic_count=1,
+            human_review_required=True,
+            blocked=False,
+            message="return-path risk needs review",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
+    assert report["autonomous_signoff"]["human_review_checks"] == ["impedance-return-path"]
+
+
+def test_impedance_return_path_blocking_evidence_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import ImpedanceReturnPathEvidence
+
+    manifest = ProofManifest(
+        name="SiBlocked",
+        design_path="design.yaml",
+        impedance_return_path=ImpedanceReturnPathEvidence(
+            report_path="si-risk.json",
+            passed=False,
+            assumption_count=1,
+            diagnostic_count=1,
+            human_review_required=False,
+            blocked=True,
+            message="return-path discontinuity blocks signoff",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["impedance-return-path"]

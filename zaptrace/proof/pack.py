@@ -452,6 +452,7 @@ class ProofPack:
             + self._signoff_evidence_from_footprint_proof()
             + self._signoff_evidence_from_placement_scorecard()
             + self._signoff_evidence_from_diffpair_length()
+            + self._signoff_evidence_from_impedance_return_path()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -655,6 +656,29 @@ class ProofPack:
                 summary=summary,
                 release_blocking=True,
                 evidence_required=True,
+            )
+        ]
+
+    def _signoff_evidence_from_impedance_return_path(self) -> list[SignoffEvidence]:
+        """Map impedance/return-path risk evidence into sign-off evidence."""
+        risk = self.manifest.impedance_return_path
+        if risk is None:
+            return []
+        status = SignoffCheckStatus.PASS if risk.passed else SignoffCheckStatus.FAIL
+        if risk.human_review_required and not risk.blocked:
+            status = SignoffCheckStatus.WARNING
+        summary = (
+            risk.message or f"{risk.assumption_count} impedance assumption(s), {risk.diagnostic_count} diagnostic(s)"
+        )
+        return [
+            SignoffEvidence(
+                name="impedance-return-path",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+                human_review_required=risk.human_review_required,
             )
         ]
 

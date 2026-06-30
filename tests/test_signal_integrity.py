@@ -119,3 +119,54 @@ class TestReturnPathChecker:
         net = Net(id="sig", name="MOSI", type=NetType.SIGNAL)
         results = check_return_path_hints({"sig": net})
         assert results == []
+
+
+class TestImpedanceReturnPathReport:
+    def test_report_makes_impedance_assumptions_explicit(self) -> None:
+        from zaptrace.analysis.signal_integrity import build_impedance_return_path_report
+        from zaptrace.core.models import Design, DesignMeta, Net, NetConstraints, NetType
+
+        design = Design(
+            meta=DesignMeta(name="si-risk"),
+            nets={
+                "usb_dp": Net(
+                    id="usb_dp",
+                    name="USB_DP",
+                    type=NetType.DIFFERENTIAL,
+                    constraints=NetConstraints(impedance_target=90.0, return_path_net="GND"),
+                )
+            },
+        )
+
+        report = build_impedance_return_path_report(design)
+
+        assert report.assumption_count == 1
+        assert report.assumptions[0].target_ohms == 90.0
+        assert report.assumptions[0].assumed_er == 4.2
+        assert report.diagnostics[0].risk == "low"
+        assert report.human_review_required is False
+        assert report.blocked is False
+
+    def test_missing_return_path_requires_human_review(self) -> None:
+        from zaptrace.analysis.signal_integrity import SiRiskStatus, build_impedance_return_path_report
+        from zaptrace.core.models import Design, DesignMeta, Net, NetConstraints, NetType
+
+        design = Design(
+            meta=DesignMeta(name="si-risk"),
+            nets={
+                "hs": Net(
+                    id="hs",
+                    name="HS_DATA",
+                    type=NetType.SIGNAL,
+                    constraints=NetConstraints(impedance_target=50.0),
+                )
+            },
+        )
+
+        report = build_impedance_return_path_report(design)
+
+        assert report.blocked is False
+        assert report.human_review_required is True
+        assert report.diagnostics[0].status == SiRiskStatus.HUMAN_REVIEW_REQUIRED
+        assert "No return-path net assigned" in report.diagnostics[0].message
+        assert report.limitations

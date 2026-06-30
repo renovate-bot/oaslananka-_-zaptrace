@@ -218,6 +218,18 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class ImpedanceReturnPathEvidence(BaseModel):
+    """Structured impedance/return-path risk evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to impedance/return-path JSON report")
+    passed: bool = Field(description="Whether impedance/return-path risk checks passed")
+    assumption_count: int = Field(default=0, ge=0, description="Number of explicit impedance assumptions")
+    diagnostic_count: int = Field(default=0, ge=0, description="Return-path diagnostic count")
+    human_review_required: bool = Field(default=False, description="Whether unsupported/high-risk cases need review")
+    blocked: bool = Field(default=False, description="Whether risk evidence blocks autonomous sign-off")
+    message: str = Field(default="", description="Human-readable impedance/return-path summary")
+
+
 class DiffPairLengthEvidence(BaseModel):
     """Structured differential-pair length/skew evidence stored in a proof-pack manifest."""
 
@@ -475,6 +487,10 @@ class ProofManifest(BaseModel):
     diffpair_length: DiffPairLengthEvidence | None = Field(
         default=None,
         description="Differential-pair length/skew evidence metadata",
+    )
+    impedance_return_path: ImpedanceReturnPathEvidence | None = Field(
+        default=None,
+        description="Impedance assumption and return-path risk evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(
