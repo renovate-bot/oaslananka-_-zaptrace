@@ -908,3 +908,59 @@ def test_impedance_return_path_blocking_evidence_blocks_autonomous_pass() -> Non
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
     assert report["autonomous_signoff"]["blocking_checks"] == ["impedance-return-path"]
+
+
+def test_repair_proposal_evidence_requires_human_review() -> None:
+    from zaptrace.proof.manifest import RepairProposalEvidence
+
+    manifest = ProofManifest(
+        name="RepairReview",
+        design_path="design.yaml",
+        repair_proposals=RepairProposalEvidence(
+            report_path="repair-proposals.json",
+            passed=True,
+            proposal_count=2,
+            verified_count=2,
+            silent_repair_count=0,
+            human_review_required=True,
+            blocked=False,
+            message="repair proposals include low-confidence defaults",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
+    assert report["autonomous_signoff"]["human_review_checks"] == ["repair-proposals"]
+
+
+def test_silent_repair_evidence_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import RepairProposalEvidence
+
+    manifest = ProofManifest(
+        name="RepairBlocked",
+        design_path="design.yaml",
+        repair_proposals=RepairProposalEvidence(
+            report_path="repair-proposals.json",
+            passed=False,
+            proposal_count=0,
+            verified_count=0,
+            silent_repair_count=1,
+            human_review_required=False,
+            blocked=True,
+            message="silent repair without proposal evidence",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["repair-proposals"]

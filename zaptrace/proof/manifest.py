@@ -218,6 +218,19 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class RepairProposalEvidence(BaseModel):
+    """Structured auto-repair proposal evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to repair proposal JSON report")
+    passed: bool = Field(description="Whether repair proposals passed evidence policy")
+    proposal_count: int = Field(default=0, ge=0, description="Number of repair proposals recorded")
+    verified_count: int = Field(default=0, ge=0, description="Number of proposals with improving verification")
+    silent_repair_count: int = Field(default=0, ge=0, description="Repairs without proposal evidence")
+    human_review_required: bool = Field(default=False, description="Whether repair evidence requires human review")
+    blocked: bool = Field(default=False, description="Whether repair evidence blocks autonomous sign-off")
+    message: str = Field(default="", description="Human-readable repair proposal evidence summary")
+
+
 class ImpedanceReturnPathEvidence(BaseModel):
     """Structured impedance/return-path risk evidence stored in a proof-pack manifest."""
 
@@ -491,6 +504,10 @@ class ProofManifest(BaseModel):
     impedance_return_path: ImpedanceReturnPathEvidence | None = Field(
         default=None,
         description="Impedance assumption and return-path risk evidence metadata",
+    )
+    repair_proposals: RepairProposalEvidence | None = Field(
+        default=None,
+        description="Auto-repair proposal and verification evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(

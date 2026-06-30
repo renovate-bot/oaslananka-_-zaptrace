@@ -453,6 +453,7 @@ class ProofPack:
             + self._signoff_evidence_from_placement_scorecard()
             + self._signoff_evidence_from_diffpair_length()
             + self._signoff_evidence_from_impedance_return_path()
+            + self._signoff_evidence_from_repair_proposals()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -679,6 +680,29 @@ class ProofPack:
                 release_blocking=True,
                 evidence_required=True,
                 human_review_required=risk.human_review_required,
+            )
+        ]
+
+    def _signoff_evidence_from_repair_proposals(self) -> list[SignoffEvidence]:
+        """Map auto-repair proposal evidence into sign-off evidence."""
+        repair = self.manifest.repair_proposals
+        if repair is None:
+            return []
+        status = SignoffCheckStatus.PASS if repair.passed else SignoffCheckStatus.FAIL
+        if repair.human_review_required and not repair.blocked:
+            status = SignoffCheckStatus.WARNING
+        summary = repair.message or f"{repair.proposal_count} repair proposal(s), {repair.verified_count} verified"
+        if repair.silent_repair_count:
+            summary = f"{summary}; {repair.silent_repair_count} silent repair(s)"
+        return [
+            SignoffEvidence(
+                name="repair-proposals",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+                human_review_required=repair.human_review_required,
             )
         ]
 
