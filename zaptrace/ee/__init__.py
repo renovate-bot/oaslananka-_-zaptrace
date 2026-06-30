@@ -3,6 +3,16 @@
 from zaptrace.ee.classifier import classify_design, get_net_class, summarize_classification
 from zaptrace.ee.constraints.net_classes import CLASS_RULES, NetClass, NetClassRule
 from zaptrace.ee.drc import DRCEngine
+from zaptrace.ee.footprint_proof import (
+    FootprintPadProof,
+    FootprintPin1Evidence,
+    FootprintProof,
+    FootprintSourceProvenance,
+    FootprintSourceType,
+    build_footprint_proof,
+    file_sha256,
+    write_footprint_proof,
+)
 from zaptrace.ee.footprints import (
     generate_footprint,
     generate_footprint_for_component,
@@ -26,12 +36,20 @@ __all__ = [
     "DEFAULT_TRACE_WIDTHS",
     "DEFAULT_VIA_SPECS",
     "STACKUP_PRESETS",
+    "build_footprint_proof",
     "classify_design",
     "get_net_class",
     "summarize_classification",
     "DRCEngine",
+    "FootprintPadProof",
+    "FootprintPin1Evidence",
+    "FootprintProof",
+    "FootprintSourceProvenance",
+    "FootprintSourceType",
     "generate_footprint",
+    "file_sha256",
     "generate_footprint_for_component",
     "list_supported_packages",
     "symbol_from_pins",
+    "write_footprint_proof",
 ]
