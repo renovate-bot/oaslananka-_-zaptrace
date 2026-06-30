@@ -817,9 +817,23 @@ def check_hole_to_hole_clearance(design: Design, _kb: KnowledgeBase, _result: DR
         return vio
 
     _IPC_MIN_WALL_MM = 0.25
-    vias = [(seg, seg.start[0], seg.start[1], seg.via_hole) for seg in routing.traces if seg.via_hole]
-    for i, (s1, x1, y1, d1) in enumerate(vias):
-        for s2, x2, y2, d2 in vias[i + 1 :]:
+    # Count real drilled holes, not every trace segment: vias live in
+    # ``routing.vias`` as ``(x, y, pad, hole, [net])`` (the canonical list every
+    # exporter reads), and some importers instead flag a segment with ``via``.
+    # Reading ``seg.via_hole`` would treat every segment start as a via, since
+    # that field defaults to a non-zero diameter.
+    holes: list[tuple[float, float, float, str]] = []
+    for v in routing.vias:
+        if len(v) < 4:
+            continue
+        net = str(v[4]) if len(v) > 4 else ""
+        holes.append((float(v[0]), float(v[1]), float(v[3]), net))
+    for seg in routing.traces:
+        if seg.via:
+            holes.append((seg.start[0], seg.start[1], seg.via_hole, seg.net_id))
+
+    for i, (x1, y1, d1, n1) in enumerate(holes):
+        for x2, y2, d2, n2 in holes[i + 1 :]:
             dist = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
             wall_clearance = dist - (d1 + d2) / 2.0
             if wall_clearance < _IPC_MIN_WALL_MM - 0.001:
@@ -830,9 +844,9 @@ def check_hole_to_hole_clearance(design: Design, _kb: KnowledgeBase, _result: DR
                         message=(
                             f"Via hole-to-hole wall clearance {wall_clearance:.3f}mm "
                             f"below IPC-2221 minimum {_IPC_MIN_WALL_MM}mm "
-                            f"(nets '{s1.net_id}' and '{s2.net_id}')"
+                            f"(nets '{n1}' and '{n2}')"
                         ),
-                        net_id=s1.net_id,
+                        net_id=n1 or None,
                     )
                 )
     return vio
