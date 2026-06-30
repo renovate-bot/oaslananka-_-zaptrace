@@ -45,12 +45,24 @@ class TestResolution:
         out = synthesize_and_repair("STM32 3.3V board, RS485 modbus node")
         assert out["footprints"].fully_resolved
 
-    def test_module_package_is_unresolved_not_faked(self) -> None:
-        design = _design_with(Component(id="U1", ref="U1", type="mcu", value="ESP32", footprint="ESP32-C3-MINI-1"))
+    def test_unknown_module_package_is_unresolved_not_faked(self) -> None:
+        # A package with neither a parametric generator nor a vendored land
+        # pattern stays an honest gap — pads are never invented.
+        design = _design_with(
+            Component(id="U1", ref="U1", type="mcu", value="MysteryMCU", footprint="NO-SUCH-MODULE-QFNX")
+        )
         result = resolve_footprints(design)
         assert design.components["U1"].footprint_def is None  # no invented pads
         assert any(u["ref"] == "U1" for u in result.unresolved)
         assert not result.fully_resolved
+
+    def test_known_module_resolves_via_vendored_geometry(self) -> None:
+        # A module with a verified vendored land pattern resolves with real pads.
+        design = _design_with(Component(id="U1", ref="U1", type="mcu", value="ESP32", footprint="ESP32-C3-MINI-1"))
+        result = resolve_footprints(design)
+        fp = design.components["U1"].footprint_def
+        assert fp is not None and fp.pads  # verified geometry, not invented
+        assert result.fully_resolved
 
     def test_missing_name_is_reported(self) -> None:
         design = _design_with(Component(id="R1", ref="R1", type="resistor", value="10k"))  # no footprint
@@ -66,15 +78,14 @@ class TestResolution:
 
 
 class TestEndToEnd:
-    def test_synthesized_board_gets_geometry_except_module(self) -> None:
-        # No I2C sensor here, so the only custom-package part is the MCU module.
+    def test_synthesized_board_gets_full_geometry(self) -> None:
+        # The MCU module now resolves from a vendored verified land pattern, so
+        # every part — passives, the RS485 IC, and the ESP32 module — has pads.
         out = synthesize_and_repair("ESP32-C3 USB-C 3.3V board, RS485 modbus")
         design, footprints = out["design"], out["footprints"]
         with_geometry = [c for c in design.components.values() if c.footprint_def and c.footprint_def.pads]
-        # Every passive/IC resolves; only the MCU module is the honest gap.
-        assert len(with_geometry) == len(design.components) - 1
-        assert not footprints.fully_resolved
-        assert all(u["type"] == "mcu" for u in footprints.unresolved)
+        assert len(with_geometry) == len(design.components)
+        assert footprints.fully_resolved
 
     def test_resolution_to_dict_shape(self) -> None:
         out = synthesize_and_repair("USB-C powered board, 3.3V rail, I2C sensor")

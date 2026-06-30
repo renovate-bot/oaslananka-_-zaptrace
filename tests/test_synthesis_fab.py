@@ -59,11 +59,12 @@ class TestFabFlow:
             assert any("DRC error" in item for item in result.review_checklist)
 
     def test_review_checklist_flags_unresolved_footprints_and_mandates_review(self, tmp_path: Path) -> None:
-        result = synthesize_to_manufacturing("ESP32-C3 USB-C 3.3V board, I2C temperature sensor", tmp_path)
+        # BMP390 (Bosch LGA-10) has no parametric generator and no vendored land
+        # pattern, so it is the honest gap the checklist must call out.
+        result = synthesize_to_manufacturing("nRF52840 3.3V board, I2C pressure sensor BMP390", tmp_path)
         joined = "\n".join(result.review_checklist)
-        # the MCU module has no land pattern yet → must be called out
         assert "no pad geometry" in joined
-        assert "ESP32-C3-MINI-1" in joined
+        assert "BMP390" in joined
         # the mandatory human-review line is always present
         assert any("qualified engineer" in item for item in result.review_checklist)
 

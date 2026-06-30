@@ -104,6 +104,75 @@ def import_kicad_pcb(path: str | Path) -> KiCadImportResult:
     return KiCadImportResult(design=design, unsupported=unsupported, source_path=pcb_path)
 
 
+def load_kicad_footprint(path: str | Path) -> FootprintDef | None:
+    """Load a KiCad ``.kicad_mod`` land pattern into a :class:`FootprintDef`.
+
+    Reads pad geometry (id, shape, position, size, drill, layer) and the F.CrtYd
+    courtyard extent. Returns ``None`` when the file is not a footprint or has no
+    pads — an empty land pattern is not usable geometry. Tolerant of KiCad format
+    versions (single- or multi-line forms) since it parses S-expressions, not text.
+    """
+    fp_path = Path(path)
+    root = _parse_one(fp_path.read_text(encoding="utf-8"))
+    if not isinstance(root, list) or _head(root) != "footprint":
+        return None
+    pads = [_pad_from_form(pad) for pad in _children(root, "pad") if _atom(pad, 1)]
+    if not pads:
+        return None
+    return FootprintDef(
+        pads=pads,
+        courtyard=_courtyard_extent(root),
+        description=_atom(_first(root, "descr"), 1),
+        source=f"KiCad:{fp_path.stem}",
+    )
+
+
+def _courtyard_extent(root: SExpr) -> tuple[float, float]:
+    """Bounding-box (width, height) of the F.CrtYd graphics, in mm.
+
+    The router blocks a component by its courtyard; a zero extent makes it skip
+    the part, so fall back to the pad bounding box when no courtyard is drawn.
+    """
+    xs: list[float] = []
+    ys: list[float] = []
+    for name in ("fp_line", "fp_rect"):
+        for form in _children(root, name):
+            if _atom(_first(form, "layer"), 1) != "F.CrtYd":
+                continue
+            for endpoint in ("start", "end"):
+                point = _first(form, endpoint)
+                if point is not None:
+                    xs.append(_float_atom(point, 1))
+                    ys.append(_float_atom(point, 2))
+    for form in _children(root, "fp_poly"):
+        if _atom(_first(form, "layer"), 1) != "F.CrtYd":
+            continue
+        pts = _first(form, "pts")
+        for xy in _children(pts, "xy") if pts is not None else []:
+            xs.append(_float_atom(xy, 1))
+            ys.append(_float_atom(xy, 2))
+    if not xs or not ys:
+        return _pad_bbox_extent(root)
+    return (round(max(xs) - min(xs), 4), round(max(ys) - min(ys), 4))
+
+
+def _pad_bbox_extent(root: SExpr) -> tuple[float, float]:
+    """Fallback courtyard: pad bounding box plus a small margin."""
+    xs: list[float] = []
+    ys: list[float] = []
+    for pad in _children(root, "pad"):
+        at = _first(pad, "at")
+        size = _first(pad, "size")
+        cx, cy = _float_atom(at, 1), _float_atom(at, 2)
+        half_w = _float_atom(size, 1, 1.0) / 2.0
+        half_h = _float_atom(size, 2, 1.0) / 2.0
+        xs.extend((cx - half_w, cx + half_w))
+        ys.extend((cy - half_h, cy + half_h))
+    if not xs or not ys:
+        return (0.0, 0.0)
+    return (round(max(xs) - min(xs) + 0.5, 4), round(max(ys) - min(ys) + 0.5, 4))
+
+
 def score_kicad_roundtrip(
     original: Design,
     imported: Design,

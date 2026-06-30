@@ -17,6 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
+from zaptrace.ee.footprint_vendor import resolve_vendored_footprint
 from zaptrace.ee.footprints import generate_footprint_for_component
 
 if TYPE_CHECKING:
@@ -69,6 +70,10 @@ def resolve_footprints(design: Design) -> FootprintResolution:
             package = package_by_mpn.get(comp.mpn)
             if package:
                 footprint_def = generate_footprint_for_component(package, comp.type)
+        # Packages with no parametric generator (modules, DFN/LGA/aQFN, magjacks)
+        # fall back to a verified vendored KiCad land pattern keyed by name.
+        if footprint_def is None:
+            footprint_def = resolve_vendored_footprint(comp.footprint)
         if footprint_def is not None:
             comp.footprint_def = footprint_def
             result.resolved.append(comp.ref)
