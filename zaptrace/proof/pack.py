@@ -454,6 +454,7 @@ class ProofPack:
             + self._signoff_evidence_from_diffpair_length()
             + self._signoff_evidence_from_impedance_return_path()
             + self._signoff_evidence_from_repair_proposals()
+            + self._signoff_evidence_from_rail_current_budget()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -703,6 +704,29 @@ class ProofPack:
                 release_blocking=True,
                 evidence_required=True,
                 human_review_required=repair.human_review_required,
+            )
+        ]
+
+    def _signoff_evidence_from_rail_current_budget(self) -> list[SignoffEvidence]:
+        """Map rail current budget evidence into sign-off evidence."""
+        budget = self.manifest.rail_current_budget
+        if budget is None:
+            return []
+        status = SignoffCheckStatus.PASS if budget.passed else SignoffCheckStatus.FAIL
+        if budget.human_review_required and not budget.blocked:
+            status = SignoffCheckStatus.WARNING
+        summary = budget.message or f"{budget.rail_count} rail(s), {budget.failure_count} budget failure(s)"
+        if budget.missing_metadata_count:
+            summary = f"{summary}; {budget.missing_metadata_count} missing current metadata item(s)"
+        return [
+            SignoffEvidence(
+                name="rail-current-budget",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+                human_review_required=budget.human_review_required,
             )
         ]
 

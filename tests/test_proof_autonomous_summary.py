@@ -964,3 +964,59 @@ def test_silent_repair_evidence_blocks_autonomous_pass() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
     assert report["autonomous_signoff"]["blocking_checks"] == ["repair-proposals"]
+
+
+def test_rail_current_budget_failure_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import RailCurrentBudgetEvidence
+
+    manifest = ProofManifest(
+        name="RailBudgetBlocked",
+        design_path="design.yaml",
+        rail_current_budget=RailCurrentBudgetEvidence(
+            report_path="rail-current-budget.json",
+            passed=False,
+            rail_count=1,
+            failure_count=1,
+            missing_metadata_count=0,
+            human_review_required=False,
+            blocked=True,
+            message="rail current budget exceeded",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["rail-current-budget"]
+
+
+def test_missing_rail_current_metadata_requires_human_review() -> None:
+    from zaptrace.proof.manifest import RailCurrentBudgetEvidence
+
+    manifest = ProofManifest(
+        name="RailBudgetReview",
+        design_path="design.yaml",
+        rail_current_budget=RailCurrentBudgetEvidence(
+            report_path="rail-current-budget.json",
+            passed=True,
+            rail_count=1,
+            failure_count=0,
+            missing_metadata_count=1,
+            human_review_required=True,
+            blocked=False,
+            message="rail current metadata incomplete",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
+    assert report["autonomous_signoff"]["human_review_checks"] == ["rail-current-budget"]

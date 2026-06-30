@@ -7,6 +7,10 @@ from zaptrace.analysis.diffpair import (
     build_diffpair_length_report,
     write_diffpair_length_report,
 )
+from zaptrace.analysis.rail_current import (
+    RailCurrentBudgetReport,
+    build_rail_current_budget_report,
+)
 from zaptrace.analysis.reports import (
     AnalysisFinding,
     ElectricalAnalysisReport,
@@ -24,6 +28,8 @@ __all__ = [
     "DiffPairLengthReport",
     "build_diffpair_length_report",
     "write_diffpair_length_report",
+    "RailCurrentBudgetReport",
+    "build_rail_current_budget_report",
     "ImpedanceReturnPathReport",
     "build_impedance_return_path_report",
     "AnalysisFinding",

@@ -39,6 +39,7 @@ from .manifest import (
     NetlistParityEvidence,
     PlacementScorecardEvidence,
     ProofManifest,
+    RailCurrentBudgetEvidence,
     RepairProposalEvidence,
     RequirementsCoverageEvidence,
 )
@@ -64,6 +65,7 @@ __all__ = [
     "FootprintProofEvidence",
     "ImpedanceReturnPathEvidence",
     "PlacementScorecardEvidence",
+    "RailCurrentBudgetEvidence",
     "RepairProposalEvidence",
     "DeratingEvidence",
     "NetlistParityEvidence",

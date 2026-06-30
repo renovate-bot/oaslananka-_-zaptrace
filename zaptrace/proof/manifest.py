@@ -218,6 +218,19 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class RailCurrentBudgetEvidence(BaseModel):
+    """Structured rail current budget evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to rail current budget JSON report")
+    passed: bool = Field(description="Whether rail current budget passed")
+    rail_count: int = Field(default=0, ge=0, description="Number of rails checked")
+    failure_count: int = Field(default=0, ge=0, description="Rail current budget failure count")
+    missing_metadata_count: int = Field(default=0, ge=0, description="Missing source/load current metadata count")
+    human_review_required: bool = Field(default=False, description="Whether budget evidence needs human review")
+    blocked: bool = Field(default=False, description="Whether budget evidence blocks autonomous sign-off")
+    message: str = Field(default="", description="Human-readable rail current budget summary")
+
+
 class RepairProposalEvidence(BaseModel):
     """Structured auto-repair proposal evidence stored in a proof-pack manifest."""
 
@@ -508,6 +521,10 @@ class ProofManifest(BaseModel):
     repair_proposals: RepairProposalEvidence | None = Field(
         default=None,
         description="Auto-repair proposal and verification evidence metadata",
+    )
+    rail_current_budget: RailCurrentBudgetEvidence | None = Field(
+        default=None,
+        description="Rail current budget evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(
