@@ -71,6 +71,9 @@ markers = [
     "slow: marks tests as slow",
     "rust: marks tests requiring Rust extension",
 ]
+filterwarnings = [
+    "ignore:Using .*httpx.* with .*starlette.testclient.* is deprecated.*",
+]
 
 [tool.pyright]
 include = ["zaptrace"]

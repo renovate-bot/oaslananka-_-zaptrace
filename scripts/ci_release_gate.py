@@ -173,8 +173,26 @@ def build_summary(records: list[GateRecord]) -> dict[str, object]:
     }
 
 
+_HELP_EPILOG = """
+Examples:
+  python scripts/ci_release_gate.py --gate lint=success --gate tests=success
+  python scripts/ci_release_gate.py --gate lint=success --required-oracle kicad-oracle --strict
+  python scripts/ci_release_gate.py --gate kicad-oracle=skipped --skip-reason kicad-oracle=APPROVAL-1 --strict
+
+Notes:
+  The summary is milestone evidence for v0.2.3. The Python package version may
+  intentionally remain lower until the release tag is cut. At least one --gate
+  entry is required. A skipped gate blocks strict mode unless an approved
+  --skip-reason with the same gate name is supplied.
+"""
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Generate a v0.2.3 release-gate summary")
+    parser = argparse.ArgumentParser(
+        description="Generate a v0.2.3 release-gate summary",
+        epilog=_HELP_EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--gate", action="append", default=[], help="Gate result in name=value form")
     parser.add_argument("--skip-reason", action="append", default=[], help="Approved skip reason in name=reason form")
     parser.add_argument(

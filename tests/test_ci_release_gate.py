@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from scripts.ci_release_gate import (
     FAIL,
     PASS,
@@ -112,3 +114,13 @@ def test_main_required_oracle_with_approved_skip_passes_strict(tmp_path) -> None
     assert code == 0
     data = json.loads(output.read_text())
     assert data["blocked"] is False
+
+
+def test_help_documents_canonical_invocations(capsys) -> None:
+    with pytest.raises(SystemExit) as exc:
+        main(["--help"])
+    captured = capsys.readouterr()
+    assert exc.value.code == 0
+    assert "Examples:" in captured.out
+    assert "--gate lint=success --gate tests=success" in captured.out
+    assert "The Python package version may" in captured.out
