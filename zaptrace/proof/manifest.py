@@ -218,6 +218,17 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class DeratingEvidence(BaseModel):
+    """Structured component derating policy evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to derating report JSON")
+    passed: bool = Field(description="Whether derating policy passed")
+    component_count: int = Field(default=0, ge=0, description="Number of components inspected")
+    finding_count: int = Field(default=0, ge=0, description="Number of derating findings")
+    blocking_finding_count: int = Field(default=0, ge=0, description="Number of failed derating findings")
+    message: str = Field(default="", description="Human-readable derating summary")
+
+
 class ComponentMetadataEvidence(BaseModel):
     """Structured component metadata gate evidence stored in a proof-pack manifest."""
 
@@ -389,6 +400,10 @@ class ProofManifest(BaseModel):
     component_metadata: ComponentMetadataEvidence | None = Field(
         default=None,
         description="Component metadata validator/gate evidence metadata",
+    )
+    derating_evidence: DeratingEvidence | None = Field(
+        default=None,
+        description="Component derating policy evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(

@@ -565,3 +565,54 @@ def test_clean_supply_chain_risk_does_not_block_autonomous_pass() -> None:
     report = json.loads(pack.report_json())
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
+
+
+def test_failed_derating_evidence_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import DeratingEvidence
+
+    manifest = ProofManifest(
+        name="DeratingBlocked",
+        design_path="design.yaml",
+        derating_evidence=DeratingEvidence(
+            report_path="derating.json",
+            passed=False,
+            component_count=2,
+            finding_count=3,
+            blocking_finding_count=1,
+            message="derating policy failed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["component-derating"]
+
+
+def test_passing_derating_evidence_does_not_block_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import DeratingEvidence
+
+    manifest = ProofManifest(
+        name="DeratingPass",
+        design_path="design.yaml",
+        derating_evidence=DeratingEvidence(
+            report_path="derating.json",
+            passed=True,
+            component_count=2,
+            finding_count=2,
+            blocking_finding_count=0,
+            message="derating policy passed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS

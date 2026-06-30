@@ -447,6 +447,7 @@ class ProofPack:
             + self._signoff_evidence_from_oracles()
             + self._signoff_evidence_from_netlist_parity()
             + self._signoff_evidence_from_component_metadata()
+            + self._signoff_evidence_from_derating()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -537,6 +538,25 @@ class ProofPack:
             SignoffEvidence(
                 name="component-metadata",
                 status=SignoffCheckStatus.PASS if metadata.valid else SignoffCheckStatus.FAIL,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+            )
+        ]
+
+    def _signoff_evidence_from_derating(self) -> list[SignoffEvidence]:
+        """Map component derating policy evidence into release-blocking sign-off evidence."""
+        derating = self.manifest.derating_evidence
+        if derating is None:
+            return []
+        summary = derating.message
+        if derating.blocking_finding_count:
+            summary = f"{summary}; {derating.blocking_finding_count} failed derating finding(s)"
+        return [
+            SignoffEvidence(
+                name="component-derating",
+                status=SignoffCheckStatus.PASS if derating.passed else SignoffCheckStatus.FAIL,
                 source="zaptrace",
                 summary=summary,
                 release_blocking=True,
