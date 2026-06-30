@@ -21,6 +21,7 @@ class TestGenerateSynthesisProof:
             "requirements_coverage.json",
             "assumptions.json",
             "kicad_schematic_parity.json",
+            "kicad_pcb_parity.json",
         ):
             assert (tmp_path / fname).exists(), f"{fname} not written"
 
@@ -92,3 +93,14 @@ class TestGenerateSynthesisProof:
         assert any(
             a.path.endswith(".kicad_netlist_evidence.json") and a.kind == "netlist" for a in pack.manifest.artifacts
         )
+
+    def test_kicad_pcb_parity_report_is_written_and_manifested(self, tmp_path: Path) -> None:
+        pack = generate_synthesis_proof(_INTENT, tmp_path, name="UsbI2c")
+        report = json.loads((tmp_path / "kicad_pcb_parity.json").read_text())
+
+        assert report["schema_version"] == "1.0"
+        assert report["check"] == "kicad_schematic_to_pcb_netlist"
+        assert pack.manifest.kicad_pcb_parity.report_path == "kicad_pcb_parity.json"
+        assert pack.manifest.kicad_pcb_parity.passed == report["passed"]
+        assert any(a.path == "kicad_pcb_parity.json" and a.kind == "report" for a in pack.manifest.artifacts)
+        assert any(a.path.endswith(".kicad_pcb") and a.kind == "kicad" for a in pack.manifest.artifacts)

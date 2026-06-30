@@ -402,3 +402,30 @@ def test_failed_kicad_netlist_parity_blocks_autonomous_pass() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
     assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:ir_to_kicad_schematic_netlist"]
+
+
+def test_failed_kicad_pcb_parity_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import NetlistParityEvidence
+
+    manifest = ProofManifest(
+        name="FailedPcbParity",
+        design_path="design.yaml",
+        kicad_pcb_parity=NetlistParityEvidence(
+            report_path="kicad_pcb_parity.json",
+            check="kicad_schematic_to_pcb_netlist",
+            passed=False,
+            missing_net_count=1,
+            extra_net_count=0,
+            pin_mismatch_count=1,
+            message="KiCad schematic and PCB connectivity differ",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="drc", type="drc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:kicad_schematic_to_pcb_netlist"]

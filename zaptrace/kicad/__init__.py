@@ -25,12 +25,18 @@ from .oracle import (
 )
 from .parity import (
     KiCadNetlistParityReport,
+    KiCadPcbParityReport,
     NetPinMismatch,
     compare_ir_to_kicad_netlist_evidence,
     compare_ir_to_kicad_netlist_evidence_file,
+    compare_kicad_schematic_to_pcb,
+    compare_kicad_schematic_to_pcb_files,
     ir_net_map,
     kicad_evidence_net_map,
+    parse_kicad_pcb_pad_net_map,
+    schematic_evidence_ref_net_map,
     write_kicad_netlist_parity_report,
+    write_kicad_pcb_parity_report,
 )
 
 __all__ = [
@@ -52,10 +58,16 @@ __all__ = [
     "run_drc",
     "run_pcb_drc",
     "KiCadNetlistParityReport",
+    "KiCadPcbParityReport",
     "NetPinMismatch",
     "compare_ir_to_kicad_netlist_evidence",
     "compare_ir_to_kicad_netlist_evidence_file",
+    "compare_kicad_schematic_to_pcb",
+    "compare_kicad_schematic_to_pcb_files",
     "ir_net_map",
     "kicad_evidence_net_map",
+    "parse_kicad_pcb_pad_net_map",
+    "schematic_evidence_ref_net_map",
     "write_kicad_netlist_parity_report",
+    "write_kicad_pcb_parity_report",
 ]

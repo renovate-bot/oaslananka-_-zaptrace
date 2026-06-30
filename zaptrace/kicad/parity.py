@@ -119,3 +119,144 @@ def write_kicad_netlist_parity_report(
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
     return out
+
+
+class KiCadPcbParityReport(BaseModel):
+    """KiCad schematic-evidence ↔ PCB pad-net parity report."""
+
+    schema_version: str = "1.0"
+    check: str = "kicad_schematic_to_pcb_netlist"
+    passed: bool
+    missing_nets: list[str] = Field(default_factory=list)
+    extra_nets: list[str] = Field(default_factory=list)
+    pin_mismatches: list[NetPinMismatch] = Field(default_factory=list)
+    schematic_net_count: int = 0
+    pcb_net_count: int = 0
+    message: str = ""
+
+    @property
+    def error_count(self) -> int:
+        return len(self.missing_nets) + len(self.extra_nets) + len(self.pin_mismatches)
+
+
+def _component_ref_aliases(design: Design) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    for component in design.components.values():
+        aliases[component.id] = component.ref
+        aliases[component.ref] = component.ref
+    return aliases
+
+
+def schematic_evidence_ref_net_map(design: Design, evidence: dict[str, Any]) -> dict[str, set[str]]:
+    """Return ``net_name -> {reference.pin}`` from KiCad schematic netlist evidence."""
+    aliases = _component_ref_aliases(design)
+    result: dict[str, set[str]] = {}
+    for net in evidence.get("nets", []):
+        if not isinstance(net, dict):
+            continue
+        net_name = str(net.get("name", ""))
+        if not net_name:
+            continue
+        nodes: set[str] = set()
+        for node in net.get("nodes", []):
+            if not isinstance(node, dict):
+                continue
+            component_ref = str(node.get("component_ref", ""))
+            pin_name = str(node.get("pin_name", ""))
+            canonical_ref = aliases.get(component_ref, component_ref)
+            if canonical_ref and pin_name:
+                nodes.add(_node_key(canonical_ref, pin_name))
+        result[net_name] = nodes
+    return result
+
+
+def parse_kicad_pcb_pad_net_map(pcb_text: str) -> dict[str, set[str]]:
+    """Parse exported KiCad PCB text into ``net_name -> {reference.pad}``.
+
+    This parser is intentionally conservative and targets the KiCad S-expression
+    subset emitted by ZapTrace. It records only footprint references and pad net
+    assignments; missing pad net assignments remain visible as absent nodes.
+    """
+    import re
+
+    result: dict[str, set[str]] = {}
+    current_ref = ""
+    current_pad = ""
+    in_footprint = False
+    for raw_line in pcb_text.splitlines():
+        line = raw_line.strip()
+        if line.startswith("(footprint "):
+            in_footprint = True
+            current_ref = ""
+            current_pad = ""
+            continue
+        if in_footprint and line == ")":
+            current_pad = ""
+            continue
+        if not in_footprint:
+            continue
+        ref_match = re.search(r'\(property\s+"Reference"\s+"([^"]+)"', line)
+        if ref_match:
+            current_ref = ref_match.group(1)
+            continue
+        pad_match = re.search(r'\(pad\s+"([^"]+)"', line)
+        if pad_match:
+            current_pad = pad_match.group(1)
+            continue
+        net_match = re.search(r'\(net\s+\d+\s+"([^"]+)"\)', line)
+        if net_match and current_ref and current_pad:
+            result.setdefault(net_match.group(1), set()).add(_node_key(current_ref, current_pad))
+    return result
+
+
+def compare_kicad_schematic_to_pcb(
+    design: Design,
+    schematic_evidence: dict[str, Any],
+    pcb_text: str,
+) -> KiCadPcbParityReport:
+    """Compare KiCad schematic netlist evidence against PCB pad-net assignments."""
+    schematic = schematic_evidence_ref_net_map(design, schematic_evidence)
+    pcb = parse_kicad_pcb_pad_net_map(pcb_text)
+    missing_nets = sorted(set(schematic) - set(pcb))
+    extra_nets = sorted(set(pcb) - set(schematic))
+    mismatches: list[NetPinMismatch] = []
+    for net_name in sorted(set(schematic).intersection(pcb)):
+        missing_nodes = sorted(schematic[net_name] - pcb[net_name])
+        extra_nodes = sorted(pcb[net_name] - schematic[net_name])
+        if missing_nodes or extra_nodes:
+            mismatches.append(NetPinMismatch(net_id=net_name, missing_nodes=missing_nodes, extra_nodes=extra_nodes))
+    passed = not missing_nets and not extra_nets and not mismatches
+    return KiCadPcbParityReport(
+        passed=passed,
+        missing_nets=missing_nets,
+        extra_nets=extra_nets,
+        pin_mismatches=mismatches,
+        schematic_net_count=len(schematic),
+        pcb_net_count=len(pcb),
+        message="KiCad schematic and PCB connectivity match"
+        if passed
+        else "KiCad schematic and PCB connectivity differ",
+    )
+
+
+def compare_kicad_schematic_to_pcb_files(
+    design: Design,
+    schematic_evidence_path: str | Path,
+    pcb_path: str | Path,
+) -> KiCadPcbParityReport:
+    evidence = json.loads(Path(schematic_evidence_path).read_text(encoding="utf-8"))
+    pcb_text = Path(pcb_path).read_text(encoding="utf-8")
+    return compare_kicad_schematic_to_pcb(design, evidence, pcb_text)
+
+
+def write_kicad_pcb_parity_report(
+    design: Design,
+    schematic_evidence_path: str | Path,
+    pcb_path: str | Path,
+    output_path: str | Path,
+) -> Path:
+    report = compare_kicad_schematic_to_pcb_files(design, schematic_evidence_path, pcb_path)
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    return out

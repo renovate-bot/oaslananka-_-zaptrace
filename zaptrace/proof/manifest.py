@@ -367,6 +367,10 @@ class ProofManifest(BaseModel):
         default=None,
         description="IR-to-KiCad schematic netlist parity evidence metadata",
     )
+    kicad_pcb_parity: NetlistParityEvidence | None = Field(
+        default=None,
+        description="KiCad schematic-to-PCB netlist parity evidence metadata",
+    )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(
         default=None,

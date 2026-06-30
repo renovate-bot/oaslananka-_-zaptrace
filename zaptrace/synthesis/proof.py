@@ -22,8 +22,8 @@ from typing import TYPE_CHECKING
 import yaml
 
 from zaptrace.core.parser import design_to_dict
-from zaptrace.export.kicad import export_kicad_netlist_evidence
-from zaptrace.kicad.parity import write_kicad_netlist_parity_report
+from zaptrace.export.kicad import export_kicad_netlist_evidence, export_kicad_pcb
+from zaptrace.kicad.parity import write_kicad_netlist_parity_report, write_kicad_pcb_parity_report
 from zaptrace.proof import (
     ArtifactRecord,
     AssumptionsEvidence,
@@ -137,7 +137,8 @@ def generate_synthesis_proof(
     """Synthesize a board from *intent* and emit an auditable proof pack in *output_dir*.
 
     Writes ``design.yaml`` (the routed design, hashed), KiCad netlist evidence,
-    ``kicad_schematic_parity.json`` (IR ↔ KiCad netlist parity), ``requirements_coverage.json``
+    ``kicad_schematic_parity.json`` (IR ↔ KiCad netlist parity),
+    ``kicad_pcb_parity.json`` (schematic ↔ PCB netlist parity), ``requirements_coverage.json``
     (requirement ID traceability), ``assumptions.json`` (explicit unresolved
     assumptions), ``proof.yaml`` (the manifest with synthesis
     decisions, input/environment provenance, and check records), and ``report.json``
@@ -160,6 +161,14 @@ def generate_synthesis_proof(
         out_dir / "kicad_schematic_parity.json",
     )
     parity_report = yaml.safe_load(parity_path.read_text(encoding="utf-8"))
+    kicad_pcb_path = export_kicad_pcb(design, out_dir)["pcb"]
+    pcb_parity_path = write_kicad_pcb_parity_report(
+        design,
+        kicad_netlist_path,
+        kicad_pcb_path,
+        out_dir / "kicad_pcb_parity.json",
+    )
+    pcb_parity_report = yaml.safe_load(pcb_parity_path.read_text(encoding="utf-8"))
 
     checks = _baseline_checks(design)
     results = ProofRunner(design).run_checks(checks)
@@ -200,6 +209,15 @@ def generate_synthesis_proof(
             pin_mismatch_count=len(parity_report["pin_mismatches"]),
             message=str(parity_report["message"]),
         ),
+        kicad_pcb_parity=NetlistParityEvidence(
+            report_path="kicad_pcb_parity.json",
+            check="kicad_schematic_to_pcb_netlist",
+            passed=bool(pcb_parity_report["passed"]),
+            missing_net_count=len(pcb_parity_report["missing_nets"]),
+            extra_net_count=len(pcb_parity_report["extra_nets"]),
+            pin_mismatch_count=len(pcb_parity_report["pin_mismatches"]),
+            message=str(pcb_parity_report["message"]),
+        ),
         assumptions_evidence=AssumptionsEvidence(
             report_path="assumptions.json",
             requirements_hash=str(assumptions_report["requirements_hash"]),
@@ -239,10 +257,22 @@ def generate_synthesis_proof(
                 size_bytes=kicad_netlist_path.stat().st_size,
             ),
             ArtifactRecord(
+                path=kicad_pcb_path.name,
+                kind="kicad",
+                sha256=hash_file(kicad_pcb_path),
+                size_bytes=kicad_pcb_path.stat().st_size,
+            ),
+            ArtifactRecord(
                 path="kicad_schematic_parity.json",
                 kind="report",
                 sha256=hash_file(parity_path),
                 size_bytes=parity_path.stat().st_size,
+            ),
+            ArtifactRecord(
+                path="kicad_pcb_parity.json",
+                kind="report",
+                sha256=hash_file(pcb_parity_path),
+                size_bytes=pcb_parity_path.stat().st_size,
             ),
             ArtifactRecord(
                 path="requirements_coverage.json",
