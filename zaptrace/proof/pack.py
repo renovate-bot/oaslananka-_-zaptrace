@@ -448,6 +448,7 @@ class ProofPack:
             + self._signoff_evidence_from_netlist_parity()
             + self._signoff_evidence_from_component_metadata()
             + self._signoff_evidence_from_derating()
+            + self._signoff_evidence_from_datasheet_provenance()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -561,6 +562,31 @@ class ProofPack:
                 summary=summary,
                 release_blocking=True,
                 evidence_required=True,
+            )
+        ]
+
+    def _signoff_evidence_from_datasheet_provenance(self) -> list[SignoffEvidence]:
+        """Map datasheet confidence/conflict evidence into sign-off evidence."""
+        provenance = self.manifest.datasheet_provenance
+        if provenance is None:
+            return []
+        status = SignoffCheckStatus.FAIL if provenance.blocked else SignoffCheckStatus.PASS
+        if provenance.human_review_required and not provenance.blocked:
+            status = SignoffCheckStatus.WARNING
+        summary = provenance.message
+        if provenance.conflict_count:
+            summary = f"{summary}; {provenance.conflict_count} conflicting datasheet fact group(s)"
+        if provenance.low_confidence_count:
+            summary = f"{summary}; {provenance.low_confidence_count} low-confidence fact(s)"
+        return [
+            SignoffEvidence(
+                name="datasheet-provenance",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+                human_review_required=provenance.human_review_required,
             )
         ]
 

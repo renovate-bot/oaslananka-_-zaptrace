@@ -616,3 +616,56 @@ def test_passing_derating_evidence_does_not_block_autonomous_pass() -> None:
     report = json.loads(pack.report_json())
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
+
+
+def test_conflicting_datasheet_provenance_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import DatasheetProvenanceEvidence
+
+    manifest = ProofManifest(
+        name="DatasheetConflict",
+        design_path="design.yaml",
+        datasheet_provenance=DatasheetProvenanceEvidence(
+            report_path="datasheet-validation.json",
+            component_count=1,
+            fact_count=2,
+            conflict_count=1,
+            blocked=True,
+            message="datasheet fact validation failed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["datasheet-provenance"]
+
+
+def test_low_confidence_datasheet_provenance_requires_human_review() -> None:
+    from zaptrace.proof.manifest import DatasheetProvenanceEvidence
+
+    manifest = ProofManifest(
+        name="DatasheetLowConfidence",
+        design_path="design.yaml",
+        datasheet_provenance=DatasheetProvenanceEvidence(
+            report_path="datasheet-validation.json",
+            component_count=1,
+            fact_count=2,
+            low_confidence_count=1,
+            human_review_required=True,
+            blocked=False,
+            message="datasheet fact validation needs review",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
+    assert report["autonomous_signoff"]["human_review_checks"] == ["datasheet-provenance"]

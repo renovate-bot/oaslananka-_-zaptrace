@@ -70,6 +70,132 @@ class DatasheetFact(BaseModel):
     source: DatasheetSourceRef
 
 
+class DatasheetConfidenceLevel(StrEnum):
+    """Discrete confidence classification for extracted facts."""
+
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class DatasheetDiagnosticSeverity(StrEnum):
+    """Severity for datasheet fact validation diagnostics."""
+
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+
+
+class DatasheetFactDiagnostic(BaseModel):
+    """One datasheet fact validation diagnostic."""
+
+    model_config = ConfigDict(strict=False)
+
+    component_id: str
+    field: str
+    scope: DatasheetFactScope
+    severity: DatasheetDiagnosticSeverity
+    code: str
+    message: str
+    source_hashes: list[str] = Field(default_factory=list)
+    values: list[str] = Field(default_factory=list)
+
+
+class DatasheetFactValidationReport(BaseModel):
+    """Confidence/conflict validation report for datasheet facts."""
+
+    schema_version: str = "1.0"
+    fact_count: int
+    low_confidence_count: int
+    conflict_count: int
+    missing_hash_count: int
+    human_review_required: bool
+    blocked: bool
+    diagnostics: list[DatasheetFactDiagnostic]
+
+
+def confidence_level(confidence: float) -> DatasheetConfidenceLevel:
+    """Classify numeric confidence into a stable vocabulary."""
+    if confidence >= 0.85:
+        return DatasheetConfidenceLevel.HIGH
+    if confidence >= 0.6:
+        return DatasheetConfidenceLevel.MEDIUM
+    return DatasheetConfidenceLevel.LOW
+
+
+def _fact_key(fact: DatasheetFact) -> tuple[str, DatasheetFactScope, str]:
+    return (fact.component_id, fact.scope, fact.field)
+
+
+def validate_datasheet_facts(
+    report: DatasheetFactReport,
+    *,
+    low_confidence_threshold: float = 0.6,
+) -> DatasheetFactValidationReport:
+    """Detect low-confidence, missing-provenance, and conflicting datasheet facts."""
+    diagnostics: list[DatasheetFactDiagnostic] = []
+    facts = report.facts
+    for fact in facts:
+        if fact.confidence < low_confidence_threshold:
+            diagnostics.append(
+                DatasheetFactDiagnostic(
+                    component_id=fact.component_id,
+                    field=fact.field,
+                    scope=fact.scope,
+                    severity=DatasheetDiagnosticSeverity.WARNING,
+                    code="low-confidence",
+                    message=f"{fact.field} confidence {fact.confidence:.2f} requires human review",
+                    source_hashes=[fact.source.datasheet_sha256] if fact.source.datasheet_sha256 else [],
+                    values=[str(fact.value)],
+                )
+            )
+        if not fact.source.datasheet_sha256:
+            diagnostics.append(
+                DatasheetFactDiagnostic(
+                    component_id=fact.component_id,
+                    field=fact.field,
+                    scope=fact.scope,
+                    severity=DatasheetDiagnosticSeverity.ERROR,
+                    code="missing-datasheet-hash",
+                    message=f"{fact.field} has no datasheet SHA-256 provenance",
+                    values=[str(fact.value)],
+                )
+            )
+    by_key: dict[tuple[str, DatasheetFactScope, str], list[DatasheetFact]] = {}
+    for fact in facts:
+        by_key.setdefault(_fact_key(fact), []).append(fact)
+    for (_component_id, _scope, _field), group in sorted(by_key.items(), key=lambda item: item[0]):
+        values = {str(fact.value) for fact in group}
+        if len(values) <= 1:
+            continue
+        first = group[0]
+        diagnostics.append(
+            DatasheetFactDiagnostic(
+                component_id=first.component_id,
+                field=first.field,
+                scope=first.scope,
+                severity=DatasheetDiagnosticSeverity.ERROR,
+                code="conflicting-facts",
+                message=f"{first.field} has conflicting datasheet values: {', '.join(sorted(values))}",
+                source_hashes=sorted({fact.source.datasheet_sha256 for fact in group if fact.source.datasheet_sha256}),
+                values=sorted(values),
+            )
+        )
+    low = sum(1 for item in diagnostics if item.code == "low-confidence")
+    conflicts = sum(1 for item in diagnostics if item.code == "conflicting-facts")
+    missing_hash = sum(1 for item in diagnostics if item.code == "missing-datasheet-hash")
+    blocked = any(item.severity == DatasheetDiagnosticSeverity.ERROR for item in diagnostics)
+    return DatasheetFactValidationReport(
+        fact_count=len(facts),
+        low_confidence_count=low,
+        conflict_count=conflicts,
+        missing_hash_count=missing_hash,
+        human_review_required=low > 0,
+        blocked=blocked,
+        diagnostics=diagnostics,
+    )
+
+
 class DatasheetFactReport(BaseModel):
     """Machine-readable datasheet provenance report for one component."""
 

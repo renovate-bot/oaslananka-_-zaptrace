@@ -203,3 +203,108 @@ class TestDatasheetFactProvenance:
         assert dumped["datasheet_provenance"]["report_path"] == "datasheet-facts.json"
         assert dumped["datasheet_provenance"]["absolute_maximum_count"] == 1
         assert dumped["datasheet_provenance"]["recommended_operating_count"] == 2
+
+
+class TestDatasheetConfidenceAndConflicts:
+    def test_confidence_level_vocabulary(self) -> None:
+        from zaptrace.library.datasheet import DatasheetConfidenceLevel, confidence_level
+
+        assert confidence_level(0.9) == DatasheetConfidenceLevel.HIGH
+        assert confidence_level(0.7) == DatasheetConfidenceLevel.MEDIUM
+        assert confidence_level(0.2) == DatasheetConfidenceLevel.LOW
+
+    def test_low_confidence_fact_requires_human_review(self) -> None:
+        from zaptrace.library.datasheet import (
+            DatasheetFact,
+            DatasheetFactReport,
+            DatasheetFactScope,
+            DatasheetSourceRef,
+            validate_datasheet_facts,
+        )
+
+        source = DatasheetSourceRef(datasheet_sha256="b" * 64, page=2, table="Electrical Characteristics")
+        report = DatasheetFactReport(
+            component_id="u1",
+            datasheet_sha256="b" * 64,
+            other_facts=[
+                DatasheetFact(
+                    component_id="u1",
+                    field="dropout_voltage_v",
+                    value=0.5,
+                    unit="V",
+                    scope=DatasheetFactScope.ELECTRICAL_CHARACTERISTIC,
+                    confidence=0.4,
+                    source=source,
+                )
+            ],
+        )
+
+        validation = validate_datasheet_facts(report)
+
+        assert validation.blocked is False
+        assert validation.human_review_required is True
+        assert validation.low_confidence_count == 1
+        assert validation.diagnostics[0].code == "low-confidence"
+        assert validation.diagnostics[0].severity == "warning"
+
+    def test_conflicting_facts_block_validation(self) -> None:
+        from zaptrace.library.datasheet import (
+            DatasheetFact,
+            DatasheetFactReport,
+            DatasheetFactScope,
+            DatasheetSourceRef,
+            validate_datasheet_facts,
+        )
+
+        source = DatasheetSourceRef(datasheet_sha256="c" * 64, page=4, table="Recommended Operating Conditions")
+        f1 = DatasheetFact(
+            component_id="u1",
+            field="supply_voltage_max_v",
+            value=5.5,
+            unit="V",
+            scope=DatasheetFactScope.RECOMMENDED_OPERATING,
+            confidence=0.95,
+            source=source,
+        )
+        f2 = f1.model_copy(update={"value": 6.0})
+        report = DatasheetFactReport(
+            component_id="u1",
+            datasheet_sha256="c" * 64,
+            recommended_operating=[f1, f2],
+        )
+
+        validation = validate_datasheet_facts(report)
+
+        assert validation.blocked is True
+        assert validation.conflict_count == 1
+        assert validation.diagnostics[0].code == "conflicting-facts"
+        assert validation.diagnostics[0].severity == "error"
+
+    def test_missing_datasheet_hash_blocks_validation(self) -> None:
+        from zaptrace.library.datasheet import (
+            DatasheetFact,
+            DatasheetFactReport,
+            DatasheetFactScope,
+            DatasheetSourceRef,
+            validate_datasheet_facts,
+        )
+
+        report = DatasheetFactReport(
+            component_id="u1",
+            datasheet_sha256="d" * 64,
+            other_facts=[
+                DatasheetFact(
+                    component_id="u1",
+                    field="package",
+                    value="SOT-23",
+                    scope=DatasheetFactScope.PACKAGE,
+                    confidence=0.9,
+                    source=DatasheetSourceRef(datasheet_sha256=""),
+                )
+            ],
+        )
+
+        validation = validate_datasheet_facts(report)
+
+        assert validation.blocked is True
+        assert validation.missing_hash_count == 1

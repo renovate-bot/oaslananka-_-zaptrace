@@ -74,3 +74,39 @@ message
 ```
 
 A proof pack should include the full JSON report as an artifact and the manifest summary as provenance metadata.
+
+## Confidence and conflict policy
+
+Datasheet facts carry numeric confidence and are classified as:
+
+```text
+high    >= 0.85
+medium  >= 0.60 and < 0.85
+low     < 0.60
+```
+
+`validate_datasheet_facts(report)` produces a machine-readable validation report with:
+
+```text
+fact_count
+low_confidence_count
+conflict_count
+missing_hash_count
+human_review_required
+blocked
+diagnostics[]
+```
+
+Policy behavior:
+
+- Low-confidence facts create warning diagnostics and require human engineering review.
+- Missing datasheet SHA-256 provenance creates an error diagnostic and blocks autonomous sign-off.
+- Conflicting facts for the same `component_id + scope + field` create an error diagnostic and block autonomous sign-off.
+
+Proof-pack `datasheet_provenance` maps to sign-off as follows:
+
+```text
+blocked=true                  -> datasheet-provenance fails and blocks autonomous-pass
+human_review_required=true    -> datasheet-provenance becomes human-review-required
+no conflicts / no low confidence -> datasheet-provenance passes
+```
