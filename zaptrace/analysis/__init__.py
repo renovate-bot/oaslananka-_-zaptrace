@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from zaptrace.analysis.diffpair import (
+    DiffPairLengthReport,
+    build_diffpair_length_report,
+    write_diffpair_length_report,
+)
 from zaptrace.analysis.reports import (
     AnalysisFinding,
     ElectricalAnalysisReport,
@@ -12,6 +17,9 @@ from zaptrace.analysis.reports import (
 )
 
 __all__ = [
+    "DiffPairLengthReport",
+    "build_diffpair_length_report",
+    "write_diffpair_length_report",
     "AnalysisFinding",
     "ElectricalAnalysisReport",
     "build_analysis_proof_artifacts",

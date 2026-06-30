@@ -803,3 +803,54 @@ def test_warning_placement_scorecard_requires_human_review() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
     assert report["autonomous_signoff"]["human_review_checks"] == ["placement-scorecard"]
+
+
+def test_failed_diffpair_length_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import DiffPairLengthEvidence
+
+    manifest = ProofManifest(
+        name="DiffPairBlocked",
+        design_path="design.yaml",
+        diffpair_length=DiffPairLengthEvidence(
+            report_path="diffpair-length.json",
+            passed=False,
+            pair_count=1,
+            violation_count=1,
+            missing_route_count=0,
+            message="USB pair exceeds skew tolerance",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["diff-pair-length"]
+
+
+def test_passing_diffpair_length_does_not_block_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import DiffPairLengthEvidence
+
+    manifest = ProofManifest(
+        name="DiffPairPass",
+        design_path="design.yaml",
+        diffpair_length=DiffPairLengthEvidence(
+            report_path="diffpair-length.json",
+            passed=True,
+            pair_count=1,
+            violation_count=0,
+            missing_route_count=0,
+            message="diff-pair length clean",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS

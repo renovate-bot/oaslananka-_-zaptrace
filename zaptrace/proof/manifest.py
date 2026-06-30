@@ -218,6 +218,17 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class DiffPairLengthEvidence(BaseModel):
+    """Structured differential-pair length/skew evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to differential-pair length/skew JSON report")
+    passed: bool = Field(description="Whether differential-pair length/skew checks passed")
+    pair_count: int = Field(default=0, ge=0, description="Number of length/differential groups checked")
+    violation_count: int = Field(default=0, ge=0, description="Length/skew violation count")
+    missing_route_count: int = Field(default=0, ge=0, description="Missing routed-length evidence count")
+    message: str = Field(default="", description="Human-readable differential-pair length/skew summary")
+
+
 class PlacementScorecardEvidence(BaseModel):
     """Structured placement scorecard evidence stored in a proof-pack manifest."""
 
@@ -460,6 +471,10 @@ class ProofManifest(BaseModel):
     placement_scorecard: PlacementScorecardEvidence | None = Field(
         default=None,
         description="Constraint-aware placement scorecard evidence metadata",
+    )
+    diffpair_length: DiffPairLengthEvidence | None = Field(
+        default=None,
+        description="Differential-pair length/skew evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(

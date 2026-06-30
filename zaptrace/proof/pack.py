@@ -451,6 +451,7 @@ class ProofPack:
             + self._signoff_evidence_from_datasheet_provenance()
             + self._signoff_evidence_from_footprint_proof()
             + self._signoff_evidence_from_placement_scorecard()
+            + self._signoff_evidence_from_diffpair_length()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -633,6 +634,27 @@ class ProofPack:
                 release_blocking=True,
                 evidence_required=True,
                 human_review_required=scorecard.human_review_required,
+            )
+        ]
+
+    def _signoff_evidence_from_diffpair_length(self) -> list[SignoffEvidence]:
+        """Map differential-pair length/skew evidence into sign-off evidence."""
+        diffpair = self.manifest.diffpair_length
+        if diffpair is None:
+            return []
+        summary = diffpair.message
+        if diffpair.violation_count:
+            summary = f"{summary}; {diffpair.violation_count} length/skew violation(s)"
+        if diffpair.missing_route_count:
+            summary = f"{summary}; {diffpair.missing_route_count} missing route evidence item(s)"
+        return [
+            SignoffEvidence(
+                name="diff-pair-length",
+                status=SignoffCheckStatus.PASS if diffpair.passed else SignoffCheckStatus.FAIL,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
             )
         ]
 
