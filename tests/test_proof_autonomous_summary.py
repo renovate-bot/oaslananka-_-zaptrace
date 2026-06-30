@@ -206,3 +206,35 @@ def test_stable_id_ignores_runtime_requirements_and_assumptions_evidence() -> No
             results=[result],
         ).stable_id
     )
+
+
+def test_failed_kicad_schematic_erc_evidence_blocks_autonomous_pass() -> None:
+    from zaptrace.kicad.oracle import KiCadErcResult
+
+    erc = KiCadErcResult(
+        available=True,
+        success=False,
+        message="1 ERC errors, 0 warnings",
+        version="9.0.0",
+        cli_path="/usr/bin/kicad-cli",
+        command=["/usr/bin/kicad-cli", "sch", "erc", "design.kicad_sch"],
+        exit_code=1,
+        report_path="erc.json",
+        errors=1,
+        warnings=0,
+    )
+    manifest = ProofManifest(
+        name="FailedSchematicErc",
+        design_path="design.yaml",
+        kicad_oracle=[erc.to_oracle_evidence()],
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:schematic_erc"]
+    assert "Blocking evidence: kicad:schematic_erc" in pack.summary

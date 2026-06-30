@@ -20,6 +20,7 @@ from zaptrace.kicad.oracle import (
     get_kicad_version,
     run_drc,
     run_erc,
+    run_schematic_erc,
 )
 
 # ======================================================================
@@ -431,3 +432,69 @@ def teardown_module() -> None:
     import zaptrace.kicad.oracle as _mod
 
     _mod._ORACLE_CACHE = None
+
+
+class TestKiCadErcEvidence:
+    @patch("zaptrace.kicad.oracle.subprocess.run")
+    def test_erc_records_command_exit_report_and_tool_metadata(self, mock_run) -> None:
+        mock_proc = mock_run.return_value
+        mock_proc.returncode = 0
+        mock_proc.stdout = ""
+        mock_proc.stderr = ""
+
+        with (
+            patch.object(Path, "exists", return_value=True),
+            patch.object(Path, "read_text", return_value=json.dumps(_EMPTY_ERC_JSON)),
+        ):
+            oracle = _oracle_with_path()
+            result = oracle.run_erc("design.kicad_sch", output_path="/tmp/erc.json")
+
+        assert result.available
+        assert result.success
+        assert result.cli_path == "/usr/bin/kicad-cli"
+        assert result.version == "8.0.0"
+        assert result.exit_code == 0
+        assert result.report_path == "/tmp/erc.json"
+        assert result.command[:4] == ["/usr/bin/kicad-cli", "sch", "erc", "design.kicad_sch"]
+        assert "--format" in result.command
+        assert "--exit-code-violations" in result.command
+
+    @patch("zaptrace.kicad.oracle.subprocess.run")
+    def test_erc_result_converts_to_kicad_oracle_evidence(self, mock_run) -> None:
+        mock_proc = mock_run.return_value
+        mock_proc.returncode = 1
+        mock_proc.stdout = ""
+        mock_proc.stderr = ""
+
+        with (
+            patch.object(Path, "exists", return_value=True),
+            patch.object(Path, "read_text", return_value=json.dumps(_SAMPLE_ERC_JSON)),
+        ):
+            oracle = _oracle_with_path()
+            result = oracle.run_erc("design.kicad_sch", output_path="/tmp/erc.json")
+
+        evidence = result.to_oracle_evidence()
+
+        assert evidence.check == "schematic_erc"
+        assert evidence.status == "failed"
+        assert evidence.version == "8.0.0"
+        assert evidence.cli_path == "/usr/bin/kicad-cli"
+        assert evidence.exit_code == 1
+        assert evidence.report_path == "/tmp/erc.json"
+        assert evidence.errors == 1
+        assert evidence.warnings == 1
+        assert evidence.command[:3] == ["/usr/bin/kicad-cli", "sch", "erc"]
+
+    def test_erc_unavailable_converts_to_skipped_evidence(self) -> None:
+        result = KiCadErcResult(available=False, message="KiCad CLI not found")
+
+        evidence = result.to_oracle_evidence()
+
+        assert evidence.status == "skipped"
+        assert evidence.skip_reason == "KiCad CLI not found"
+        assert evidence.errors == 0
+
+    def test_schematic_erc_alias_delegates(self) -> None:
+        with patch.object(KiCadOracle, "run_erc", return_value=KiCadErcResult(available=False)) as mock:
+            run_schematic_erc("design.kicad_sch")
+            mock.assert_called_once()

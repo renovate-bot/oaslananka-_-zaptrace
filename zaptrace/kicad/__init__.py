@@ -20,6 +20,7 @@ from .oracle import (
     get_kicad_version,
     run_drc,
     run_erc,
+    run_schematic_erc,
 )
 
 __all__ = [
@@ -37,5 +38,6 @@ __all__ = [
     "detect_kicad",
     "get_kicad_version",
     "run_erc",
+    "run_schematic_erc",
     "run_drc",
 ]
