@@ -29,6 +29,13 @@ from .manifest import (
     CheckStatus as ManifestCheckStatus,
 )
 from .pack import ProofPack, capture_environment, hash_file, run_proof, validate_proof_pack
+from .signoff import (
+    AutonomousSignoffDecision,
+    AutonomousSignoffPolicy,
+    AutonomousSignoffStatus,
+    SignoffCheckStatus,
+    SignoffEvidence,
+)
 
 __all__ = [
     "ProofManifest",
@@ -48,4 +55,9 @@ __all__ = [
     "validate_proof_pack",
     "capture_environment",
     "hash_file",
+    "AutonomousSignoffStatus",
+    "SignoffCheckStatus",
+    "SignoffEvidence",
+    "AutonomousSignoffDecision",
+    "AutonomousSignoffPolicy",
 ]
