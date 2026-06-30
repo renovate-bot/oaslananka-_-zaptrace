@@ -49,33 +49,11 @@ jobs:
       - name: Install semgrep
         run: pip install semgrep==1.168.0
 
-      - name: Run Semgrep diagnostics
-        run: |
-          semgrep scan --config p/default --json --output semgrep-results.json || true
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          path = Path("semgrep-results.json")
-          if not path.exists():
-              print("No Semgrep diagnostics JSON produced")
-              raise SystemExit(0)
-          data = json.loads(path.read_text(encoding="utf-8"))
-          results = data.get("results", [])
-          print(f"Semgrep diagnostics findings: {len(results)}")
-          for result in results:
-              extra = result.get("extra", {})
-              start = result.get("start", {})
-              print("::warning::"
-                    f"{result.get('check_id')} "
-                    f"{result.get('path')}:{start.get('line')} "
-                    f"{extra.get('message', '')}")
-          PY
-
       - name: Run Semgrep
         run: semgrep scan --config p/default --error --sarif --output semgrep-results.sarif
 
       - name: Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4
         with:
           sarif_file: semgrep-results.sarif
           category: semgrep
@@ -93,9 +71,9 @@ jobs:
       - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4
         with:
           languages: python
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e  # v4
