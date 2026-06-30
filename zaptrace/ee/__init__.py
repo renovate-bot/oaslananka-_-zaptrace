@@ -27,6 +27,13 @@ from zaptrace.ee.footprints import (
     list_supported_packages,
     symbol_from_pins,
 )
+from zaptrace.ee.ipc7351 import (
+    Ipc7351ChipFixture,
+    Ipc7351DensityLevel,
+    Ipc7351LandPatternResult,
+    calculate_ipc7351_chip,
+    supported_ipc7351_chip_packages,
+)
 from zaptrace.ee.knowledge import KnowledgeBase
 from zaptrace.ee.routing.defaults import (
     CLEARANCE_MATRIX,
@@ -45,6 +52,7 @@ __all__ = [
     "DEFAULT_VIA_SPECS",
     "STACKUP_PRESETS",
     "build_footprint_proof",
+    "calculate_ipc7351_chip",
     "classify_risky_package",
     "classify_design",
     "get_net_class",
@@ -58,11 +66,15 @@ __all__ = [
     "FootprintProofValidationReport",
     "FootprintSourceProvenance",
     "FootprintSourceType",
+    "Ipc7351ChipFixture",
+    "Ipc7351DensityLevel",
+    "Ipc7351LandPatternResult",
     "RiskyPackagePolicyResult",
     "generate_footprint",
     "file_sha256",
     "generate_footprint_for_component",
     "list_supported_packages",
+    "supported_ipc7351_chip_packages",
     "symbol_from_pins",
     "validate_footprint_proof",
     "validate_footprint_proofs",
