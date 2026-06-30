@@ -1076,3 +1076,61 @@ def test_regulator_margin_missing_metadata_requires_human_review() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
     assert report["autonomous_signoff"]["human_review_checks"] == ["regulator-margin"]
+
+
+def test_current_density_violation_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import CurrentDensityEvidence
+
+    manifest = ProofManifest(
+        name="CurrentDensityBlocked",
+        design_path="design.yaml",
+        current_density=CurrentDensityEvidence(
+            report_path="current-density.json",
+            passed=False,
+            high_current_net_count=1,
+            trace_count=1,
+            violation_count=1,
+            missing_route_count=0,
+            human_review_required=False,
+            blocked=True,
+            message="trace width below required current-carrying width",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["current-density"]
+
+
+def test_missing_current_density_route_requires_human_review() -> None:
+    from zaptrace.proof.manifest import CurrentDensityEvidence
+
+    manifest = ProofManifest(
+        name="CurrentDensityReview",
+        design_path="design.yaml",
+        current_density=CurrentDensityEvidence(
+            report_path="current-density.json",
+            passed=True,
+            high_current_net_count=1,
+            trace_count=0,
+            violation_count=0,
+            missing_route_count=1,
+            human_review_required=True,
+            blocked=False,
+            message="high-current net missing routed trace evidence",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
+    assert report["autonomous_signoff"]["human_review_checks"] == ["current-density"]

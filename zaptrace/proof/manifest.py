@@ -218,6 +218,20 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class CurrentDensityEvidence(BaseModel):
+    """Structured current-density/copper-width evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to current density JSON report")
+    passed: bool = Field(description="Whether current density checks passed")
+    high_current_net_count: int = Field(default=0, ge=0, description="Number of high-current nets checked")
+    trace_count: int = Field(default=0, ge=0, description="Number of trace segments checked")
+    violation_count: int = Field(default=0, ge=0, description="Trace width/current violation count")
+    missing_route_count: int = Field(default=0, ge=0, description="High-current nets without routed trace evidence")
+    human_review_required: bool = Field(default=False, description="Whether current-density evidence needs review")
+    blocked: bool = Field(default=False, description="Whether current-density evidence blocks autonomous sign-off")
+    message: str = Field(default="", description="Human-readable current-density summary")
+
+
 class RegulatorMarginEvidence(BaseModel):
     """Structured regulator dropout/thermal margin evidence stored in a proof-pack manifest."""
 
@@ -542,6 +556,10 @@ class ProofManifest(BaseModel):
     regulator_margin: RegulatorMarginEvidence | None = Field(
         default=None,
         description="Regulator dropout and thermal margin evidence metadata",
+    )
+    current_density: CurrentDensityEvidence | None = Field(
+        default=None,
+        description="Current density and copper width evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(

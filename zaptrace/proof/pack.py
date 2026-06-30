@@ -456,6 +456,7 @@ class ProofPack:
             + self._signoff_evidence_from_repair_proposals()
             + self._signoff_evidence_from_rail_current_budget()
             + self._signoff_evidence_from_regulator_margin()
+            + self._signoff_evidence_from_current_density()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -751,6 +752,32 @@ class ProofPack:
                 release_blocking=True,
                 evidence_required=True,
                 human_review_required=margin.human_review_required,
+            )
+        ]
+
+    def _signoff_evidence_from_current_density(self) -> list[SignoffEvidence]:
+        """Map current-density/copper-width evidence into sign-off evidence."""
+        density = self.manifest.current_density
+        if density is None:
+            return []
+        status = SignoffCheckStatus.PASS if density.passed else SignoffCheckStatus.FAIL
+        if density.human_review_required and not density.blocked:
+            status = SignoffCheckStatus.WARNING
+        summary = (
+            density.message
+            or f"{density.high_current_net_count} high-current net(s), {density.violation_count} width violation(s)"
+        )
+        if density.missing_route_count:
+            summary = f"{summary}; {density.missing_route_count} missing route evidence item(s)"
+        return [
+            SignoffEvidence(
+                name="current-density",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+                human_review_required=density.human_review_required,
             )
         ]
 

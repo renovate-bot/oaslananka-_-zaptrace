@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from zaptrace.analysis.current_density import (
+    CurrentDensityReport,
+    build_current_density_report,
+)
 from zaptrace.analysis.diffpair import (
     DiffPairLengthReport,
     build_diffpair_length_report,
@@ -29,6 +33,8 @@ from zaptrace.analysis.signal_integrity import (
 )
 
 __all__ = [
+    "CurrentDensityReport",
+    "build_current_density_report",
     "DiffPairLengthReport",
     "build_diffpair_length_report",
     "write_diffpair_length_report",
