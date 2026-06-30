@@ -166,6 +166,16 @@ def _board_input_net(design: Design) -> str | None:
     for name in _INPUT_NET_PRIORITY:
         if name in design.nets:
             return name
+    # No conventionally-named input: the DC-input rail is the net that carries
+    # both the input connector and a regulator's input (the externally-supplied
+    # highest rail, e.g. VDD_12 for a 12 V-in board).
+    for net_id, net in design.nets.items():
+        comps = [design.get_component(node.component_ref) for node in net.nodes]
+        types = [c.type.lower() for c in comps if c is not None]
+        has_connector = any("connector" in t or "header" in t or "jack" in t for t in types)
+        has_regulator = any("regulator" in t for t in types)
+        if has_connector and has_regulator:
+            return net_id
     return None
 
 

@@ -376,7 +376,18 @@ def build_architecture_design(
     log = SynthesisDecisionLog()
     design = Design(meta=DesignMeta(name=name, description=f"Board synthesized from: {requirements.raw_intent}"))
 
-    input_net = "VBUS" if requirements.usb_c else ("VBAT" if requirements.battery else "VIN")
+    # The net the regulators draw from. With no on-board source, the highest
+    # requested rail is the externally-supplied input (it gets the DC connector),
+    # and the lower rails are derived from it — so regulators must draw from that
+    # rail's net, not a phantom "VIN" that nothing feeds.
+    if requirements.usb_c:
+        input_net = "VBUS"
+    elif requirements.battery:
+        input_net = "VBAT"
+    elif requirements.rails_v:
+        input_net = _rail_net(max(requirements.rails_v))
+    else:
+        input_net = "VIN"
     load_a = requirements.max_current_a if requirements.max_current_a is not None else _DEFAULT_LOAD_A
     logic_rail = _rail_net(_logic_rail_v(requirements))
 

@@ -115,6 +115,25 @@ class TestEnableTieRepair:
         assert en_patch.confidence < 1.0  # always-on default, a human may want sequencing
 
 
+class TestExternalInputConnection:
+    def test_regulator_input_is_fed_by_the_dc_connector(self) -> None:
+        # With no on-board source, the highest rail is the externally-supplied
+        # input: its net must carry both the DC connector and the regulator input
+        # (no phantom VIN net the regulator draws from but nothing feeds).
+        out = synthesize_and_repair("industrial board, 12V input, 3.3V rail at 1A")
+        design = out["design"]
+        assert "VIN" not in design.nets  # no dangling phantom input net
+        input_net = next((n for n in design.nets.values() if n.name == "VDD_12"), None)
+        assert input_net is not None
+        types = {
+            design.get_component(node.component_ref).type  # type: ignore[union-attr]
+            for node in input_net.nodes
+            if design.get_component(node.component_ref) is not None
+        }
+        assert "connector" in types  # the DC input terminal
+        assert "regulator" in types  # the buck that steps it down
+
+
 class TestSynthesizeAndRepair:
     def test_converges_and_escalates_single_pin_nets(self) -> None:
         out = synthesize_and_repair("industrial board, 12V input, 3.3V rail at 1A, I2C, ethernet")
