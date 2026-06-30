@@ -14,9 +14,133 @@ defaults (a missing field stays empty/None for the caller to resolve).
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+# ---------------------------------------------------------------------------
+# Requirements schema v1 — explicit pre-synthesis contract
+# ---------------------------------------------------------------------------
+
+
+class EnvironmentRequirements(BaseModel):
+    """Environmental operating requirements for a design contract."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    temperature_c: tuple[float, float] = Field(description="Operating temperature range as (min_c, max_c)")
+    ingress_rating: str | None = Field(default=None, description="Ingress protection target, e.g. IP67")
+    enclosure: str | None = Field(default=None, description="Expected enclosure/material context")
+
+    @model_validator(mode="after")
+    def _temperature_range_must_be_ordered(self) -> EnvironmentRequirements:
+        if self.temperature_c[0] >= self.temperature_c[1]:
+            raise ValueError("environment.temperature_c must be ordered as min < max")
+        return self
+
+
+class PowerRequirements(BaseModel):
+    """Power-source and rail requirements for a design contract."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    inputs: list[str] = Field(min_length=1, description="Input power sources, e.g. usb_c_5v or battery_lipo")
+    rails_v: list[float] = Field(min_length=1, description="Required regulated/supplied voltage rails")
+    max_current_a: float = Field(gt=0, description="Maximum board current budget in amperes")
+
+
+class SafetyRequirements(BaseModel):
+    """Safety-domain requirements for a design contract."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    mains: bool = Field(description="Whether the design touches mains/hazardous line voltage")
+    battery: bool = Field(description="Whether the design includes or charges a battery")
+    isolation_required: bool = Field(default=False, description="Whether reinforced/basic isolation is required")
+    safety_critical: bool = Field(default=False, description="Whether functional-safety/life-safety constraints apply")
+
+
+class ManufacturingRequirements(BaseModel):
+    """Manufacturing constraints for a design contract."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fab_profile: str = Field(description="Target fabrication profile, e.g. jlcpcb-2layer")
+    layers: int = Field(ge=1, le=32, description="Expected PCB layer count")
+    min_trace_width_mm: float = Field(gt=0, description="Minimum trace width allowed by the fab profile")
+    min_clearance_mm: float = Field(gt=0, description="Minimum clearance allowed by the fab profile")
+    assembly: str | None = Field(default=None, description="Assembly target, e.g. smt, hand, mixed")
+
+
+class RequirementsSchemaV1(BaseModel):
+    """Machine-readable requirements contract consumed before synthesis."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal["1.0"] = Field(default="1.0", description="Requirements schema version")
+    product_class: str = Field(min_length=1, description="Board/product family, e.g. iot_sensor_node")
+    environment: EnvironmentRequirements
+    power: PowerRequirements
+    interfaces: list[str] = Field(description="Required external/internal interfaces")
+    safety: SafetyRequirements
+    manufacturing: ManufacturingRequirements
+    compliance_targets: list[str] = Field(description="Regulatory/compliance targets, can be empty if explicitly none")
+
+
+def validate_requirements_schema_v1(data: Mapping[str, Any]) -> RequirementsSchemaV1:
+    """Validate a mapping as a requirements schema v1 contract."""
+    return RequirementsSchemaV1.model_validate(data)
+
+
+def load_requirements_schema_v1(path: str | Path) -> RequirementsSchemaV1:
+    """Load and validate a requirements schema v1 JSON/YAML file."""
+    import json
+
+    import yaml
+
+    p = Path(path)
+    raw = p.read_text(encoding="utf-8")
+    data = json.loads(raw) if p.suffix.lower() == ".json" else yaml.safe_load(raw)
+    if not isinstance(data, Mapping):
+        raise ValueError("requirements schema file must contain a mapping/object")
+    return validate_requirements_schema_v1(data)
+
+
+def minimal_requirements_schema_v1_example() -> dict[str, Any]:
+    """Return a minimal valid requirements schema v1 example."""
+    return {
+        "schema_version": "1.0",
+        "product_class": "iot_sensor_node",
+        "environment": {
+            "temperature_c": [0.0, 50.0],
+            "ingress_rating": None,
+            "enclosure": "plastic",
+        },
+        "power": {
+            "inputs": ["usb_c_5v"],
+            "rails_v": [3.3],
+            "max_current_a": 0.5,
+        },
+        "interfaces": ["usb", "i2c"],
+        "safety": {
+            "mains": False,
+            "battery": False,
+            "isolation_required": False,
+            "safety_critical": False,
+        },
+        "manufacturing": {
+            "fab_profile": "jlcpcb-2layer",
+            "layers": 2,
+            "min_trace_width_mm": 0.15,
+            "min_clearance_mm": 0.15,
+            "assembly": "smt",
+        },
+        "compliance_targets": ["RoHS"],
+    }
+
 
 # Canonical interface -> the tokens that imply it.
 _INTERFACES: dict[str, tuple[str, ...]] = {
