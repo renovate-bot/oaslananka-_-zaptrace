@@ -176,6 +176,33 @@ class KiCadDrcResult(KiCadResult):
     def passed(self) -> bool:
         return self.success and self.errors == 0
 
+    def to_oracle_evidence(self, *, check: str = "pcb_drc") -> Any:
+        """Convert this DRC result into proof-pack KiCad oracle evidence."""
+        from zaptrace.proof.manifest import KiCadOracleEvidence
+
+        if not self.available:
+            status = "skipped"
+            skip_reason = self.message or "kicad-cli not available"
+        elif self.passed:
+            status = "passed"
+            skip_reason = ""
+        else:
+            status = "failed"
+            skip_reason = ""
+        return KiCadOracleEvidence(
+            check=check,
+            status=status,
+            version=self.version,
+            cli_path=self.cli_path,
+            command=self.command,
+            exit_code=self.exit_code,
+            report_path=self.report_path,
+            errors=self.errors,
+            warnings=self.warnings,
+            message=self.message,
+            skip_reason=skip_reason,
+        )
+
     @property
     def violation_count(self) -> int:
         return len(self.violations)
@@ -445,7 +472,11 @@ class KiCadOracle:
         Returns:
             ``KiCadDrcResult`` with structured violations.
         """
-        base = KiCadDrcResult(available=self.available)
+        base = KiCadDrcResult(
+            available=self.available,
+            version=self.version,
+            cli_path=self._cli_path or "",
+        )
         if not self._cli_path:
             base.message = "KiCad CLI not found"
             return base
@@ -462,6 +493,7 @@ class KiCadOracle:
             return base
 
         out = Path(output_path) if output_path else Path(tempfile.mktemp(suffix="-drc.json"))
+        base.report_path = str(out)
 
         cmd = [
             self._cli_path,
@@ -478,17 +510,25 @@ class KiCadOracle:
             cmd.append("--exit-code-violations")
         if schematic_parity:
             cmd.append("--schematic-parity")
+        base.command = cmd.copy()
 
         try:
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
             elapsed = (time.perf_counter() - start) * 1000
             base.duration_ms = elapsed
+            base.exit_code = proc.returncode
 
             if out.exists():
                 raw = json.loads(out.read_text(encoding="utf-8"))
-                base = self._parse_drc_json(raw)
-                base.available = True
-                base.duration_ms = elapsed
+                parsed = self._parse_drc_json(raw)
+                parsed.available = True
+                parsed.duration_ms = elapsed
+                parsed.version = self.version
+                parsed.cli_path = self._cli_path or ""
+                parsed.command = cmd.copy()
+                parsed.exit_code = proc.returncode
+                parsed.report_path = str(out)
+                base = parsed
 
             if exit_code_violations and proc.returncode != 0 and proc.returncode != 3:
                 base.success = False
@@ -586,4 +626,9 @@ def run_schematic_erc(schematic_or_project_file: str | Path, **kwargs: Any) -> K
 
 def run_drc(pcb_file: str | Path, **kwargs: Any) -> KiCadDrcResult:
     """Convenience: detect, then run DRC."""
+    return detect_kicad().run_drc(pcb_file, **kwargs)
+
+
+def run_pcb_drc(pcb_file: str | Path, **kwargs: Any) -> KiCadDrcResult:
+    """Convenience alias for the release-gated PCB DRC oracle."""
     return detect_kicad().run_drc(pcb_file, **kwargs)

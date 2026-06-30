@@ -20,6 +20,7 @@ from zaptrace.kicad.oracle import (
     get_kicad_version,
     run_drc,
     run_erc,
+    run_pcb_drc,
     run_schematic_erc,
 )
 
@@ -497,4 +498,71 @@ class TestKiCadErcEvidence:
     def test_schematic_erc_alias_delegates(self) -> None:
         with patch.object(KiCadOracle, "run_erc", return_value=KiCadErcResult(available=False)) as mock:
             run_schematic_erc("design.kicad_sch")
+            mock.assert_called_once()
+
+
+class TestKiCadDrcEvidence:
+    @patch("zaptrace.kicad.oracle.subprocess.run")
+    def test_drc_records_command_exit_report_and_tool_metadata(self, mock_run) -> None:
+        mock_proc = mock_run.return_value
+        mock_proc.returncode = 0
+        mock_proc.stdout = ""
+        mock_proc.stderr = ""
+
+        with (
+            patch.object(Path, "exists", return_value=True),
+            patch.object(Path, "read_text", return_value=json.dumps(_EMPTY_DRC_JSON)),
+        ):
+            oracle = _oracle_with_path()
+            result = oracle.run_drc("board.kicad_pcb", output_path="/tmp/drc.json", schematic_parity=True)
+
+        assert result.available
+        assert result.success
+        assert result.cli_path == "/usr/bin/kicad-cli"
+        assert result.version == "8.0.0"
+        assert result.exit_code == 0
+        assert result.report_path == "/tmp/drc.json"
+        assert result.command[:4] == ["/usr/bin/kicad-cli", "pcb", "drc", "board.kicad_pcb"]
+        assert "--format" in result.command
+        assert "--exit-code-violations" in result.command
+        assert "--schematic-parity" in result.command
+
+    @patch("zaptrace.kicad.oracle.subprocess.run")
+    def test_drc_result_converts_to_kicad_oracle_evidence(self, mock_run) -> None:
+        mock_proc = mock_run.return_value
+        mock_proc.returncode = 1
+        mock_proc.stdout = ""
+        mock_proc.stderr = ""
+
+        with (
+            patch.object(Path, "exists", return_value=True),
+            patch.object(Path, "read_text", return_value=json.dumps(_SAMPLE_DRC_JSON)),
+        ):
+            oracle = _oracle_with_path()
+            result = oracle.run_drc("board.kicad_pcb", output_path="/tmp/drc.json")
+
+        evidence = result.to_oracle_evidence()
+
+        assert evidence.check == "pcb_drc"
+        assert evidence.status == "failed"
+        assert evidence.version == "8.0.0"
+        assert evidence.cli_path == "/usr/bin/kicad-cli"
+        assert evidence.exit_code == 1
+        assert evidence.report_path == "/tmp/drc.json"
+        assert evidence.errors == 1
+        assert evidence.warnings == 1
+        assert evidence.command[:3] == ["/usr/bin/kicad-cli", "pcb", "drc"]
+
+    def test_drc_unavailable_converts_to_skipped_evidence(self) -> None:
+        result = KiCadDrcResult(available=False, message="KiCad CLI not found")
+
+        evidence = result.to_oracle_evidence()
+
+        assert evidence.status == "skipped"
+        assert evidence.skip_reason == "KiCad CLI not found"
+        assert evidence.errors == 0
+
+    def test_pcb_drc_alias_delegates(self) -> None:
+        with patch.object(KiCadOracle, "run_drc", return_value=KiCadDrcResult(available=False)) as mock:
+            run_pcb_drc("board.kicad_pcb")
             mock.assert_called_once()

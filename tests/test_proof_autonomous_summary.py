@@ -238,3 +238,35 @@ def test_failed_kicad_schematic_erc_evidence_blocks_autonomous_pass() -> None:
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
     assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:schematic_erc"]
     assert "Blocking evidence: kicad:schematic_erc" in pack.summary
+
+
+def test_failed_kicad_pcb_drc_evidence_blocks_autonomous_pass() -> None:
+    from zaptrace.kicad.oracle import KiCadDrcResult
+
+    drc = KiCadDrcResult(
+        available=True,
+        success=False,
+        message="1 DRC errors, 0 warnings",
+        version="9.0.0",
+        cli_path="/usr/bin/kicad-cli",
+        command=["/usr/bin/kicad-cli", "pcb", "drc", "board.kicad_pcb"],
+        exit_code=1,
+        report_path="drc.json",
+        errors=1,
+        warnings=0,
+    )
+    manifest = ProofManifest(
+        name="FailedPcbDrc",
+        design_path="design.yaml",
+        kicad_oracle=[drc.to_oracle_evidence()],
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="drc", type="drc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:pcb_drc"]
+    assert "Blocking evidence: kicad:pcb_drc" in pack.summary
