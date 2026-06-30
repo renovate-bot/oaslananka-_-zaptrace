@@ -63,3 +63,58 @@ def test_manifest_stores_autonomous_signoff_decision() -> None:
 
     assert pack.manifest.autonomous_signoff.status == AutonomousSignoffStatus.AUTONOMOUS_PASS
     assert pack.manifest.model_dump(mode="json")["autonomous_signoff"]["status"] == "autonomous-pass"
+
+
+def test_requirements_coverage_blocks_autonomous_pass_when_incomplete() -> None:
+    from zaptrace.proof.manifest import RequirementsCoverageEvidence
+
+    manifest = ProofManifest(
+        name="CoverageBlocked",
+        design_path="design.yaml",
+        requirements_coverage=RequirementsCoverageEvidence(
+            report_path="requirements_coverage.json",
+            requirements_hash="abc123",
+            fully_covered=False,
+            fully_traced=False,
+            requirement_count=2,
+            untraced_artifact_count=1,
+            message="requirements coverage has gaps",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["requirements-coverage"]
+    assert "Blocking evidence: requirements-coverage" in pack.summary
+
+
+def test_requirements_coverage_allows_pass_when_complete() -> None:
+    from zaptrace.proof.manifest import RequirementsCoverageEvidence
+
+    manifest = ProofManifest(
+        name="CoveragePass",
+        design_path="design.yaml",
+        requirements_coverage=RequirementsCoverageEvidence(
+            report_path="requirements_coverage.json",
+            requirements_hash="abc123",
+            fully_covered=True,
+            fully_traced=True,
+            requirement_count=2,
+            untraced_artifact_count=0,
+            message="requirements coverage complete",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
+    assert report["autonomous_signoff"]["blocking_checks"] == []

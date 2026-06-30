@@ -440,7 +440,11 @@ class ProofPack:
 
     def update_autonomous_signoff(self) -> AutonomousSignoffDecision:
         """Recompute and store the autonomous sign-off decision."""
-        evidence = self._signoff_evidence_from_results() + self._signoff_evidence_from_oracles()
+        evidence = (
+            self._signoff_evidence_from_results()
+            + self._signoff_evidence_from_oracles()
+            + self._signoff_evidence_from_requirements_coverage()
+        )
         self.manifest.autonomous_signoff = AutonomousSignoffPolicy().evaluate(evidence)
         return self.manifest.autonomous_signoff
 
@@ -471,6 +475,29 @@ class ProofPack:
                 )
             )
         return evidence
+
+    def _signoff_evidence_from_requirements_coverage(self) -> list[SignoffEvidence]:
+        """Map requirements coverage metadata into release-blocking evidence."""
+        coverage = self.manifest.requirements_coverage
+        if coverage is None:
+            return []
+        if coverage.fully_covered and coverage.fully_traced:
+            status = SignoffCheckStatus.PASS
+        else:
+            status = SignoffCheckStatus.FAIL
+        summary = coverage.message
+        if coverage.untraced_artifact_count:
+            summary = f"{summary}; {coverage.untraced_artifact_count} untraced artifact(s)"
+        return [
+            SignoffEvidence(
+                name="requirements-coverage",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+            )
+        ]
 
     def _signoff_evidence_from_oracles(self) -> list[SignoffEvidence]:
         """Map manifest oracle records into sign-off evidence records."""
