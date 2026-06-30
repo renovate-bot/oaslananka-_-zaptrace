@@ -218,6 +218,18 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class NetlistParityEvidence(BaseModel):
+    """Structured netlist parity evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to netlist parity JSON report")
+    check: str = Field(default="ir_to_kicad_schematic_netlist", description="Parity check name")
+    passed: bool = Field(description="Whether the compared netlists match")
+    missing_net_count: int = Field(default=0, ge=0, description="Nets missing from KiCad evidence")
+    extra_net_count: int = Field(default=0, ge=0, description="Nets unexpectedly present in KiCad evidence")
+    pin_mismatch_count: int = Field(default=0, ge=0, description="Nets with pin-level connectivity mismatch")
+    message: str = Field(default="", description="Human-readable parity summary")
+
+
 class RequirementsCoverageEvidence(BaseModel):
     """Structured requirements coverage evidence stored in a proof-pack manifest."""
 
@@ -351,6 +363,11 @@ class ProofManifest(BaseModel):
         default_factory=list,
         description="Manufacturing export logs with artifact kinds, tool versions, warnings, and unsupported paths",
     )
+    kicad_schematic_parity: NetlistParityEvidence | None = Field(
+        default=None,
+        description="IR-to-KiCad schematic netlist parity evidence metadata",
+    )
+
     requirements_coverage: RequirementsCoverageEvidence | None = Field(
         default=None,
         description="Requirements coverage and traceability evidence metadata",

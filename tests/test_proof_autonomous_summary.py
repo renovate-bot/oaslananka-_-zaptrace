@@ -376,3 +376,29 @@ def test_unapproved_kicad_waiver_blocks_autonomous_pass() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
     assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:schematic_erc"]
+
+
+def test_failed_kicad_netlist_parity_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import NetlistParityEvidence
+
+    manifest = ProofManifest(
+        name="FailedNetlistParity",
+        design_path="design.yaml",
+        kicad_schematic_parity=NetlistParityEvidence(
+            report_path="kicad_schematic_parity.json",
+            passed=False,
+            missing_net_count=1,
+            extra_net_count=0,
+            pin_mismatch_count=1,
+            message="IR and KiCad netlist evidence differ",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:ir_to_kicad_schematic_netlist"]

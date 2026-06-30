@@ -445,6 +445,7 @@ class ProofPack:
         evidence = (
             self._signoff_evidence_from_results()
             + self._signoff_evidence_from_oracles()
+            + self._signoff_evidence_from_netlist_parity()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
         )
@@ -494,6 +495,22 @@ class ProofPack:
                 status=status,
                 source="zaptrace",
                 summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+            )
+        ]
+
+    def _signoff_evidence_from_netlist_parity(self) -> list[SignoffEvidence]:
+        """Map netlist parity evidence into release-blocking sign-off evidence."""
+        parity = self.manifest.kicad_schematic_parity
+        if parity is None:
+            return []
+        return [
+            SignoffEvidence(
+                name=f"kicad:{parity.check}",
+                status=SignoffCheckStatus.PASS if parity.passed else SignoffCheckStatus.FAIL,
+                source="kicad",
+                summary=parity.message,
                 release_blocking=True,
                 evidence_required=True,
             )

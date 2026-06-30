@@ -22,11 +22,14 @@ from typing import TYPE_CHECKING
 import yaml
 
 from zaptrace.core.parser import design_to_dict
+from zaptrace.export.kicad import export_kicad_netlist_evidence
+from zaptrace.kicad.parity import write_kicad_netlist_parity_report
 from zaptrace.proof import (
     ArtifactRecord,
     AssumptionsEvidence,
     CheckDefinition,
     InputRecord,
+    NetlistParityEvidence,
     ProofManifest,
     ProofPack,
     ProofRunner,
@@ -133,7 +136,8 @@ def generate_synthesis_proof(
 ) -> ProofPack:
     """Synthesize a board from *intent* and emit an auditable proof pack in *output_dir*.
 
-    Writes ``design.yaml`` (the routed design, hashed), ``requirements_coverage.json``
+    Writes ``design.yaml`` (the routed design, hashed), KiCad netlist evidence,
+    ``kicad_schematic_parity.json`` (IR ↔ KiCad netlist parity), ``requirements_coverage.json``
     (requirement ID traceability), ``assumptions.json`` (explicit unresolved
     assumptions), ``proof.yaml`` (the manifest with synthesis
     decisions, input/environment provenance, and check records), and ``report.json``
@@ -149,6 +153,13 @@ def generate_synthesis_proof(
     # so the bundle is portable and re-verifiable, then hash it for the manifest.
     design_yaml = out_dir / "design.yaml"
     design_yaml.write_text(yaml.safe_dump(design_to_dict(design), sort_keys=False), encoding="utf-8")
+    kicad_netlist_path = export_kicad_netlist_evidence(design, out_dir)["netlist_evidence"]
+    parity_path = write_kicad_netlist_parity_report(
+        design,
+        kicad_netlist_path,
+        out_dir / "kicad_schematic_parity.json",
+    )
+    parity_report = yaml.safe_load(parity_path.read_text(encoding="utf-8"))
 
     checks = _baseline_checks(design)
     results = ProofRunner(design).run_checks(checks)
@@ -181,6 +192,14 @@ def generate_synthesis_proof(
         agent_decisions=_decision_records(synth["decision_log"]),
         check_records=_check_records(results),
         requires_kicad_oracle=True,
+        kicad_schematic_parity=NetlistParityEvidence(
+            report_path="kicad_schematic_parity.json",
+            passed=bool(parity_report["passed"]),
+            missing_net_count=len(parity_report["missing_nets"]),
+            extra_net_count=len(parity_report["extra_nets"]),
+            pin_mismatch_count=len(parity_report["pin_mismatches"]),
+            message=str(parity_report["message"]),
+        ),
         assumptions_evidence=AssumptionsEvidence(
             report_path="assumptions.json",
             requirements_hash=str(assumptions_report["requirements_hash"]),
@@ -212,6 +231,18 @@ def generate_synthesis_proof(
                 kind="netlist",
                 sha256=hash_file(design_yaml),
                 size_bytes=design_yaml.stat().st_size,
+            ),
+            ArtifactRecord(
+                path=kicad_netlist_path.name,
+                kind="netlist",
+                sha256=hash_file(kicad_netlist_path),
+                size_bytes=kicad_netlist_path.stat().st_size,
+            ),
+            ArtifactRecord(
+                path="kicad_schematic_parity.json",
+                kind="report",
+                sha256=hash_file(parity_path),
+                size_bytes=parity_path.stat().st_size,
             ),
             ArtifactRecord(
                 path="requirements_coverage.json",
