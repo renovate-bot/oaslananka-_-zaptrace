@@ -457,6 +457,7 @@ class ProofPack:
             + self._signoff_evidence_from_rail_current_budget()
             + self._signoff_evidence_from_regulator_margin()
             + self._signoff_evidence_from_current_density()
+            + self._signoff_evidence_from_sipi_risk()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -778,6 +779,30 @@ class ProofPack:
                 release_blocking=True,
                 evidence_required=True,
                 human_review_required=density.human_review_required,
+            )
+        ]
+
+    def _signoff_evidence_from_sipi_risk(self) -> list[SignoffEvidence]:
+        """Map aggregate SI/PI risk evidence into sign-off evidence."""
+        risk = self.manifest.sipi_risk
+        if risk is None:
+            return []
+        status = SignoffCheckStatus.PASS if risk.passed else SignoffCheckStatus.FAIL
+        if risk.human_review_required and not risk.blocked:
+            status = SignoffCheckStatus.WARNING
+        summary = (
+            risk.message
+            or f"{risk.high_speed_net_count} high-speed net(s), {risk.decoupling_issue_count} decoupling issue(s)"
+        )
+        return [
+            SignoffEvidence(
+                name="sipi-risk",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+                human_review_required=risk.human_review_required,
             )
         ]
 

@@ -218,6 +218,21 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class SipiRiskEvidence(BaseModel):
+    """Structured SI/PI risk evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to SI/PI risk JSON report")
+    passed: bool = Field(description="Whether SI/PI risk evidence passed")
+    high_speed_net_count: int = Field(default=0, ge=0, description="High-speed/RF net count")
+    impedance_assumption_count: int = Field(default=0, ge=0, description="Impedance assumption count")
+    return_path_diagnostic_count: int = Field(default=0, ge=0, description="Return-path diagnostic count")
+    decoupling_issue_count: int = Field(default=0, ge=0, description="Decoupling issue count")
+    unsupported_high_speed_count: int = Field(default=0, ge=0, description="Unsupported high-speed/RF net count")
+    human_review_required: bool = Field(default=False, description="Whether SI/PI evidence needs review")
+    blocked: bool = Field(default=False, description="Whether SI/PI evidence blocks autonomous sign-off")
+    message: str = Field(default="", description="Human-readable SI/PI risk summary")
+
+
 class CurrentDensityEvidence(BaseModel):
     """Structured current-density/copper-width evidence stored in a proof-pack manifest."""
 
@@ -560,6 +575,10 @@ class ProofManifest(BaseModel):
     current_density: CurrentDensityEvidence | None = Field(
         default=None,
         description="Current density and copper width evidence metadata",
+    )
+    sipi_risk: SipiRiskEvidence | None = Field(
+        default=None,
+        description="SI/PI aggregate risk evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(

@@ -1134,3 +1134,63 @@ def test_missing_current_density_route_requires_human_review() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
     assert report["autonomous_signoff"]["human_review_checks"] == ["current-density"]
+
+
+def test_sipi_risk_review_requires_human_review() -> None:
+    from zaptrace.proof.manifest import SipiRiskEvidence
+
+    manifest = ProofManifest(
+        name="SipiReview",
+        design_path="design.yaml",
+        sipi_risk=SipiRiskEvidence(
+            report_path="sipi-risk.json",
+            passed=True,
+            high_speed_net_count=1,
+            impedance_assumption_count=1,
+            return_path_diagnostic_count=1,
+            decoupling_issue_count=1,
+            unsupported_high_speed_count=0,
+            human_review_required=True,
+            blocked=False,
+            message="SI/PI risk requires review",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
+    assert report["autonomous_signoff"]["human_review_checks"] == ["sipi-risk"]
+
+
+def test_sipi_risk_blocking_evidence_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import SipiRiskEvidence
+
+    manifest = ProofManifest(
+        name="SipiBlocked",
+        design_path="design.yaml",
+        sipi_risk=SipiRiskEvidence(
+            report_path="sipi-risk.json",
+            passed=False,
+            high_speed_net_count=1,
+            impedance_assumption_count=1,
+            return_path_diagnostic_count=1,
+            decoupling_issue_count=0,
+            unsupported_high_speed_count=0,
+            human_review_required=False,
+            blocked=True,
+            message="SI/PI risk failed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["sipi-risk"]

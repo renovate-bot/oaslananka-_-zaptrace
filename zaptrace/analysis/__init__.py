@@ -31,6 +31,10 @@ from zaptrace.analysis.signal_integrity import (
     ImpedanceReturnPathReport,
     build_impedance_return_path_report,
 )
+from zaptrace.analysis.sipi_risk import (
+    SipiRiskReport,
+    build_sipi_risk_report,
+)
 
 __all__ = [
     "CurrentDensityReport",
@@ -42,6 +46,8 @@ __all__ = [
     "build_rail_current_budget_report",
     "RegulatorMarginReport",
     "build_regulator_margin_report",
+    "SipiRiskReport",
+    "build_sipi_risk_report",
     "ImpedanceReturnPathReport",
     "build_impedance_return_path_report",
     "AnalysisFinding",

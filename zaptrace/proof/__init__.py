@@ -44,6 +44,7 @@ from .manifest import (
     RegulatorMarginEvidence,
     RepairProposalEvidence,
     RequirementsCoverageEvidence,
+    SipiRiskEvidence,
 )
 from .manifest import (
     CheckStatus as ManifestCheckStatus,
@@ -74,6 +75,7 @@ __all__ = [
     "DeratingEvidence",
     "NetlistParityEvidence",
     "RequirementsCoverageEvidence",
+    "SipiRiskEvidence",
     "CheckDefinition",
     "CheckRecord",
     "CheckSource",
