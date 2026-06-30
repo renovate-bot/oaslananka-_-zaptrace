@@ -540,6 +540,10 @@ class ProofPack:
             status_raw = oracle.status.strip().lower()
             if status_raw in {"pass", "passed", "success"}:
                 status = SignoffCheckStatus.PASS
+            elif status_raw == "waived":
+                status = (
+                    SignoffCheckStatus.PASS if oracle.approval_id and oracle.waiver_reason else SignoffCheckStatus.FAIL
+                )
             elif status_raw in {"fail", "failed", "error"}:
                 status = SignoffCheckStatus.FAIL
             elif status_raw in {"skip", "skipped"}:
@@ -551,11 +555,11 @@ class ProofPack:
                     name=f"kicad:{oracle.check}",
                     status=status,
                     source="kicad",
-                    summary=oracle.message or oracle.skip_reason,
+                    summary=oracle.message or oracle.waiver_reason or oracle.skip_reason,
                     release_blocking=True,
                     evidence_required=True,
-                    human_review_required=status == SignoffCheckStatus.SKIPPED and bool(oracle.skip_reason),
-                    approval_id=oracle.skip_reason,
+                    human_review_required=False,
+                    approval_id=oracle.approval_id or oracle.skip_reason,
                 )
             )
         return evidence

@@ -566,3 +566,38 @@ class TestKiCadDrcEvidence:
         with patch.object(KiCadOracle, "run_drc", return_value=KiCadDrcResult(available=False)) as mock:
             run_pcb_drc("board.kicad_pcb")
             mock.assert_called_once()
+
+
+def test_erc_approved_waiver_evidence_keeps_violation_counts_visible() -> None:
+    result = KiCadErcResult(
+        available=True,
+        success=False,
+        message="1 ERC errors, 0 warnings",
+        version="9.0.0",
+        errors=1,
+        warnings=0,
+    )
+
+    evidence = result.to_oracle_evidence(approval_id="WAIVER-ERC-1", waiver_reason="Approved NC pin exception")
+
+    assert evidence.status == "waived"
+    assert evidence.approval_id == "WAIVER-ERC-1"
+    assert evidence.waiver_reason == "Approved NC pin exception"
+    assert evidence.errors == 1
+
+
+def test_drc_incomplete_waiver_evidence_stays_failed() -> None:
+    result = KiCadDrcResult(
+        available=True,
+        success=False,
+        message="1 DRC errors, 0 warnings",
+        errors=1,
+        warnings=0,
+    )
+
+    evidence = result.to_oracle_evidence(approval_id="WAIVER-DRC-1")
+
+    assert evidence.status == "failed"
+    assert evidence.approval_id == "WAIVER-DRC-1"
+    assert evidence.waiver_reason == ""
+    assert evidence.errors == 1

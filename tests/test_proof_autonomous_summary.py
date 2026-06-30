@@ -315,3 +315,64 @@ def test_skipped_required_kicad_oracle_blocks_autonomous_pass() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
     assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:proof_pack_oracle"]
+
+
+def test_approved_kicad_waiver_does_not_block_but_keeps_counts_visible() -> None:
+    from zaptrace.proof.manifest import KiCadOracleEvidence
+
+    manifest = ProofManifest(
+        name="ApprovedKiCadWaiver",
+        design_path="design.yaml",
+        requires_kicad_oracle=True,
+        kicad_oracle=[
+            KiCadOracleEvidence(
+                check="pcb_drc",
+                status="waived",
+                errors=1,
+                warnings=0,
+                approval_id="WAIVER-DRC-1",
+                waiver_reason="Approved mechanical courtyard exception",
+                message="1 DRC errors, 0 warnings",
+            )
+        ],
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="drc", type="drc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
+    assert pack.manifest.kicad_oracle[0].errors == 1
+    assert pack.manifest.kicad_oracle[0].approval_id == "WAIVER-DRC-1"
+
+
+def test_unapproved_kicad_waiver_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import KiCadOracleEvidence
+
+    manifest = ProofManifest(
+        name="UnapprovedKiCadWaiver",
+        design_path="design.yaml",
+        requires_kicad_oracle=True,
+        kicad_oracle=[
+            KiCadOracleEvidence(
+                check="schematic_erc",
+                status="waived",
+                errors=1,
+                warnings=0,
+                approval_id="WAIVER-ERC-1",
+                waiver_reason="",
+                message="1 ERC errors, 0 warnings",
+            )
+        ],
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:schematic_erc"]

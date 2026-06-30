@@ -151,6 +151,8 @@ class KiCadOracleEvidence(BaseModel):
     warnings: int = Field(default=0, ge=0, description="Parsed warning count")
     message: str = Field(default="", description="Human-readable outcome summary")
     skip_reason: str = Field(default="", description="Explicit reason when status is skipped")
+    approval_id: str = Field(default="", description="Human approval/waiver identifier, if waived")
+    waiver_reason: str = Field(default="", description="Human-readable waiver rationale, if waived")
 
 
 class BomProvenanceEvidence(BaseModel):

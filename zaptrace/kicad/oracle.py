@@ -111,7 +111,13 @@ class KiCadErcResult(KiCadResult):
     def passed(self) -> bool:
         return self.success and self.errors == 0
 
-    def to_oracle_evidence(self, *, check: str = "schematic_erc") -> Any:
+    def to_oracle_evidence(
+        self,
+        *,
+        check: str = "schematic_erc",
+        approval_id: str = "",
+        waiver_reason: str = "",
+    ) -> Any:
         """Convert this ERC result into proof-pack KiCad oracle evidence."""
         from zaptrace.proof.manifest import KiCadOracleEvidence
 
@@ -120,6 +126,9 @@ class KiCadErcResult(KiCadResult):
             skip_reason = self.message or "kicad-cli not available"
         elif self.passed:
             status = "passed"
+            skip_reason = ""
+        elif approval_id and waiver_reason:
+            status = "waived"
             skip_reason = ""
         else:
             status = "failed"
@@ -136,6 +145,8 @@ class KiCadErcResult(KiCadResult):
             warnings=self.warnings,
             message=self.message,
             skip_reason=skip_reason,
+            approval_id=approval_id,
+            waiver_reason=waiver_reason,
         )
 
     @property
@@ -176,7 +187,13 @@ class KiCadDrcResult(KiCadResult):
     def passed(self) -> bool:
         return self.success and self.errors == 0
 
-    def to_oracle_evidence(self, *, check: str = "pcb_drc") -> Any:
+    def to_oracle_evidence(
+        self,
+        *,
+        check: str = "pcb_drc",
+        approval_id: str = "",
+        waiver_reason: str = "",
+    ) -> Any:
         """Convert this DRC result into proof-pack KiCad oracle evidence."""
         from zaptrace.proof.manifest import KiCadOracleEvidence
 
@@ -185,6 +202,9 @@ class KiCadDrcResult(KiCadResult):
             skip_reason = self.message or "kicad-cli not available"
         elif self.passed:
             status = "passed"
+            skip_reason = ""
+        elif approval_id and waiver_reason:
+            status = "waived"
             skip_reason = ""
         else:
             status = "failed"
@@ -201,6 +221,8 @@ class KiCadDrcResult(KiCadResult):
             warnings=self.warnings,
             message=self.message,
             skip_reason=skip_reason,
+            approval_id=approval_id,
+            waiver_reason=waiver_reason,
         )
 
     @property
