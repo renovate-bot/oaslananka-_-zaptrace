@@ -218,6 +218,20 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class DatasheetProvenanceEvidence(BaseModel):
+    """Structured datasheet fact/provenance evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to datasheet fact provenance report JSON")
+    component_count: int = Field(default=0, ge=0, description="Number of components with datasheet evidence")
+    fact_count: int = Field(default=0, ge=0, description="Number of datasheet facts recorded")
+    absolute_maximum_count: int = Field(default=0, ge=0, description="Number of absolute maximum facts")
+    recommended_operating_count: int = Field(
+        default=0, ge=0, description="Number of recommended operating condition facts"
+    )
+    missing_hash_count: int = Field(default=0, ge=0, description="Facts without datasheet SHA-256 provenance")
+    message: str = Field(default="", description="Human-readable datasheet provenance summary")
+
+
 class DeratingEvidence(BaseModel):
     """Structured component derating policy evidence stored in a proof-pack manifest."""
 
@@ -404,6 +418,10 @@ class ProofManifest(BaseModel):
     derating_evidence: DeratingEvidence | None = Field(
         default=None,
         description="Component derating policy evidence metadata",
+    )
+    datasheet_provenance: DatasheetProvenanceEvidence | None = Field(
+        default=None,
+        description="Datasheet-derived fact/provenance evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(

@@ -18,9 +18,276 @@ fills in carries a ``confidence`` value in [0.0, 1.0].
 
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import asdict, dataclass, field
+from enum import StrEnum
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
+
+# ---------------------------------------------------------------------------
+# Provenance/fact evidence schema v1
+# ---------------------------------------------------------------------------
+
+
+class DatasheetFactScope(StrEnum):
+    """Datasheet fact category with explicit safety semantics."""
+
+    ABSOLUTE_MAXIMUM = "absolute_maximum"
+    RECOMMENDED_OPERATING = "recommended_operating"
+    PIN_FUNCTION = "pin_function"
+    PACKAGE = "package"
+    ELECTRICAL_CHARACTERISTIC = "electrical_characteristic"
+    THERMAL_CHARACTERISTIC = "thermal_characteristic"
+
+
+class DatasheetSourceRef(BaseModel):
+    """Source locator for a datasheet-derived fact."""
+
+    model_config = ConfigDict(strict=False)
+
+    datasheet_url: str = ""
+    datasheet_sha256: str = Field(description="SHA-256 of the source datasheet text/PDF bytes")
+    page: int | None = Field(default=None, ge=1)
+    table: str = ""
+    figure: str = ""
+    section: str = ""
+    source_snippet: str = ""
+
+
+class DatasheetFact(BaseModel):
+    """One datasheet-derived engineering fact with provenance."""
+
+    model_config = ConfigDict(strict=False)
+
+    component_id: str
+    field: str
+    value: str | float | int | bool
+    unit: str = ""
+    scope: DatasheetFactScope
+    confidence: float = Field(ge=0, le=1)
+    source: DatasheetSourceRef
+
+
+class DatasheetFactReport(BaseModel):
+    """Machine-readable datasheet provenance report for one component."""
+
+    model_config = ConfigDict(strict=False)
+
+    schema_version: str = "1.0"
+    component_id: str
+    datasheet_url: str = ""
+    datasheet_sha256: str
+    absolute_maximum: list[DatasheetFact] = Field(default_factory=list)
+    recommended_operating: list[DatasheetFact] = Field(default_factory=list)
+    other_facts: list[DatasheetFact] = Field(default_factory=list)
+    import_losses: list[str] = Field(default_factory=list)
+
+    @property
+    def facts(self) -> list[DatasheetFact]:
+        return [*self.absolute_maximum, *self.recommended_operating, *self.other_facts]
+
+    @property
+    def fact_count(self) -> int:
+        return len(self.facts)
+
+
+def datasheet_sha256(raw: str | bytes) -> str:
+    """Return a stable SHA-256 for datasheet text or bytes."""
+    payload = raw.encode("utf-8") if isinstance(raw, str) else raw
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _source(
+    *,
+    datasheet_url: str,
+    digest: str,
+    snippet: str,
+    section: str,
+    page: int | None = None,
+    table: str = "",
+    figure: str = "",
+) -> DatasheetSourceRef:
+    return DatasheetSourceRef(
+        datasheet_url=datasheet_url,
+        datasheet_sha256=digest,
+        page=page,
+        table=table,
+        figure=figure,
+        section=section,
+        source_snippet=snippet[:240],
+    )
+
+
+def _add_fact(
+    facts: list[DatasheetFact],
+    *,
+    component_id: str,
+    field: str,
+    value: str | float | int | bool | None,
+    unit: str,
+    scope: DatasheetFactScope,
+    confidence: float,
+    source: DatasheetSourceRef,
+) -> None:
+    if value is None:
+        return
+    facts.append(
+        DatasheetFact(
+            component_id=component_id,
+            field=field,
+            value=value,
+            unit=unit,
+            scope=scope,
+            confidence=confidence,
+            source=source,
+        )
+    )
+
+
+def build_datasheet_fact_report(
+    component_id: str,
+    raw_text: str,
+    *,
+    datasheet_url: str = "",
+    page: int | None = None,
+    extract: DatasheetExtract | None = None,
+) -> DatasheetFactReport:
+    """Build a provenance report from datasheet text and optional extraction."""
+    parsed = extract or extract_datasheet(raw_text)
+    digest = datasheet_sha256(raw_text)
+    recommended: list[DatasheetFact] = []
+    other: list[DatasheetFact] = []
+
+    _add_fact(
+        recommended,
+        component_id=component_id,
+        field="supply_voltage_min_v",
+        value=parsed.supply_voltage_min_v.value,
+        unit="V",
+        scope=DatasheetFactScope.RECOMMENDED_OPERATING,
+        confidence=parsed.supply_voltage_min_v.confidence,
+        source=_source(
+            datasheet_url=datasheet_url,
+            digest=digest,
+            page=page,
+            table="Recommended Operating Conditions",
+            section="recommended operating conditions",
+            snippet=parsed.supply_voltage_min_v.source_snippet,
+        ),
+    )
+    _add_fact(
+        recommended,
+        component_id=component_id,
+        field="supply_voltage_max_v",
+        value=parsed.supply_voltage_max_v.value,
+        unit="V",
+        scope=DatasheetFactScope.RECOMMENDED_OPERATING,
+        confidence=parsed.supply_voltage_max_v.confidence,
+        source=_source(
+            datasheet_url=datasheet_url,
+            digest=digest,
+            page=page,
+            table="Recommended Operating Conditions",
+            section="recommended operating conditions",
+            snippet=parsed.supply_voltage_max_v.source_snippet,
+        ),
+    )
+    _add_fact(
+        recommended,
+        component_id=component_id,
+        field="operating_temp_min_c",
+        value=parsed.operating_temp_min_c.value,
+        unit="C",
+        scope=DatasheetFactScope.RECOMMENDED_OPERATING,
+        confidence=parsed.operating_temp_min_c.confidence,
+        source=_source(
+            datasheet_url=datasheet_url,
+            digest=digest,
+            page=page,
+            table="Recommended Operating Conditions",
+            section="recommended operating conditions",
+            snippet=parsed.operating_temp_min_c.source_snippet,
+        ),
+    )
+    _add_fact(
+        recommended,
+        component_id=component_id,
+        field="operating_temp_max_c",
+        value=parsed.operating_temp_max_c.value,
+        unit="C",
+        scope=DatasheetFactScope.RECOMMENDED_OPERATING,
+        confidence=parsed.operating_temp_max_c.confidence,
+        source=_source(
+            datasheet_url=datasheet_url,
+            digest=digest,
+            page=page,
+            table="Recommended Operating Conditions",
+            section="recommended operating conditions",
+            snippet=parsed.operating_temp_max_c.source_snippet,
+        ),
+    )
+    _add_fact(
+        other,
+        component_id=component_id,
+        field="output_current_max_a",
+        value=parsed.output_current_max_a.value,
+        unit="A",
+        scope=DatasheetFactScope.ELECTRICAL_CHARACTERISTIC,
+        confidence=parsed.output_current_max_a.confidence,
+        source=_source(
+            datasheet_url=datasheet_url,
+            digest=digest,
+            page=page,
+            table="Electrical Characteristics",
+            section="electrical characteristics",
+            snippet=parsed.output_current_max_a.source_snippet,
+        ),
+    )
+    _add_fact(
+        other,
+        component_id=component_id,
+        field="package",
+        value=parsed.package.value,
+        unit="",
+        scope=DatasheetFactScope.PACKAGE,
+        confidence=parsed.package.confidence,
+        source=_source(
+            datasheet_url=datasheet_url,
+            digest=digest,
+            page=page,
+            section="package information",
+            snippet=parsed.package.source_snippet,
+        ),
+    )
+    for pin_name, function in sorted(parsed.pin_functions.items()):
+        _add_fact(
+            other,
+            component_id=component_id,
+            field=f"pin_functions.{pin_name}",
+            value=function,
+            unit="",
+            scope=DatasheetFactScope.PIN_FUNCTION,
+            confidence=0.75,
+            source=_source(
+                datasheet_url=datasheet_url,
+                digest=digest,
+                page=page,
+                table="Pin Functions",
+                section="pin functions",
+                snippet=function,
+            ),
+        )
+    return DatasheetFactReport(
+        component_id=component_id,
+        datasheet_url=datasheet_url,
+        datasheet_sha256=digest,
+        recommended_operating=recommended,
+        other_facts=other,
+        import_losses=parsed.import_losses,
+    )
+
 
 # ---------------------------------------------------------------------------
 # Extraction schema

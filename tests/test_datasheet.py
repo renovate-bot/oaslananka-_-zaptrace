@@ -103,3 +103,103 @@ class TestExtractedField:
         assert d["value"] == 3.3
         assert d["confidence"] == 0.9
         assert d["source_snippet"] == "3.3V supply"
+
+
+class TestDatasheetFactProvenance:
+    def test_datasheet_hash_is_stable(self) -> None:
+        from zaptrace.library.datasheet import datasheet_sha256
+
+        assert datasheet_sha256("abc") == datasheet_sha256(b"abc")
+        assert len(datasheet_sha256("abc")) == 64
+
+    def test_fact_report_has_hash_page_table_and_scope(self) -> None:
+        from zaptrace.library.datasheet import DatasheetFactScope, build_datasheet_fact_report, datasheet_sha256
+
+        report = build_datasheet_fact_report(
+            "ts2940",
+            _LDO_DATASHEET,
+            datasheet_url="https://example.com/ts2940.pdf",
+            page=7,
+        )
+
+        assert report.datasheet_sha256 == datasheet_sha256(_LDO_DATASHEET)
+        assert report.fact_count > 0
+        assert report.absolute_maximum == []
+        assert report.recommended_operating
+        fact = report.recommended_operating[0]
+        assert fact.scope == DatasheetFactScope.RECOMMENDED_OPERATING
+        assert fact.source.datasheet_sha256 == report.datasheet_sha256
+        assert fact.source.page == 7
+        assert fact.source.table == "Recommended Operating Conditions"
+        assert fact.source.figure == ""
+        assert fact.source.source_snippet
+
+    def test_absolute_maximum_and_recommended_operating_are_separate_lists(self) -> None:
+        from zaptrace.library.datasheet import (
+            DatasheetFact,
+            DatasheetFactReport,
+            DatasheetFactScope,
+            DatasheetSourceRef,
+        )
+
+        source = DatasheetSourceRef(
+            datasheet_url="https://example.com/ds.pdf",
+            datasheet_sha256="a" * 64,
+            page=4,
+            table="Absolute Maximum Ratings",
+            figure="Figure 3",
+            section="absolute maximum ratings",
+            source_snippet="VIN to GND -0.3V to 20V",
+        )
+        absolute = DatasheetFact(
+            component_id="u1",
+            field="vin_abs_max_v",
+            value=20.0,
+            unit="V",
+            scope=DatasheetFactScope.ABSOLUTE_MAXIMUM,
+            confidence=0.95,
+            source=source,
+        )
+        recommended = DatasheetFact(
+            component_id="u1",
+            field="vin_recommended_max_v",
+            value=12.0,
+            unit="V",
+            scope=DatasheetFactScope.RECOMMENDED_OPERATING,
+            confidence=0.95,
+            source=source.model_copy(update={"table": "Recommended Operating Conditions"}),
+        )
+        report = DatasheetFactReport(
+            component_id="u1",
+            datasheet_sha256="a" * 64,
+            absolute_maximum=[absolute],
+            recommended_operating=[recommended],
+        )
+
+        assert report.absolute_maximum[0].scope == DatasheetFactScope.ABSOLUTE_MAXIMUM
+        assert report.recommended_operating[0].scope == DatasheetFactScope.RECOMMENDED_OPERATING
+        assert report.fact_count == 2
+        assert report.absolute_maximum[0].source.table == "Absolute Maximum Ratings"
+        assert report.absolute_maximum[0].source.figure == "Figure 3"
+
+    def test_proof_manifest_can_include_datasheet_provenance(self) -> None:
+        from zaptrace.proof.manifest import DatasheetProvenanceEvidence, ProofManifest
+
+        manifest = ProofManifest(
+            name="datasheet-proof",
+            design_path="design.yaml",
+            datasheet_provenance=DatasheetProvenanceEvidence(
+                report_path="datasheet-facts.json",
+                component_count=1,
+                fact_count=5,
+                absolute_maximum_count=1,
+                recommended_operating_count=2,
+                missing_hash_count=0,
+                message="datasheet provenance recorded",
+            ),
+        )
+
+        dumped = manifest.model_dump(mode="json")
+        assert dumped["datasheet_provenance"]["report_path"] == "datasheet-facts.json"
+        assert dumped["datasheet_provenance"]["absolute_maximum_count"] == 1
+        assert dumped["datasheet_provenance"]["recommended_operating_count"] == 2
