@@ -218,6 +218,17 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class FootprintProofEvidence(BaseModel):
+    """Structured footprint proof validation evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to footprint proof validation report JSON")
+    passed: bool = Field(description="Whether footprint proof validation passed")
+    proof_count: int = Field(default=0, ge=0, description="Number of footprint proofs validated")
+    error_count: int = Field(default=0, ge=0, description="Blocking footprint proof error count")
+    warning_count: int = Field(default=0, ge=0, description="Non-blocking footprint proof warning count")
+    message: str = Field(default="", description="Human-readable footprint proof summary")
+
+
 class DatasheetProvenanceEvidence(BaseModel):
     """Structured datasheet fact/provenance evidence stored in a proof-pack manifest."""
 
@@ -428,6 +439,10 @@ class ProofManifest(BaseModel):
     datasheet_provenance: DatasheetProvenanceEvidence | None = Field(
         default=None,
         description="Datasheet-derived fact/provenance evidence metadata",
+    )
+    footprint_proof: FootprintProofEvidence | None = Field(
+        default=None,
+        description="Footprint proof validation evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(

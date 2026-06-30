@@ -7,10 +7,15 @@ from zaptrace.ee.footprint_proof import (
     FootprintPadProof,
     FootprintPin1Evidence,
     FootprintProof,
+    FootprintProofDiagnostic,
+    FootprintProofSeverity,
+    FootprintProofValidationReport,
     FootprintSourceProvenance,
     FootprintSourceType,
     build_footprint_proof,
     file_sha256,
+    validate_footprint_proof,
+    validate_footprint_proofs,
     write_footprint_proof,
 )
 from zaptrace.ee.footprints import (
@@ -44,6 +49,9 @@ __all__ = [
     "FootprintPadProof",
     "FootprintPin1Evidence",
     "FootprintProof",
+    "FootprintProofDiagnostic",
+    "FootprintProofSeverity",
+    "FootprintProofValidationReport",
     "FootprintSourceProvenance",
     "FootprintSourceType",
     "generate_footprint",
@@ -51,5 +59,7 @@ __all__ = [
     "generate_footprint_for_component",
     "list_supported_packages",
     "symbol_from_pins",
+    "validate_footprint_proof",
+    "validate_footprint_proofs",
     "write_footprint_proof",
 ]

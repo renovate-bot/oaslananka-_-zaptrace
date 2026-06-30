@@ -148,7 +148,8 @@ def build_footprint_proof(
 ) -> FootprintProof:
     """Build a footprint proof from a FootprintDef."""
     resolved_source = source or _default_source(source_type, footprint.source or package_id, source_path)
-    mapping = pin_map or {pad.id: pad.id for pad in footprint.pads}
+    thermal = set(footprint.thermal_pads or [])
+    mapping = pin_map or {pad.id: pad.id for pad in footprint.pads if pad.id not in thermal}
     pin_count = expected_pin_count if expected_pin_count is not None else len(mapping)
     paste_enabled = sum(1 for pad in footprint.pads if pad.solder_paste)
     paste_disabled = len(footprint.pads) - paste_enabled
@@ -166,9 +167,169 @@ def build_footprint_proof(
         courtyard_mm=footprint.courtyard,
         paste_enabled_pad_count=paste_enabled,
         paste_disabled_pad_count=paste_disabled,
-        thermal_pads=footprint.thermal_pads or [],
+        thermal_pads=sorted(thermal),
         pin1=_pin1_evidence(footprint.pads),
         notes=notes,
+    )
+
+
+class FootprintProofSeverity(StrEnum):
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+
+
+class FootprintProofDiagnostic(BaseModel):
+    """Actionable diagnostic emitted by footprint proof validation."""
+
+    model_config = ConfigDict(strict=False)
+
+    package_id: str
+    code: str
+    severity: FootprintProofSeverity
+    message: str
+    expected: str = ""
+    observed: str = ""
+
+
+class FootprintProofValidationReport(BaseModel):
+    """Validation report for one or more footprint proofs."""
+
+    schema_version: str = "1.0"
+    proof_count: int
+    blocked: bool
+    error_count: int
+    warning_count: int
+    diagnostics: list[FootprintProofDiagnostic]
+
+
+def validate_footprint_proof(
+    proof: FootprintProof,
+    *,
+    expected_pins: set[str] | None = None,
+    require_pin1: bool = True,
+    require_courtyard: bool = True,
+) -> FootprintProofValidationReport:
+    """Validate pad/pin-count and pin-map consistency for one footprint proof."""
+    diagnostics: list[FootprintProofDiagnostic] = []
+    pad_ids = {pad.pad_id for pad in proof.pads}
+    thermal = set(proof.thermal_pads)
+    signal_pad_ids = pad_ids - thermal
+    if proof.pad_count != len(proof.pads):
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="pad-count-field-mismatch",
+                severity=FootprintProofSeverity.ERROR,
+                message="pad_count does not match the number of pad records",
+                expected=str(len(proof.pads)),
+                observed=str(proof.pad_count),
+            )
+        )
+    if len(signal_pad_ids) != proof.pin_count:
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="pad-pin-count-mismatch",
+                severity=FootprintProofSeverity.ERROR,
+                message="signal pad count does not match expected pin count",
+                expected=str(proof.pin_count),
+                observed=str(len(signal_pad_ids)),
+            )
+        )
+    if len(proof.pin_map) != proof.pin_count:
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="pin-map-count-mismatch",
+                severity=FootprintProofSeverity.ERROR,
+                message="pin_map entry count does not match expected pin count",
+                expected=str(proof.pin_count),
+                observed=str(len(proof.pin_map)),
+            )
+        )
+    mapped_pads = set(proof.pin_map.values())
+    missing_pads = sorted(mapped_pads - pad_ids)
+    if missing_pads:
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="pin-map-pad-missing",
+                severity=FootprintProofSeverity.ERROR,
+                message="pin_map references pad ids not present in the footprint",
+                expected="existing pad id",
+                observed=", ".join(missing_pads),
+            )
+        )
+    unmapped_signal_pads = sorted(signal_pad_ids - mapped_pads)
+    if unmapped_signal_pads:
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="unmapped-signal-pad",
+                severity=FootprintProofSeverity.ERROR,
+                message="signal pads are not referenced by pin_map",
+                expected="all signal pads mapped",
+                observed=", ".join(unmapped_signal_pads),
+            )
+        )
+    if expected_pins is not None:
+        actual_pins = set(proof.pin_map)
+        missing = sorted(expected_pins - actual_pins)
+        unexpected = sorted(actual_pins - expected_pins)
+        if missing or unexpected:
+            diagnostics.append(
+                FootprintProofDiagnostic(
+                    package_id=proof.package_id,
+                    code="pin-name-mismatch",
+                    severity=FootprintProofSeverity.ERROR,
+                    message="pin_map names do not match the expected component pins",
+                    expected=", ".join(sorted(expected_pins)),
+                    observed=", ".join(sorted(actual_pins)),
+                )
+            )
+    if require_pin1 and not proof.pin1.present:
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="missing-pin1-evidence",
+                severity=FootprintProofSeverity.ERROR,
+                message="footprint has no explicit pin-1 evidence",
+            )
+        )
+    if require_courtyard and proof.courtyard_mm == (0.0, 0.0):
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="missing-courtyard",
+                severity=FootprintProofSeverity.ERROR,
+                message="footprint courtyard is missing or zero-sized",
+            )
+        )
+    errors = sum(1 for item in diagnostics if item.severity == FootprintProofSeverity.ERROR)
+    warnings = sum(1 for item in diagnostics if item.severity == FootprintProofSeverity.WARNING)
+    return FootprintProofValidationReport(
+        proof_count=1,
+        blocked=errors > 0,
+        error_count=errors,
+        warning_count=warnings,
+        diagnostics=diagnostics,
+    )
+
+
+def validate_footprint_proofs(proofs: list[FootprintProof]) -> FootprintProofValidationReport:
+    """Validate multiple footprint proofs and aggregate diagnostics."""
+    diagnostics: list[FootprintProofDiagnostic] = []
+    for proof in proofs:
+        diagnostics.extend(validate_footprint_proof(proof).diagnostics)
+    errors = sum(1 for item in diagnostics if item.severity == FootprintProofSeverity.ERROR)
+    warnings = sum(1 for item in diagnostics if item.severity == FootprintProofSeverity.WARNING)
+    return FootprintProofValidationReport(
+        proof_count=len(proofs),
+        blocked=errors > 0,
+        error_count=errors,
+        warning_count=warnings,
+        diagnostics=diagnostics,
     )
 
 

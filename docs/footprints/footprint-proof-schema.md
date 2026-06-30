@@ -71,3 +71,29 @@ A sample generated proof is committed at:
 ```text
 tests/fixtures/footprints/sot23_footprint_proof.json
 ```
+
+## Validation diagnostics
+
+`validate_footprint_proof()` emits actionable diagnostics and blocks when any error exists.
+
+Blocking diagnostics include:
+
+```text
+pad-count-field-mismatch
+pad-pin-count-mismatch
+pin-map-count-mismatch
+pin-map-pad-missing
+unmapped-signal-pad
+pin-name-mismatch
+missing-pin1-evidence
+missing-courtyard
+```
+
+Thermal pads are excluded from signal pad count. For example, a QFN-16 footprint with 16 signal pads plus one exposed thermal pad has `pad_count=17`, `pin_count=16`, and should not map the thermal pad as a logical signal pin.
+
+Proof-pack `footprint_proof` evidence maps to sign-off as follows:
+
+```text
+passed=false -> footprint-proof fails and blocks autonomous-pass
+passed=true  -> footprint-proof passes
+```

@@ -449,6 +449,7 @@ class ProofPack:
             + self._signoff_evidence_from_component_metadata()
             + self._signoff_evidence_from_derating()
             + self._signoff_evidence_from_datasheet_provenance()
+            + self._signoff_evidence_from_footprint_proof()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -589,6 +590,25 @@ class ProofPack:
                 release_blocking=True,
                 evidence_required=True,
                 human_review_required=provenance.human_review_required,
+            )
+        ]
+
+    def _signoff_evidence_from_footprint_proof(self) -> list[SignoffEvidence]:
+        """Map footprint proof validation evidence into release-blocking sign-off evidence."""
+        proof = self.manifest.footprint_proof
+        if proof is None:
+            return []
+        summary = proof.message
+        if proof.error_count:
+            summary = f"{summary}; {proof.error_count} footprint proof error(s)"
+        return [
+            SignoffEvidence(
+                name="footprint-proof",
+                status=SignoffCheckStatus.PASS if proof.passed else SignoffCheckStatus.FAIL,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
             )
         ]
 

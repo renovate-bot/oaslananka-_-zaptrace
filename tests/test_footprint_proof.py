@@ -86,3 +86,88 @@ def test_sample_fixture_matches_schema() -> None:
     assert data["schema_version"] == "1.0"
     assert data["package_id"] == "SOT-23"
     assert data["pin1"]["present"] is True
+
+
+def test_footprint_validator_passes_valid_generated_proof() -> None:
+    from zaptrace.ee.footprint_proof import validate_footprint_proof
+
+    fp = footprint_sot("SOT-23")
+    assert fp is not None
+    proof = build_footprint_proof("SOT-23", fp, expected_pin_count=3)
+
+    report = validate_footprint_proof(proof, expected_pins={"1", "2", "3"})
+
+    assert report.blocked is False
+    assert report.error_count == 0
+    assert report.diagnostics == []
+
+
+def test_footprint_validator_fails_pad_pin_count_mismatch() -> None:
+    from zaptrace.ee.footprint_proof import validate_footprint_proof
+
+    fp = footprint_sot("SOT-23")
+    assert fp is not None
+    proof = build_footprint_proof("SOT-23", fp, expected_pin_count=4)
+
+    report = validate_footprint_proof(proof)
+
+    assert report.blocked is True
+    assert any(item.code == "pad-pin-count-mismatch" for item in report.diagnostics)
+
+
+def test_footprint_validator_fails_pin_name_mismatch() -> None:
+    from zaptrace.ee.footprint_proof import validate_footprint_proof
+
+    fp = footprint_sot("SOT-23")
+    assert fp is not None
+    proof = build_footprint_proof("SOT-23", fp, expected_pin_count=3, pin_map={"VIN": "1", "GND": "2", "VOUT": "3"})
+
+    report = validate_footprint_proof(proof, expected_pins={"1", "2", "3"})
+
+    assert report.blocked is True
+    diag = next(item for item in report.diagnostics if item.code == "pin-name-mismatch")
+    assert "VIN" in diag.observed
+    assert "1" in diag.expected
+
+
+def test_footprint_validator_fails_missing_pad_reference() -> None:
+    from zaptrace.ee.footprint_proof import validate_footprint_proof
+
+    fp = footprint_sot("SOT-23")
+    assert fp is not None
+    proof = build_footprint_proof("SOT-23", fp, expected_pin_count=3, pin_map={"1": "1", "2": "2", "3": "99"})
+
+    report = validate_footprint_proof(proof)
+
+    assert report.blocked is True
+    assert any(item.code == "pin-map-pad-missing" and "99" in item.observed for item in report.diagnostics)
+
+
+def test_footprint_validator_handles_qfn_thermal_pad() -> None:
+    from zaptrace.ee.footprint_proof import validate_footprint_proof
+
+    fp = footprint_qfn("QFN-16")
+    assert fp is not None
+    proof = build_footprint_proof("QFN-16", fp, expected_pin_count=16)
+
+    report = validate_footprint_proof(proof)
+
+    assert report.blocked is False
+    assert proof.pad_count == 17
+    assert proof.pin_count == 16
+    assert "0" not in proof.pin_map
+
+
+def test_aggregate_footprint_validation_report() -> None:
+    from zaptrace.ee.footprint_proof import validate_footprint_proofs
+
+    fp = footprint_sot("SOT-23")
+    assert fp is not None
+    good = build_footprint_proof("SOT-23", fp, expected_pin_count=3)
+    bad = build_footprint_proof("SOT-23-bad", fp, expected_pin_count=4)
+
+    report = validate_footprint_proofs([good, bad])
+
+    assert report.proof_count == 2
+    assert report.blocked is True
+    assert report.error_count >= 1

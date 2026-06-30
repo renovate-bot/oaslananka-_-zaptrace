@@ -698,3 +698,54 @@ def test_stale_datasheet_hash_blocks_autonomous_pass() -> None:
     assert report["autonomous_signoff"]["blocking_checks"] == ["datasheet-provenance"]
     evidence = next(item for item in pack.manifest.autonomous_signoff.evidence if item.name == "datasheet-provenance")
     assert "stale datasheet fact" in evidence.summary
+
+
+def test_failed_footprint_proof_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import FootprintProofEvidence
+
+    manifest = ProofManifest(
+        name="FootprintProofBlocked",
+        design_path="design.yaml",
+        footprint_proof=FootprintProofEvidence(
+            report_path="footprint-proof-validation.json",
+            passed=False,
+            proof_count=1,
+            error_count=1,
+            warning_count=0,
+            message="footprint proof validation failed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["footprint-proof"]
+
+
+def test_passing_footprint_proof_does_not_block_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import FootprintProofEvidence
+
+    manifest = ProofManifest(
+        name="FootprintProofPass",
+        design_path="design.yaml",
+        footprint_proof=FootprintProofEvidence(
+            report_path="footprint-proof-validation.json",
+            passed=True,
+            proof_count=1,
+            error_count=0,
+            warning_count=0,
+            message="footprint proof validation passed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
