@@ -11,6 +11,10 @@ from zaptrace.analysis.rail_current import (
     RailCurrentBudgetReport,
     build_rail_current_budget_report,
 )
+from zaptrace.analysis.regulator_margin import (
+    RegulatorMarginReport,
+    build_regulator_margin_report,
+)
 from zaptrace.analysis.reports import (
     AnalysisFinding,
     ElectricalAnalysisReport,
@@ -30,6 +34,8 @@ __all__ = [
     "write_diffpair_length_report",
     "RailCurrentBudgetReport",
     "build_rail_current_budget_report",
+    "RegulatorMarginReport",
+    "build_regulator_margin_report",
     "ImpedanceReturnPathReport",
     "build_impedance_return_path_report",
     "AnalysisFinding",

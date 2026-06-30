@@ -1020,3 +1020,59 @@ def test_missing_rail_current_metadata_requires_human_review() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
     assert report["autonomous_signoff"]["human_review_checks"] == ["rail-current-budget"]
+
+
+def test_regulator_margin_failure_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import RegulatorMarginEvidence
+
+    manifest = ProofManifest(
+        name="RegulatorMarginBlocked",
+        design_path="design.yaml",
+        regulator_margin=RegulatorMarginEvidence(
+            report_path="regulator-margin.json",
+            passed=False,
+            regulator_count=1,
+            failure_count=1,
+            missing_metadata_count=0,
+            human_review_required=False,
+            blocked=True,
+            message="regulator thermal margin failed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["regulator-margin"]
+
+
+def test_regulator_margin_missing_metadata_requires_human_review() -> None:
+    from zaptrace.proof.manifest import RegulatorMarginEvidence
+
+    manifest = ProofManifest(
+        name="RegulatorMarginReview",
+        design_path="design.yaml",
+        regulator_margin=RegulatorMarginEvidence(
+            report_path="regulator-margin.json",
+            passed=True,
+            regulator_count=1,
+            failure_count=0,
+            missing_metadata_count=2,
+            human_review_required=True,
+            blocked=False,
+            message="regulator margin metadata incomplete",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
+    assert report["autonomous_signoff"]["human_review_checks"] == ["regulator-margin"]

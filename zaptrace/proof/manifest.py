@@ -218,6 +218,19 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class RegulatorMarginEvidence(BaseModel):
+    """Structured regulator dropout/thermal margin evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to regulator margin JSON report")
+    passed: bool = Field(description="Whether regulator dropout/thermal margin checks passed")
+    regulator_count: int = Field(default=0, ge=0, description="Number of regulators checked")
+    failure_count: int = Field(default=0, ge=0, description="Dropout/thermal failure count")
+    missing_metadata_count: int = Field(default=0, ge=0, description="Missing regulator margin metadata count")
+    human_review_required: bool = Field(default=False, description="Whether regulator margin evidence needs review")
+    blocked: bool = Field(default=False, description="Whether regulator margin evidence blocks autonomous sign-off")
+    message: str = Field(default="", description="Human-readable regulator margin summary")
+
+
 class RailCurrentBudgetEvidence(BaseModel):
     """Structured rail current budget evidence stored in a proof-pack manifest."""
 
@@ -525,6 +538,10 @@ class ProofManifest(BaseModel):
     rail_current_budget: RailCurrentBudgetEvidence | None = Field(
         default=None,
         description="Rail current budget evidence metadata",
+    )
+    regulator_margin: RegulatorMarginEvidence | None = Field(
+        default=None,
+        description="Regulator dropout and thermal margin evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(

@@ -455,6 +455,7 @@ class ProofPack:
             + self._signoff_evidence_from_impedance_return_path()
             + self._signoff_evidence_from_repair_proposals()
             + self._signoff_evidence_from_rail_current_budget()
+            + self._signoff_evidence_from_regulator_margin()
             + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
@@ -727,6 +728,29 @@ class ProofPack:
                 release_blocking=True,
                 evidence_required=True,
                 human_review_required=budget.human_review_required,
+            )
+        ]
+
+    def _signoff_evidence_from_regulator_margin(self) -> list[SignoffEvidence]:
+        """Map regulator dropout/thermal margin evidence into sign-off evidence."""
+        margin = self.manifest.regulator_margin
+        if margin is None:
+            return []
+        status = SignoffCheckStatus.PASS if margin.passed else SignoffCheckStatus.FAIL
+        if margin.human_review_required and not margin.blocked:
+            status = SignoffCheckStatus.WARNING
+        summary = margin.message or f"{margin.regulator_count} regulator(s), {margin.failure_count} margin failure(s)"
+        if margin.missing_metadata_count:
+            summary = f"{summary}; {margin.missing_metadata_count} missing regulator metadata item(s)"
+        return [
+            SignoffEvidence(
+                name="regulator-margin",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+                human_review_required=margin.human_review_required,
             )
         ]
 
