@@ -218,6 +218,17 @@ class AssumptionsEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable assumptions summary")
 
 
+class ComponentMetadataEvidence(BaseModel):
+    """Structured component metadata gate evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to component metadata gate JSON report")
+    valid: bool = Field(description="Whether critical component metadata passed the gate")
+    component_count: int = Field(default=0, ge=0, description="Number of components inspected")
+    critical_issue_count: int = Field(default=0, ge=0, description="Blocking metadata issue count")
+    warning_count: int = Field(default=0, ge=0, description="Non-blocking metadata warning count")
+    message: str = Field(default="", description="Human-readable component metadata summary")
+
+
 class NetlistParityEvidence(BaseModel):
     """Structured netlist parity evidence stored in a proof-pack manifest."""
 
@@ -374,6 +385,10 @@ class ProofManifest(BaseModel):
     ipc_d356_parity: NetlistParityEvidence | None = Field(
         default=None,
         description="IPC-D-356 manufacturing netlist parity evidence metadata",
+    )
+    component_metadata: ComponentMetadataEvidence | None = Field(
+        default=None,
+        description="Component metadata validator/gate evidence metadata",
     )
 
     requirements_coverage: RequirementsCoverageEvidence | None = Field(

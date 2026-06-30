@@ -45,6 +45,15 @@ jobs:
       - name: Pyright
         run: uv run pyright
 
+      - name: Component metadata gate
+        run: |
+          uv run python scripts/ci_component_metadata_gate.py \
+            --max-errors 22 \
+            --max-warnings 127 \
+            --strict \
+            --output component-metadata-gate.json \
+            --markdown "$GITHUB_STEP_SUMMARY"
+
   test:
     name: Test (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest

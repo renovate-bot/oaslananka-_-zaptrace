@@ -456,3 +456,55 @@ def test_failed_ipc_d356_parity_blocks_autonomous_pass() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
     assert report["autonomous_signoff"]["blocking_checks"] == ["manufacturing:ipc_d356_netlist"]
+
+
+def test_failed_component_metadata_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import ComponentMetadataEvidence
+
+    manifest = ProofManifest(
+        name="ComponentMetadataBlocked",
+        design_path="design.yaml",
+        component_metadata=ComponentMetadataEvidence(
+            report_path="component-metadata-gate.json",
+            valid=False,
+            component_count=3,
+            critical_issue_count=1,
+            warning_count=2,
+            message="component metadata gate failed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["component-metadata"]
+    assert "Blocking evidence: component-metadata" in pack.summary
+
+
+def test_valid_component_metadata_does_not_block_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import ComponentMetadataEvidence
+
+    manifest = ProofManifest(
+        name="ComponentMetadataPass",
+        design_path="design.yaml",
+        component_metadata=ComponentMetadataEvidence(
+            report_path="component-metadata-gate.json",
+            valid=True,
+            component_count=3,
+            critical_issue_count=0,
+            warning_count=0,
+            message="component metadata gate passed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS

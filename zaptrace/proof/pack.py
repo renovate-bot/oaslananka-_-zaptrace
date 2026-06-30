@@ -446,6 +446,7 @@ class ProofPack:
             self._signoff_evidence_from_results()
             + self._signoff_evidence_from_oracles()
             + self._signoff_evidence_from_netlist_parity()
+            + self._signoff_evidence_from_component_metadata()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
         )
@@ -522,6 +523,25 @@ class ProofPack:
                 )
             )
         return evidence
+
+    def _signoff_evidence_from_component_metadata(self) -> list[SignoffEvidence]:
+        """Map component metadata gate evidence into release-blocking sign-off evidence."""
+        metadata = self.manifest.component_metadata
+        if metadata is None:
+            return []
+        summary = metadata.message
+        if metadata.critical_issue_count:
+            summary = f"{summary}; {metadata.critical_issue_count} critical metadata issue(s)"
+        return [
+            SignoffEvidence(
+                name="component-metadata",
+                status=SignoffCheckStatus.PASS if metadata.valid else SignoffCheckStatus.FAIL,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+            )
+        ]
 
     def _signoff_evidence_from_requirements_coverage(self) -> list[SignoffEvidence]:
         """Map requirements coverage metadata into release-blocking evidence."""

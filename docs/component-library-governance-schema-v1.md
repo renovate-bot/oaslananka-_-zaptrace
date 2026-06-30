@@ -105,3 +105,19 @@ uv run pytest tests/test_library.py tests/test_library_governance.py -q
 ```
 
 Schema v1 validation is evidence, not manufacturer approval. A human review remains required for new or changed component claims.
+
+## CI metadata gate
+
+The CI gate uses the same report and fails when the current debt budget gets worse:
+
+```bash
+uv run python scripts/ci_component_metadata_gate.py \
+  --max-errors 22 \
+  --max-warnings 127 \
+  --strict \
+  --output component-metadata-gate.json
+```
+
+The current budget reflects the shipped library baseline at the time schema v1 was introduced. Reducing the budget is safe after missing datasheets, compliance, sourcing, and provenance are reviewed. Increasing the budget should be treated as adding new component metadata debt.
+
+Proof packs can attach `component_metadata` evidence. If `valid=false`, autonomous sign-off is blocked with `component-metadata` as the blocking check.
