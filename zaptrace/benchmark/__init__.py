@@ -21,6 +21,15 @@ from zaptrace.benchmark.families import (
     manifest_json,
     validate_board_family_manifest,
 )
+from zaptrace.benchmark.kicad_fixtures import (
+    GoldenKiCadComparisonResult,
+    GoldenKiCadFile,
+    GoldenKiCadProjectFixture,
+    build_golden_kicad_fixture,
+    compare_golden_kicad_fixture,
+    compute_kicad_file_record,
+    load_golden_kicad_fixture,
+)
 
 __all__ = [
     "BUILTIN_BENCHMARKS",
@@ -30,6 +39,13 @@ __all__ = [
     "BenchmarkRunResult",
     "get_benchmark",
     "list_benchmarks",
+    "GoldenKiCadComparisonResult",
+    "GoldenKiCadFile",
+    "GoldenKiCadProjectFixture",
+    "build_golden_kicad_fixture",
+    "compare_golden_kicad_fixture",
+    "compute_kicad_file_record",
+    "load_golden_kicad_fixture",
     "AcceptanceThreshold",
     "BenchmarkBoardFamily",
     "BoardFamilyManifest",
