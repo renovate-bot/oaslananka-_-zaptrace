@@ -57,12 +57,13 @@ def validate_example(name: str, entry: Path) -> None:
         proof_data = yaml.safe_load(entry.read_text(encoding="utf-8"))
         design_path = entry.parent / proof_data.get("design_path", "design.yaml")
         if not design_path.exists():
-            print(f"  SKIP: design_path '{design_path.name}' not found in proof pack")
-            return
+            missing = design_path.name
+            rel = entry.relative_to(ROOT)
+            raise FileNotFoundError(f"proof pack {rel} references missing design_path {missing!r}")
         entry = design_path
 
     # Parse design
-    design = parse_file(str(entry))
+    design = parse_file(entry)
     if design is None:
         print(f"  FAILED: Failed to parse {entry}")
         raise RuntimeError(f"Failed to parse {entry}")
@@ -74,9 +75,12 @@ def validate_example(name: str, entry: Path) -> None:
 
         runner = ERCRunner()
         erc_result = runner.run(design)
-        print(f"  ERC:    {erc_result.passed}/{erc_result.total} passed")
-        if erc_result.errors:
-            for err in erc_result.errors[:5]:
+        print(
+            f"  ERC:    passed={erc_result.passed} "
+            f"errors={erc_result.total_errors} warnings={erc_result.total_warnings} info={erc_result.total_info}"
+        )
+        if erc_result.total_errors:
+            for err in erc_result.active_violations[:5]:
                 print(f"    ERR: {err}")
     except ImportError as exc:
         print(f"  ERC:    skipped (import failed: {exc})")
@@ -105,7 +109,8 @@ def validate_example(name: str, entry: Path) -> None:
         from zaptrace.algo.router import route_design_smart
 
         _, design.routing = route_design_smart(design, positions)
-        print(f"  Route:  {len(design.routing or {})} nets routed")
+        routed_count = len(getattr(design.routing, "routes", None) or getattr(design.routing, "traces", []))
+        print(f"  Route:  {routed_count} route item(s)")
     except ImportError as exc:
         print(f"  Route:  skipped (import failed: {exc})")
 
@@ -116,7 +121,7 @@ def validate_example(name: str, entry: Path) -> None:
 
         export_modules = [
             ("BOM", "zaptrace.export.bom", ["generate_bom_csv", "generate_bom_json"]),
-            ("Pick&Place", "zaptrace.export.pick_and_place", ["generate_pick_and_place"]),
+            ("Pick&Place", "zaptrace.export.pick_and_place", ["generate_pick_and_place"], True),
             ("Report", "zaptrace.export.report", ["generate_report"]),
             ("SVG", "zaptrace.export.svg", ["render_schematic_svg"]),
             ("Gerber", "zaptrace.export.gerber", ["generate_gerber"]),
@@ -137,13 +142,29 @@ def validate_example(name: str, entry: Path) -> None:
                             continue
                         raise AttributeError(f"{fn_name} not found in {mod_path}")
                     try:
-                        result = fn(design, output_dir=output_dir)
+                        if fn_name in {
+                            "generate_bom_csv",
+                            "generate_bom_json",
+                            "generate_report",
+                            "render_schematic_svg",
+                        }:
+                            result = fn(design)
+                        elif fn_name == "generate_manufacturing_bundle":
+                            result = fn(design, output_dir)
+                        else:
+                            result = fn(design, output_dir=output_dir)
                         if result:
                             if isinstance(result, dict):
+                                printed = False
                                 for k, v in result.items():
+                                    if not isinstance(v, (str, Path)):
+                                        continue
                                     p = Path(v)
                                     if p.exists() and p.stat().st_size > 0:
                                         print(f"  {label}:  {k} ({p.stat().st_size} bytes)")
+                                        printed = True
+                                if not printed:
+                                    print(f"  {label}:  OK")
                             elif isinstance(result, list):
                                 print(f"  {label}:  {len(result)} file(s)")
                             elif isinstance(result, Path):
