@@ -201,6 +201,18 @@ class ManufacturingProofEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable manufacturing evidence summary")
 
 
+class RequirementsCoverageEvidence(BaseModel):
+    """Structured requirements coverage evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to requirements_coverage.json")
+    requirements_hash: str = Field(description="Hash of the frozen requirements contract")
+    fully_covered: bool = Field(description="Whether stated requirements are covered and artifacts are traced")
+    fully_traced: bool = Field(description="Whether generated artifacts have requirement IDs")
+    requirement_count: int = Field(default=0, ge=0, description="Number of requirement IDs in the report")
+    untraced_artifact_count: int = Field(default=0, ge=0, description="Artifact rows without requirement trace IDs")
+    message: str = Field(default="", description="Human-readable coverage summary")
+
+
 class ManufacturingExportEvidence(BaseModel):
     """Structured manufacturing export log stored in a proof-pack manifest."""
 
@@ -317,6 +329,10 @@ class ProofManifest(BaseModel):
     manufacturing_exports: list[ManufacturingExportEvidence] = Field(
         default_factory=list,
         description="Manufacturing export logs with artifact kinds, tool versions, warnings, and unsupported paths",
+    )
+    requirements_coverage: RequirementsCoverageEvidence | None = Field(
+        default=None,
+        description="Requirements coverage and traceability evidence metadata",
     )
 
     autonomous_signoff: AutonomousSignoffDecision = Field(

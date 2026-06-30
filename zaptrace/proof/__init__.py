@@ -30,6 +30,7 @@ from .manifest import (
     InputRecord,
     ManifestModel,
     ProofManifest,
+    RequirementsCoverageEvidence,
 )
 from .manifest import (
     CheckStatus as ManifestCheckStatus,
@@ -46,6 +47,7 @@ from .signoff import (
 __all__ = [
     "ProofManifest",
     "ManifestModel",
+    "RequirementsCoverageEvidence",
     "CheckDefinition",
     "CheckRecord",
     "CheckSource",

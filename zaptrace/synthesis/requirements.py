@@ -700,6 +700,151 @@ def requirements_coverage(requirements: Requirements) -> dict[str, Any]:
     return {"covered": covered, "uncovered": uncovered, "fully_covered": not uncovered}
 
 
+def requirement_ids(requirements: Requirements) -> list[dict[str, Any]]:
+    """Return stable requirement IDs for the extracted contract.
+
+    The IDs are intentionally coarse at this stage. They provide a stable trace
+    vocabulary for generated components, nets, checks, and export artifacts, and
+    will become the bridge to full schema-v1 authored requirement IDs later.
+    """
+    ids: list[dict[str, Any]] = []
+    if requirements.rails_v:
+        ids.append({"id": "REQ-POWER-RAILS", "field": "rails_v", "value": requirements.rails_v})
+    if requirements.max_current_a is not None:
+        ids.append({"id": "REQ-POWER-CURRENT", "field": "max_current_a", "value": requirements.max_current_a})
+    for iface in requirements.interfaces:
+        ids.append({"id": f"REQ-IFACE-{iface.upper()}", "field": "interfaces", "value": iface})
+    if requirements.mcu:
+        ids.append({"id": "REQ-MCU", "field": "mcu", "value": requirements.mcu})
+    if requirements.usb_c:
+        ids.append({"id": "REQ-USB-C", "field": "usb_c", "value": True})
+    if requirements.battery:
+        ids.append({"id": "REQ-BATTERY", "field": "battery", "value": True})
+    if requirements.temp_range_c:
+        ids.append({"id": "REQ-ENV-TEMP", "field": "temp_range_c", "value": requirements.temp_range_c})
+    if requirements.ingress_rating:
+        ids.append({"id": "REQ-ENV-INGRESS", "field": "ingress_rating", "value": requirements.ingress_rating})
+    if requirements.dimensions_mm:
+        ids.append({"id": "REQ-MECH-DIMENSIONS", "field": "dimensions_mm", "value": requirements.dimensions_mm})
+    if requirements.cost_target_usd is not None:
+        ids.append({"id": "REQ-COST", "field": "cost_target_usd", "value": requirements.cost_target_usd})
+    for target in requirements.regulatory:
+        ids.append({"id": f"REQ-COMPLIANCE-{target.upper()}", "field": "regulatory", "value": target})
+    return ids
+
+
+def _trace_ids_for_text(text: str, requirements: Requirements) -> list[str]:
+    """Best-effort deterministic trace IDs from object names/values."""
+    haystack = text.lower()
+    traces: set[str] = set()
+    for rail in requirements.rails_v:
+        rail_text = f"{rail:g}".replace(".", "v")
+        if f"{rail:g}" in haystack or rail_text in haystack:
+            traces.add("REQ-POWER-RAILS")
+    for iface in requirements.interfaces:
+        if iface.lower() in haystack:
+            traces.add(f"REQ-IFACE-{iface.upper()}")
+    if requirements.usb_c and ("usb" in haystack or "type-c" in haystack or "typec" in haystack):
+        traces.add("REQ-USB-C")
+    if requirements.mcu and requirements.mcu.lower() in haystack:
+        traces.add("REQ-MCU")
+    if requirements.battery and any(tok in haystack for tok in ("bat", "lipo", "li-ion", "charger")):
+        traces.add("REQ-BATTERY")
+    return sorted(traces)
+
+
+def _component_trace_rows(design: Any, requirements: Requirements) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for component in getattr(design, "components", {}).values():
+        cid = str(getattr(component, "id", getattr(component, "ref", "")))
+        text = " ".join(
+            str(value or "")
+            for value in (
+                getattr(component, "id", ""),
+                getattr(component, "ref", ""),
+                getattr(component, "type", ""),
+                getattr(component, "value", ""),
+                getattr(component, "footprint", ""),
+                getattr(component, "voltage_supply", ""),
+            )
+        )
+        rows.append({"kind": "component", "id": cid, "requirement_ids": _trace_ids_for_text(text, requirements)})
+    return rows
+
+
+def _net_trace_rows(design: Any, requirements: Requirements) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for net in getattr(design, "nets", {}).values():
+        nid = str(getattr(net, "id", getattr(net, "name", "")))
+        text = f"{getattr(net, 'id', '')} {getattr(net, 'name', '')} {getattr(net, 'type', '')}"
+        rows.append({"kind": "net", "id": nid, "requirement_ids": _trace_ids_for_text(text, requirements)})
+    return rows
+
+
+def _check_trace_rows(checks: list[Any], requirements: Requirements) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for check in checks:
+        name = str(getattr(check, "name", ""))
+        category = str(getattr(getattr(check, "category", ""), "value", getattr(check, "category", "")))
+        traces = _trace_ids_for_text(f"{name} {category} {getattr(check, 'description', '')}", requirements)
+        if name in {"erc", "drc", "footprints"} and requirement_ids(requirements):
+            traces = sorted(
+                set(traces)
+                | {
+                    "REQ-POWER-RAILS"
+                    if requirements.rails_v
+                    else "REQ-MCU"
+                    if requirements.mcu
+                    else "REQ-IFACE-USB"
+                    if "usb" in requirements.interfaces
+                    else requirement_ids(requirements)[0]["id"]
+                }
+            )
+        rows.append({"kind": "check", "id": name, "requirement_ids": traces})
+    return rows
+
+
+def _export_trace_rows(exports: list[str], requirements: Requirements) -> list[dict[str, Any]]:
+    ids = [r["id"] for r in requirement_ids(requirements)]
+    return [{"kind": "export", "id": export, "requirement_ids": ids.copy()} for export in exports]
+
+
+def requirements_coverage_report(
+    requirements: Requirements,
+    *,
+    design: Any | None = None,
+    checks: list[Any] | None = None,
+    exports: list[str] | None = None,
+) -> dict[str, Any]:
+    """Build a synthesis coverage report with requirement IDs and trace gaps.
+
+    The report extends the existing requirements coverage matrix with concrete
+    trace rows for generated components, nets, checks, and exports. Any row with
+    no requirement ID is reported in ``untraced_artifacts`` instead of being
+    silently accepted.
+    """
+    checks = checks or []
+    exports = exports or []
+    trace_rows: list[dict[str, Any]] = []
+    if design is not None:
+        trace_rows.extend(_component_trace_rows(design, requirements))
+        trace_rows.extend(_net_trace_rows(design, requirements))
+    trace_rows.extend(_check_trace_rows(checks, requirements))
+    trace_rows.extend(_export_trace_rows(exports, requirements))
+    untraced = [row for row in trace_rows if not row["requirement_ids"]]
+    base = requirements_coverage(requirements)
+    return {
+        "schema_version": "1.0",
+        "requirements_hash": freeze_requirements(requirements)["hash"],
+        "requirements": requirement_ids(requirements),
+        "coverage": base,
+        "traceability": trace_rows,
+        "untraced_artifacts": untraced,
+        "fully_traced": not untraced,
+        "fully_covered": bool(base["fully_covered"] and not untraced),
+    }
+
+
 def write_requirements_artifacts(intent: str, output_dir: str | Path) -> dict[str, str]:
     """Emit machine-readable ``requirements.json`` and ``constraints.yaml``.
 

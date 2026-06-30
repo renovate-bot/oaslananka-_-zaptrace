@@ -15,6 +15,7 @@ worse fails the pack, so it doubles as a regression guard.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -28,6 +29,7 @@ from zaptrace.proof import (
     ProofManifest,
     ProofPack,
     ProofRunner,
+    RequirementsCoverageEvidence,
     capture_environment,
     hash_file,
 )
@@ -35,6 +37,7 @@ from zaptrace.proof.checker import CheckResult, CheckStatus
 from zaptrace.proof.manifest import AgentDecisionRecord, CheckCategory, CheckRecord
 from zaptrace.proof.pack import hash_bytes
 from zaptrace.synthesis.fab import route_synthesized_design
+from zaptrace.synthesis.requirements import parse_requirements, requirements_coverage_report
 
 if TYPE_CHECKING:
     from zaptrace.core.models import Design
@@ -125,9 +128,10 @@ def generate_synthesis_proof(
 ) -> ProofPack:
     """Synthesize a board from *intent* and emit an auditable proof pack in *output_dir*.
 
-    Writes ``design.yaml`` (the routed design, hashed), ``proof.yaml`` (the
-    manifest with synthesis decisions, input/environment provenance, and check
-    records), and ``report.json`` (the check results). Returns the completed
+    Writes ``design.yaml`` (the routed design, hashed), ``requirements_coverage.json``
+    (requirement ID traceability), ``proof.yaml`` (the manifest with synthesis
+    decisions, input/environment provenance, and check records), and ``report.json``
+    (the check results). Returns the completed
     :class:`~zaptrace.proof.ProofPack`.
     """
     out_dir = Path(output_dir)
@@ -142,6 +146,15 @@ def generate_synthesis_proof(
 
     checks = _baseline_checks(design)
     results = ProofRunner(design).run_checks(checks)
+    parsed_requirements = parse_requirements(intent)
+    coverage_report = requirements_coverage_report(
+        parsed_requirements,
+        design=design,
+        checks=checks,
+        exports=["design.yaml", "proof.yaml", "report.json"],
+    )
+    coverage_path = out_dir / "requirements_coverage.json"
+    coverage_path.write_text(json.dumps(coverage_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     manifest = ProofManifest(
         name=f"{name} synthesis proof",
@@ -158,13 +171,32 @@ def generate_synthesis_proof(
         environment=capture_environment(),
         agent_decisions=_decision_records(synth["decision_log"]),
         check_records=_check_records(results),
+        requirements_coverage=RequirementsCoverageEvidence(
+            report_path="requirements_coverage.json",
+            requirements_hash=str(coverage_report["requirements_hash"]),
+            fully_covered=bool(coverage_report["fully_covered"]),
+            fully_traced=bool(coverage_report["fully_traced"]),
+            requirement_count=len(coverage_report["requirements"]),
+            untraced_artifact_count=len(coverage_report["untraced_artifacts"]),
+            message=(
+                "requirements coverage complete"
+                if coverage_report["fully_covered"]
+                else "requirements coverage has gaps or untraced artifacts"
+            ),
+        ),
         artifacts=[
             ArtifactRecord(
                 path="design.yaml",
                 kind="netlist",
                 sha256=hash_file(design_yaml),
                 size_bytes=design_yaml.stat().st_size,
-            )
+            ),
+            ArtifactRecord(
+                path="requirements_coverage.json",
+                kind="report",
+                sha256=hash_file(coverage_path),
+                size_bytes=coverage_path.stat().st_size,
+            ),
         ],
     )
 

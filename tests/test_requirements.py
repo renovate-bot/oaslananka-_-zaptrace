@@ -13,6 +13,7 @@ from zaptrace.synthesis.requirements import (
     requirements_assumptions,
     requirements_conflicts,
     requirements_coverage,
+    requirements_coverage_report,
     requirements_to_constraints,
     review_assumptions,
     write_requirements_artifacts,
@@ -320,3 +321,48 @@ def test_conflicts_battery_vs_subzero_temperature() -> None:
 
 def test_conflicts_none_for_consistent_intent() -> None:
     assert requirements_conflicts(parse_requirements("esp32 3.3v 0.2a i2c sensor")) == []
+
+
+def test_requirements_coverage_report_traces_design_checks_and_exports() -> None:
+    from zaptrace.core.models import Component, Design, DesignMeta, Net, NetType
+
+    req = parse_requirements("esp32 usb-c 3.3v i2c sensor")
+    design = Design(
+        meta=DesignMeta(name="CoverageFixture"),
+        components={
+            "U1": Component(id="U1", ref="U1", type="mcu", value="ESP32-C3", footprint="QFN", voltage_supply="3.3V"),
+            "J1": Component(id="J1", ref="J1", type="connector", value="USB-C", footprint="USB_C"),
+        },
+        nets={
+            "VDD_3V3": Net(id="VDD_3V3", name="VDD_3V3", type=NetType.POWER),
+            "USB_D_P": Net(id="USB_D_P", name="USB_D+"),
+            "SDA": Net(id="SDA", name="I2C_SDA"),
+        },
+    )
+    report = requirements_coverage_report(
+        req,
+        design=design,
+        checks=[type("Check", (), {"name": "erc", "category": "erc", "description": "electrical rules"})()],
+        exports=["design.yaml"],
+    )
+
+    assert report["schema_version"] == "1.0"
+    assert {row["id"] for row in report["requirements"]} >= {"REQ-POWER-RAILS", "REQ-USB-C", "REQ-IFACE-I2C"}
+    assert any(row["kind"] == "component" and row["id"] == "U1" for row in report["traceability"])
+    assert any(row["kind"] == "net" and row["id"] == "SDA" and row["requirement_ids"] for row in report["traceability"])
+    assert any(row["kind"] == "export" and row["id"] == "design.yaml" for row in report["traceability"])
+    assert isinstance(report["untraced_artifacts"], list)
+
+
+def test_requirements_coverage_report_reports_untraced_artifacts() -> None:
+    from zaptrace.core.models import Component, Design, DesignMeta
+
+    req = parse_requirements("3.3v sensor")
+    design = Design(
+        meta=DesignMeta(name="CoverageGap"),
+        components={"X1": Component(id="X1", ref="X1", type="mystery", value="unknown", footprint="unknown")},
+    )
+    report = requirements_coverage_report(req, design=design)
+
+    assert report["fully_traced"] is False
+    assert {row["id"] for row in report["untraced_artifacts"]} == {"X1"}

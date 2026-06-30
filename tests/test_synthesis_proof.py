@@ -14,7 +14,7 @@ _INTENT = "USB-C powered board, 3.3V rail, I2C sensor"
 class TestGenerateSynthesisProof:
     def test_writes_bundle_files(self, tmp_path: Path) -> None:
         generate_synthesis_proof(_INTENT, tmp_path, name="UsbI2c")
-        for fname in ("design.yaml", "proof.yaml", "report.json"):
+        for fname in ("design.yaml", "proof.yaml", "report.json", "requirements_coverage.json"):
             assert (tmp_path / fname).exists(), f"{fname} not written"
 
     def test_pack_passes_at_baseline(self, tmp_path: Path) -> None:
@@ -50,3 +50,15 @@ class TestGenerateSynthesisProof:
         report = json.loads((tmp_path / "report.json").read_text())
         assert report["passed"] is True
         assert {c["name"] for c in report["checks"]} == {"erc", "drc", "footprints"}
+
+    def test_requirements_coverage_report_is_written_and_manifested(self, tmp_path: Path) -> None:
+        pack = generate_synthesis_proof(_INTENT, tmp_path, name="UsbI2c")
+        report_path = tmp_path / "requirements_coverage.json"
+        report = json.loads(report_path.read_text())
+
+        assert report["schema_version"] == "1.0"
+        assert report["requirements_hash"] == pack.manifest.requirements_coverage.requirements_hash
+        assert pack.manifest.requirements_coverage.report_path == "requirements_coverage.json"
+        assert pack.manifest.requirements_coverage.requirement_count == len(report["requirements"])
+        assert any(a.path == "requirements_coverage.json" and a.kind == "report" for a in pack.manifest.artifacts)
+        assert any(row["kind"] == "export" and row["id"] == "report.json" for row in report["traceability"])
