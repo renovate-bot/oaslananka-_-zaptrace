@@ -30,6 +30,7 @@ from .manifest import (
     EnvironmentRecord,
     InputRecord,
     ManifestModel,
+    NetlistParityEvidence,
     ProofManifest,
     RequirementsCoverageEvidence,
 )
@@ -49,6 +50,7 @@ __all__ = [
     "ProofManifest",
     "ManifestModel",
     "AssumptionsEvidence",
+    "NetlistParityEvidence",
     "RequirementsCoverageEvidence",
     "CheckDefinition",
     "CheckRecord",
