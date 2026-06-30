@@ -23,6 +23,7 @@ from zaptrace.core.models import (
 )
 from zaptrace.erc.models import ERCResult, ERCSeverity, ERCViolation
 from zaptrace.export.bom import generate_bom_csv, generate_bom_json
+from zaptrace.export.gerber import generate_gerber, generate_gerber_job_file, validate_gerber_x2_attributes
 from zaptrace.export.kicad import export_kicad_pcb, export_kicad_schematic
 from zaptrace.export.report import generate_report
 from zaptrace.export.svg import render_schematic_svg
@@ -497,6 +498,33 @@ class TestGerber:
         )
         gerber = generate_copper_layer(d, layer="top")
         assert "%ADD" in gerber, "Should contain aperture definitions"
+
+    def test_gerber_x2_attributes_present(self) -> None:
+        from zaptrace.export.gerber import generate_copper_layer
+
+        gerber = generate_copper_layer(Design(meta=DesignMeta(name="x2")), layer="top")
+        validation = validate_gerber_x2_attributes(gerber)
+
+        assert validation["passed"] is True
+        assert "%TF.GenerationSoftware" in gerber
+        assert "%TF.FileFunction,Copper,L1,Top" in gerber
+        assert "%TF.FilePolarity,Positive" in gerber
+
+    def test_gerber_x2_validation_reports_missing_attributes(self) -> None:
+        validation = validate_gerber_x2_attributes("G04 no x2*\nMOMM\n%FSLAX36Y36*%\nM02*\n")
+
+        assert validation["passed"] is False
+        assert "%TF.GenerationSoftware" in validation["missing_attributes"]
+
+    def test_gerber_job_file_shape(self, tmp_path: Path) -> None:
+        d = Design(meta=DesignMeta(name="JobFile"), board=BoardConfig(width_mm=30.0, height_mm=20.0, layers=2))
+        gerbers = generate_gerber(d, output_dir=tmp_path, prefix="job")
+        data = __import__("json").loads(generate_gerber_job_file(d, gerbers))
+
+        assert data["format"] == "Gerber Job File"
+        assert data["board"]["layers"] == 2
+        assert len(data["files"]) == 7
+        assert any(item["function"] == "Copper,L1,Top" for item in data["files"])
 
 
 # ---------------------------------------------------------------------------

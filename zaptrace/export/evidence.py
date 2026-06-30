@@ -10,6 +10,7 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from zaptrace.export.gerber import validate_gerber_x2_attributes
 from zaptrace.fab.dfm import DFMCheckResult
 
 
@@ -22,6 +23,7 @@ class ManufacturingArtifactKind(StrEnum):
     PICK_AND_PLACE = "pick_and_place"
     STACKUP = "stackup"
     MANIFEST = "manifest"
+    GERBER_JOB = "gerber_job"
     BUNDLE = "bundle"
     OTHER = "other"
 
@@ -118,6 +120,8 @@ def classify_manufacturing_artifact(path: Path) -> ManufacturingArtifactKind:
         return ManufacturingArtifactKind.BOM
     if suffix == ".JSON" and "manifest" in lower_name:
         return ManufacturingArtifactKind.MANIFEST
+    if suffix == ".GBRJOB":
+        return ManufacturingArtifactKind.GERBER_JOB
     if suffix == ".ZIP":
         return ManufacturingArtifactKind.BUNDLE
     if suffix in {".ODB", ".ODBPP", ".TGZ"} or "odb" in lower_name:
@@ -171,6 +175,50 @@ def smoke_validate_excellon(path: Path) -> ManufacturingValidationEvidence:
     )
 
 
+def validate_gerber_x2_file(path: Path) -> ManufacturingValidationEvidence:
+    """Validate required Gerber X2 attributes for one Gerber artifact."""
+    result = validate_gerber_x2_attributes(path.read_text(encoding="utf-8", errors="replace"))
+    raw_missing = result.get("missing_attributes", [])
+    missing = [str(item) for item in raw_missing] if isinstance(raw_missing, list) else []
+    status = ManufacturingValidationStatus.FAIL if missing else ManufacturingValidationStatus.PASS
+    return ManufacturingValidationEvidence(
+        name=f"gerber-x2:{path.name}",
+        status=status,
+        summary=(
+            "Gerber X2 attributes present" if not missing else "Gerber file is missing required X2 fabrication metadata"
+        ),
+        details={"missing_attributes": missing, "size_bytes": path.stat().st_size},
+    )
+
+
+def validate_gerber_job_file(path: Path) -> ManufacturingValidationEvidence:
+    """Validate the Gerber Job File shape."""
+    import json
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return ManufacturingValidationEvidence(
+            name=f"gerber-job:{path.name}",
+            status=ManufacturingValidationStatus.FAIL,
+            summary="Gerber Job File is not valid JSON",
+            details={"error": str(exc)},
+        )
+    missing = [field for field in ("format", "files", "board") if field not in data]
+    if not data.get("files"):
+        missing.append("files[]")
+    status = ManufacturingValidationStatus.FAIL if missing else ManufacturingValidationStatus.PASS
+    return ManufacturingValidationEvidence(
+        name=f"gerber-job:{path.name}",
+        status=status,
+        summary="Gerber Job File validation passed" if not missing else "Gerber Job File is missing required metadata",
+        details={
+            "missing_fields": missing,
+            "file_count": len(data.get("files", [])) if isinstance(data.get("files"), list) else 0,
+        },
+    )
+
+
 def validation_from_dfm_result(result: DFMCheckResult) -> ManufacturingValidationEvidence:
     if result.errors:
         status = ManufacturingValidationStatus.FAIL
@@ -210,6 +258,9 @@ class DirectoryManufacturingEvidenceAdapter:
             artifacts.append(artifact)
             if artifact.kind == ManufacturingArtifactKind.GERBER:
                 validations.append(smoke_validate_gerber(path))
+                validations.append(validate_gerber_x2_file(path))
+            elif artifact.kind == ManufacturingArtifactKind.GERBER_JOB:
+                validations.append(validate_gerber_job_file(path))
             elif artifact.kind == ManufacturingArtifactKind.EXCELLON:
                 validations.append(smoke_validate_excellon(path))
         if dfm_result is not None:

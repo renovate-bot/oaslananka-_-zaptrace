@@ -16,9 +16,13 @@ All coordinates use RS-274X format with 3.6 integer/decimal resolution (microns)
 
 from __future__ import annotations
 
+import json
 import math
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
+from zaptrace import __version__
 from zaptrace.core.board import canonical_board_definition
 from zaptrace.core.models import Design, TraceSegment
 
@@ -106,10 +110,26 @@ def _fmt_xy(x_mm: float, y_mm: float) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _file_function(layer_name: str) -> str:
+    mapping = {
+        "TOP": "Copper,L1,Top",
+        "BOTTOM": "Copper,L2,Bot",
+        "OUTLINE": "Profile,NP",
+        "TOP_SILK": "Legend,Top",
+        "TOP_MASK": "Soldermask,Top",
+        "BOTTOM_MASK": "Soldermask,Bot",
+        "TOP_PASTE": "Paste,Top",
+    }
+    return mapping.get(layer_name, f"Other,{layer_name}")
+
+
 def _header_list(layer_name: str) -> list[str]:
-    """Build the Gerber header block as a list of lines."""
+    """Build the Gerber header block as a list of lines with X2 attributes."""
     return [
         "G04 ZapTrace generated*\n",
+        f"%TF.GenerationSoftware,ZapTrace,zaptrace,{__version__}*%\n",
+        f"%TF.FileFunction,{_file_function(layer_name)}*%\n",
+        "%TF.FilePolarity,Positive*%\n",
         _UNITS,
         _FORMAT,
         f"%LN{layer_name}*%\n",
@@ -382,6 +402,70 @@ def _insert_after_lpc(lines: list[str], insert_lines: list[str]) -> None:
             for _j, h in enumerate(reversed(insert_lines)):
                 lines.insert(i + 1, h)
             break
+
+
+_LAYER_JOB_METADATA: dict[str, dict[str, str]] = {
+    "top": {"filename_suffix": ".GTL", "function": "Copper,L1,Top", "polarity": "Positive"},
+    "bottom": {"filename_suffix": ".GBL", "function": "Copper,L2,Bot", "polarity": "Positive"},
+    "outline": {"filename_suffix": ".GKO", "function": "Profile,NP", "polarity": "Positive"},
+    "top_silk": {"filename_suffix": ".GTO", "function": "Legend,Top", "polarity": "Positive"},
+    "top_mask": {"filename_suffix": ".GTS", "function": "Soldermask,Top", "polarity": "Positive"},
+    "bottom_mask": {"filename_suffix": ".GBS", "function": "Soldermask,Bot", "polarity": "Positive"},
+    "top_paste": {"filename_suffix": ".GPT", "function": "Paste,Top", "polarity": "Positive"},
+}
+
+
+def generate_gerber_job_file(design: Design, gerber_files: Mapping[str, str | Path]) -> str:
+    """Generate a deterministic Gerber Job File JSON document."""
+    board = canonical_board_definition(design)
+    files: list[dict[str, Any]] = []
+    for layer, path in sorted(gerber_files.items()):
+        metadata = _LAYER_JOB_METADATA.get(layer, {})
+        files.append(
+            {
+                "layer": layer,
+                "path": Path(path).name,
+                "function": metadata.get("function", layer),
+                "polarity": metadata.get("polarity", "Positive"),
+            }
+        )
+    job = {
+        "schema_version": "1.0",
+        "format": "Gerber Job File",
+        "generator": "zaptrace.export.gerber",
+        "tool_version": __version__,
+        "design": design.meta.name,
+        "board": {
+            "width_mm": board.width,
+            "height_mm": board.height,
+            "layers": board.layers,
+        },
+        "files": files,
+    }
+    return json.dumps(job, indent=2, sort_keys=True) + "\n"
+
+
+def write_gerber_job_file(design: Design, gerber_files: Mapping[str, str | Path], output_path: str | Path) -> Path:
+    """Write a Gerber Job File and return the output path."""
+    out = Path(output_path)
+    if out.suffix.lower() != ".gbrjob":
+        raise ValueError(f"unexpected Gerber Job File suffix: {out.suffix}")
+    resolved = out.resolve(strict=False)
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    # nosemgrep: python.lang.security.audit.path-traversal.path-traversal-write
+    resolved.write_text(generate_gerber_job_file(design, gerber_files), encoding="utf-8")
+    return resolved
+
+
+def validate_gerber_x2_attributes(content: str) -> dict[str, bool | list[str]]:
+    """Validate required Gerber X2 file attributes in a Gerber document."""
+    required = ["%TF.GenerationSoftware", "%TF.FileFunction", "%TF.FilePolarity"]
+    missing = [token for token in required if token not in content]
+    return {
+        "passed": not missing,
+        "missing_attributes": missing,
+        "required_attributes": required,
+    }
 
 
 def generate_copper_layer(design: Design, layer: str = "top") -> str:

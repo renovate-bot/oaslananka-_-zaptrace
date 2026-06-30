@@ -19,6 +19,8 @@ from zaptrace.export.evidence import (
     ManufacturingValidationStatus,
     collect_manufacturing_evidence,
     smoke_validate_gerber,
+    validate_gerber_job_file,
+    validate_gerber_x2_file,
 )
 from zaptrace.export.manufacturing import generate_manufacturing_bundle
 from zaptrace.fab.dfm import DFMChecker
@@ -63,11 +65,14 @@ def test_collect_manufacturing_evidence_from_bundle(tmp_path: Path) -> None:
     assert ManufacturingArtifactKind.BOM in kinds
     assert ManufacturingArtifactKind.PICK_AND_PLACE in kinds
     assert ManufacturingArtifactKind.MANIFEST in kinds
+    assert ManufacturingArtifactKind.GERBER_JOB in kinds
     assert ManufacturingArtifactKind.BUNDLE in kinds
     assert evidence.fab_profile == "jlcpcb-2layer"
     assert evidence.blocked is False
     assert all(len(artifact.sha256) == 64 for artifact in evidence.artifacts)
     assert any(validation.name.startswith("gerber-smoke:") for validation in evidence.validations)
+    assert any(validation.name.startswith("gerber-x2:") for validation in evidence.validations)
+    assert any(validation.name.startswith("gerber-job:") for validation in evidence.validations)
     assert any(validation.name.startswith("excellon-smoke:") for validation in evidence.validations)
 
 
@@ -128,3 +133,24 @@ def test_evidence_bundle_json_shape(tmp_path: Path) -> None:
 
     assert "jlcpcb-2layer" in encoded
     assert "Manufacturing evidence is not manufacturer approval" in encoded
+
+
+def test_missing_gerber_x2_validation_blocks_release(tmp_path: Path) -> None:
+    path = tmp_path / "legacy.GTL"
+    path.write_text("G04 legacy*\nMOMM\n%FSLAX36Y36*%\nM02*\n", encoding="utf-8")
+
+    validation = validate_gerber_x2_file(path)
+
+    assert validation.status == ManufacturingValidationStatus.FAIL
+    assert validation.blocks_release
+    assert "%TF.GenerationSoftware" in validation.details["missing_attributes"]
+
+
+def test_gerber_job_file_validation(tmp_path: Path) -> None:
+    path = tmp_path / "board.gbrjob"
+    path.write_text('{"format":"Gerber Job File","board":{},"files":[{"path":"board.GTL"}]}\n', encoding="utf-8")
+
+    validation = validate_gerber_job_file(path)
+
+    assert validation.status == ManufacturingValidationStatus.PASS
+    assert not validation.blocks_release

@@ -19,7 +19,7 @@ from zaptrace.core.board import canonical_board_definition
 from zaptrace.core.models import Design
 from zaptrace.export.bom import generate_bom_csv
 from zaptrace.export.excellon import generate_composite_drill, generate_excellon
-from zaptrace.export.gerber import generate_gerber
+from zaptrace.export.gerber import generate_gerber, write_gerber_job_file
 from zaptrace.export.ipcd356 import write_ipcd356
 
 # ---------------------------------------------------------------------------
@@ -170,6 +170,11 @@ def generate_manufacturing_manifest(design: Design) -> str:
                 "layer": "Manufacturing netlist",
                 "description": "IPC-D-356 connectivity evidence",
             },
+            {
+                "file": ".GBRJOB",
+                "layer": "Gerber job file",
+                "description": "Machine-readable Gerber layer metadata",
+            },
         ],
         "tool": "ZapTrace AI-EDA",
         "tool_version": __version__,
@@ -204,6 +209,7 @@ def generate_manufacturing_bundle(
         - Pick-and-place CSV
         - Manufacturing manifest JSON
         - IPC-D-356 manufacturing netlist
+        - Gerber Job File
         - ``<design>.zip`` containing all of the above
 
     Args:
@@ -224,6 +230,8 @@ def generate_manufacturing_bundle(
     # ── Gerber layers ────────────────────────────────────────────────────
     gerber_files = generate_gerber(design, output_dir=str(out), prefix=pfx)
     result["gerber_layers"] = gerber_files
+    gerber_job_path = write_gerber_job_file(design, gerber_files, out / f"{pfx}.gbrjob")
+    result["gerber_job"] = str(gerber_job_path)
 
     # ── Excellon drill ───────────────────────────────────────────────────
     drill_files = generate_excellon(design, output_dir=str(out), prefix=pfx)
@@ -278,7 +286,7 @@ def generate_manufacturing_bundle(
                 zf.write(fp, arcname=fp.name)
 
         # Add BOM, PnP, manifest
-        for label in ("bom", "pick_and_place", "ipc_d356", "manifest"):
+        for label in ("bom", "pick_and_place", "ipc_d356", "gerber_job", "manifest"):
             fp = Path(result[label])
             if fp.exists():
                 zf.write(fp, arcname=fp.name)

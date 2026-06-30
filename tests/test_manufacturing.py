@@ -141,8 +141,9 @@ class TestManifest:
 
     def test_manifest_output_files(self) -> None:
         data = json.loads(generate_manufacturing_manifest(_design()))
-        assert len(data["output_files"]) >= 8
+        assert len(data["output_files"]) >= 9
         assert any(item["file"] == ".IPC" for item in data["output_files"])
+        assert any(item["file"] == ".GBRJOB" for item in data["output_files"])
 
     def test_empty_design(self) -> None:
         d = Design(meta=DesignMeta(name="empty"))
@@ -158,6 +159,7 @@ class TestManufacturingBundle:
         assert "pick_and_place" in result
         assert "manifest" in result
         assert "ipc_d356" in result
+        assert "gerber_job" in result
         assert "zip" in result
 
     def test_gerber_layers_produced(self, tmp_path: Path) -> None:
@@ -187,6 +189,13 @@ class TestManufacturingBundle:
         assert ipc_path.suffix == ".ipc"
         assert "P NET VCC REF R1 PIN 1" in ipc_path.read_text(encoding="utf-8")
 
+    def test_gerber_job_file_exists(self, tmp_path: Path) -> None:
+        result = generate_manufacturing_bundle(_design(), tmp_path)
+        job_path = Path(result["gerber_job"])
+        assert job_path.exists()
+        assert job_path.suffix == ".gbrjob"
+        assert '"Gerber Job File"' in job_path.read_text(encoding="utf-8")
+
     def test_zip_created(self, tmp_path: Path) -> None:
         result = generate_manufacturing_bundle(_design(), tmp_path)
         zip_path = Path(result["zip"])
@@ -201,6 +210,7 @@ class TestManufacturingBundle:
         assert any("bom" in n for n in names)
         assert any("manifest" in n for n in names)
         assert any(n.endswith(".ipc") for n in names)
+        assert any(n.endswith(".gbrjob") for n in names)
 
     def test_drill_produced(self, tmp_path: Path) -> None:
         result = generate_manufacturing_bundle(_design(), tmp_path)

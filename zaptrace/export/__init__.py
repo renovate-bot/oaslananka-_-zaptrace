@@ -25,6 +25,7 @@ from .evidence import (
     ManufacturingValidationStatus,
     collect_manufacturing_evidence,
 )
+from .gerber import generate_gerber_job_file, validate_gerber_x2_attributes, write_gerber_job_file
 from .ipc2581 import FabCapabilityDb, PanelLayout, compute_panel, export_ipc2581
 from .ipcd356 import (
     IpcD356ParityReport,
@@ -65,10 +66,13 @@ __all__ = [
     "export_capability_matrix",
     "export_dsn",
     "export_ipc2581",
+    "generate_gerber_job_file",
     "generate_ipcd356",
     "get_export_capability",
     "parse_ipcd356",
     "require_export_capability",
+    "validate_gerber_x2_attributes",
+    "write_gerber_job_file",
     "write_ipcd356",
     "write_ipcd356_parity_report",
 ]
