@@ -447,6 +447,7 @@ class ProofPack:
             + self._signoff_evidence_from_oracles()
             + self._signoff_evidence_from_netlist_parity()
             + self._signoff_evidence_from_component_metadata()
+            + self._signoff_evidence_from_bom_provenance()
             + self._signoff_evidence_from_requirements_coverage()
             + self._signoff_evidence_from_assumptions()
         )
@@ -542,6 +543,27 @@ class ProofPack:
                 evidence_required=True,
             )
         ]
+
+    def _signoff_evidence_from_bom_provenance(self) -> list[SignoffEvidence]:
+        """Map lifecycle/sourcing risk evidence into sign-off evidence."""
+        evidence: list[SignoffEvidence] = []
+        for bom in self.manifest.bom_provenance:
+            summary = bom.message
+            if bom.unresolved_required_parts:
+                summary = f"{summary}; {bom.unresolved_required_parts} unresolved required part(s)"
+            if bom.obsolete_required_parts:
+                summary = f"{summary}; {bom.obsolete_required_parts} obsolete required part(s)"
+            evidence.append(
+                SignoffEvidence(
+                    name="supply-chain-risk",
+                    status=SignoffCheckStatus.FAIL if bom.blocked else SignoffCheckStatus.PASS,
+                    source="zaptrace",
+                    summary=summary,
+                    release_blocking=True,
+                    evidence_required=True,
+                )
+            )
+        return evidence
 
     def _signoff_evidence_from_requirements_coverage(self) -> list[SignoffEvidence]:
         """Map requirements coverage metadata into release-blocking evidence."""

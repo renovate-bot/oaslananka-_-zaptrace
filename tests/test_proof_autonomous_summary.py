@@ -508,3 +508,60 @@ def test_valid_component_metadata_does_not_block_autonomous_pass() -> None:
     report = json.loads(pack.report_json())
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
+
+
+def test_blocked_supply_chain_risk_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import BomProvenanceEvidence
+
+    manifest = ProofManifest(
+        name="SupplyBlocked",
+        design_path="design.yaml",
+        bom_provenance=[
+            BomProvenanceEvidence(
+                provider="fixture",
+                cache_policy="fixture-only",
+                report_path="bom-risk.json",
+                highest_risk="critical",
+                blocked=True,
+                unresolved_required_parts=1,
+                obsolete_required_parts=1,
+                message="BOM risk blocks acceptance",
+            )
+        ],
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["supply-chain-risk"]
+
+
+def test_clean_supply_chain_risk_does_not_block_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import BomProvenanceEvidence
+
+    manifest = ProofManifest(
+        name="SupplyPass",
+        design_path="design.yaml",
+        bom_provenance=[
+            BomProvenanceEvidence(
+                provider="fixture",
+                cache_policy="fixture-only",
+                report_path="bom-risk.json",
+                highest_risk="low",
+                blocked=False,
+                message="BOM risk passed",
+            )
+        ],
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS

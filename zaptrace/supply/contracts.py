@@ -213,6 +213,9 @@ def _score_component(component: Component, result: BomProviderResult | None) -> 
     elif result.stock == 0:
         score += 45
         flags.append("unavailable")
+    elif result.stock < 100:
+        score += 15
+        flags.append("low-availability")
 
     if result.lifecycle == LifecycleStatus.OBSOLETE:
         score += 55

@@ -160,3 +160,49 @@ def test_lcsc_provider_adapter_preserves_miss_and_stale_cache() -> None:
     assert stale.cache.status == "stale"
     assert stale.cache.offline is True
     assert stale.cache.source == "lcsc-cache"
+
+
+def test_low_availability_single_source_raises_supply_risk() -> None:
+    provider = FixtureBomProvider(
+        {
+            "LOW-STOCK": {
+                "manufacturer": "Acme",
+                "stock": 42,
+                "lifecycle": "active",
+                "rohs_compliant": True,
+                "footprint": "0603",
+                "alternates": [],
+            }
+        }
+    )
+    design = Design(meta=DesignMeta(name="low-stock"))
+    design.components = {"r1": Component(id="r1", ref="R1", type="resistor", mpn="LOW-STOCK", footprint="0603")}
+
+    report = enrich_bom_with_provider(design, provider, generated_at=datetime(2026, 6, 30, tzinfo=UTC))
+    item = report.items[0]
+
+    assert item.risk_level == RiskLevel.MEDIUM
+    assert "low-availability" in item.flags
+    assert "single-source" in item.flags
+    assert item.lifecycle == LifecycleStatus.ACTIVE
+
+
+def test_lifecycle_status_is_serialized_in_bom_risk_evidence() -> None:
+    provider = FixtureBomProvider(
+        {
+            "NRND-PART": {
+                "manufacturer": "Acme",
+                "stock": 500,
+                "lifecycle": "nrnd",
+                "rohs_compliant": True,
+                "alternates": [{"mpn": "ALT", "lifecycle": "active"}],
+            }
+        }
+    )
+    design = Design(meta=DesignMeta(name="lifecycle"))
+    design.components = {"u1": Component(id="u1", ref="U1", type="ic", mpn="NRND-PART")}
+
+    payload = enrich_bom_with_provider(design, provider).model_dump(mode="json")
+
+    assert payload["items"][0]["lifecycle"] == "nrnd"
+    assert "nrnd" in payload["items"][0]["flags"]
