@@ -170,3 +170,39 @@ def test_confirmed_assumptions_do_not_block_autonomous_pass() -> None:
     report = json.loads(pack.report_json())
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
+
+
+def test_stable_id_ignores_runtime_requirements_and_assumptions_evidence() -> None:
+    from zaptrace.proof.manifest import AssumptionsEvidence, RequirementsCoverageEvidence
+
+    base_manifest = ProofManifest(name="StableRuntimeEvidence", design_path="design.yaml")
+    with_runtime = ProofManifest(
+        name="StableRuntimeEvidence",
+        design_path="design.yaml",
+        requirements_coverage=RequirementsCoverageEvidence(
+            report_path="requirements_coverage.json",
+            requirements_hash="hash-a",
+            fully_covered=False,
+            fully_traced=False,
+            requirement_count=3,
+            untraced_artifact_count=2,
+            message="runtime coverage state",
+        ),
+        assumptions_evidence=AssumptionsEvidence(
+            report_path="assumptions.json",
+            requirements_hash="hash-b",
+            approved=False,
+            assumption_count=2,
+            unconfirmed_high_risk_count=1,
+            message="runtime assumptions state",
+        ),
+    )
+    result = CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)
+
+    assert (
+        ProofPack(manifest=base_manifest, results=[result]).stable_id
+        == ProofPack(
+            manifest=with_runtime,
+            results=[result],
+        ).stable_id
+    )

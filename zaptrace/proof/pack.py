@@ -336,6 +336,8 @@ class ProofPack:
             "bom_provenance",
             "manufacturing_evidence",
             "manufacturing_exports",
+            "requirements_coverage",
+            "assumptions_evidence",
             "autonomous_signoff",
         ):
             data.pop(runtime_key, None)
