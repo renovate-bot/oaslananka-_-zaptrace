@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from zaptrace.analysis.dc_bias import DcBiasResult
+    from zaptrace.core.models import Design
     from zaptrace.synthesis.footprint_resolver import FootprintResolution
     from zaptrace.synthesis.repair import RepairResult
 
@@ -84,19 +85,21 @@ def _review_checklist(
     return items
 
 
-def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: str = "SynthesizedBoard") -> FabResult:
-    """Synthesize a board from intent and emit a manufacturing bundle plus evidence."""
+def route_synthesized_design(intent: str, *, name: str = "SynthesizedBoard") -> tuple[Design, dict[str, Any]]:
+    """Synthesize a board from intent and place, route, and ground-pour it.
+
+    Returns the routed :class:`~zaptrace.core.models.Design` plus the raw
+    synthesis output (``plan``, ``repair``, ``footprints``). Shared by the
+    manufacturing bundler and the proof-pack generator so both verify the
+    identical physical design.
+    """
     from zaptrace.algo.copper_pour import CopperPourGenerator
     from zaptrace.algo.grid_router import GridRouter
     from zaptrace.algo.placer import place_components
     from zaptrace.algo.router import route_design_smart
-    from zaptrace.analysis.dc_bias import resolve_dc_bias
     from zaptrace.core.models import NetClass
     from zaptrace.ee.classifier import classify_design, get_net_class
-    from zaptrace.ee.drc.engine import DRCEngine
-    from zaptrace.export.manufacturing import generate_manufacturing_bundle
     from zaptrace.synthesis.repair import synthesize_and_repair
-    from zaptrace.synthesis.scorecard import score_board
 
     out = synthesize_and_repair(intent, name=name)
     design = out["design"]
@@ -124,6 +127,17 @@ def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: st
         pour = CopperPourGenerator().generate_ground_pour(design, placement, layer="F.Cu", net_id=ground.id)
         design.copper_pours[f"F.Cu_{ground.name}"] = pour
 
+    return design, out
+
+
+def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: str = "SynthesizedBoard") -> FabResult:
+    """Synthesize a board from intent and emit a manufacturing bundle plus evidence."""
+    from zaptrace.analysis.dc_bias import resolve_dc_bias
+    from zaptrace.ee.drc.engine import DRCEngine
+    from zaptrace.export.manufacturing import generate_manufacturing_bundle
+    from zaptrace.synthesis.scorecard import score_board
+
+    design, out = route_synthesized_design(intent, name=name)
     drc = DRCEngine().run(design)
 
     out_path = Path(output_dir)

@@ -16,6 +16,35 @@ def proof() -> None:
 
 
 @proof.command()
+@click.argument("intent")
+@click.option("--output", "-o", type=click.Path(), default="proof-pack", help="Output directory for the bundle")
+@click.option("--name", "-n", default="SynthesizedBoard", help="Design name")
+@click.option("--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text")
+def synth(intent: str, output: str, name: str, output_format: str) -> None:
+    """Synthesize a board from INTENT and emit an auditable proof pack.
+
+    Writes design.yaml, proof.yaml, and report.json into the output directory:
+    the routed design, every synthesis decision, and the ERC/DRC baselines.
+    """
+    from zaptrace.synthesis.proof import generate_synthesis_proof
+
+    try:
+        pack = generate_synthesis_proof(intent, output, name=name)
+        if output_format == "json":
+            console.print(pack.report_json())
+        else:
+            console.print(pack.summary)
+            console.print(f"\nBundle written to {output}/ (design.yaml, proof.yaml, report.json)")
+        if not pack.passed:
+            raise SystemExit(1)
+    except SystemExit:
+        raise
+    except Exception as e:
+        print_summary(False, f"Synthesis proof failed: {e}")
+        raise click.Abort() from e
+
+
+@proof.command()
 @click.argument("path", type=click.Path(exists=True))
 @click.option("--verbose", "-v", is_flag=True, help="Show detailed check output")
 @click.option("--format", "-f", "output_format", type=click.Choice(["text", "json"]), default="text")
