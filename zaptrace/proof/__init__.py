@@ -15,6 +15,12 @@ Usage:
 from __future__ import annotations
 
 from .checker import CheckResult, CheckStatus, ProofRunner
+from .claims import (
+    FORBIDDEN_FABRICATION_CLAIMS,
+    FabricationClaimViolation,
+    assert_no_unapproved_fabrication_claims,
+    find_unapproved_fabrication_claims,
+)
 from .manifest import (
     ArtifactRecord,
     CheckDefinition,
@@ -60,4 +66,8 @@ __all__ = [
     "SignoffEvidence",
     "AutonomousSignoffDecision",
     "AutonomousSignoffPolicy",
+    "FORBIDDEN_FABRICATION_CLAIMS",
+    "FabricationClaimViolation",
+    "find_unapproved_fabrication_claims",
+    "assert_no_unapproved_fabrication_claims",
 ]

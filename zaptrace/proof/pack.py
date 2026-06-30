@@ -23,6 +23,7 @@ from zaptrace.core.parser import dump_str
 from zaptrace.core.state import design_state_hash
 
 from .checker import CheckResult, CheckStatus, ProofRunner
+from .claims import assert_no_unapproved_fabrication_claims
 from .manifest import (
     ArtifactRecord,
     CheckRecord,
@@ -282,20 +283,25 @@ class ProofPack:
             lines.append(f"Unsupported: {', '.join(decision.unsupported_checks)}")
         if decision.unsafe_checks:
             lines.append(f"Unsafe: {', '.join(decision.unsafe_checks)}")
-        return "\n".join(lines)
+        text = "\n".join(lines)
+        assert_no_unapproved_fabrication_claims(text, signoff_status=decision.status)
+        return text
 
     def report_json(self) -> str:
         """JSON-formatted results report."""
-        return json.dumps(
+        decision = self.autonomous_signoff
+        report = json.dumps(
             {
                 "name": self.manifest.name,
                 "version": self.manifest.version,
                 "passed": self.passed,
-                "autonomous_signoff": self.autonomous_signoff.to_evidence_record(),
+                "autonomous_signoff": decision.to_evidence_record(),
                 "checks": [r.to_dict() for r in self.results],
             },
             indent=2,
         )
+        assert_no_unapproved_fabrication_claims(report, signoff_status=decision.status)
+        return report
 
     @property
     def stable_id(self) -> str:
