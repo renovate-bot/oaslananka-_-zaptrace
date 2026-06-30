@@ -429,3 +429,30 @@ def test_failed_kicad_pcb_parity_blocks_autonomous_pass() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
     assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:kicad_schematic_to_pcb_netlist"]
+
+
+def test_failed_ipc_d356_parity_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import NetlistParityEvidence
+
+    manifest = ProofManifest(
+        name="FailedIpcD356Parity",
+        design_path="design.yaml",
+        ipc_d356_parity=NetlistParityEvidence(
+            report_path="ipc_d356_parity.json",
+            check="ipc_d356_netlist",
+            passed=False,
+            missing_net_count=1,
+            extra_net_count=0,
+            pin_mismatch_count=1,
+            message="IR and IPC-D-356 netlist differ",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="manufacturing", type="custom"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["manufacturing:ipc_d356_netlist"]

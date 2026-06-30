@@ -503,14 +503,19 @@ class ProofPack:
     def _signoff_evidence_from_netlist_parity(self) -> list[SignoffEvidence]:
         """Map netlist parity evidence into release-blocking sign-off evidence."""
         evidence: list[SignoffEvidence] = []
-        for parity in (self.manifest.kicad_schematic_parity, self.manifest.kicad_pcb_parity):
+        parity_sources = (
+            (self.manifest.kicad_schematic_parity, "kicad"),
+            (self.manifest.kicad_pcb_parity, "kicad"),
+            (self.manifest.ipc_d356_parity, "manufacturing"),
+        )
+        for parity, source in parity_sources:
             if parity is None:
                 continue
             evidence.append(
                 SignoffEvidence(
-                    name=f"kicad:{parity.check}",
+                    name=f"{source}:{parity.check}",
                     status=SignoffCheckStatus.PASS if parity.passed else SignoffCheckStatus.FAIL,
-                    source="kicad",
+                    source=source,
                     summary=parity.message,
                     release_blocking=True,
                     evidence_required=True,

@@ -20,6 +20,7 @@ from zaptrace.core.models import Design
 from zaptrace.export.bom import generate_bom_csv
 from zaptrace.export.excellon import generate_composite_drill, generate_excellon
 from zaptrace.export.gerber import generate_gerber
+from zaptrace.export.ipcd356 import write_ipcd356
 
 # ---------------------------------------------------------------------------
 #  Pick-and-place (centroid) CSV
@@ -164,6 +165,11 @@ def generate_manufacturing_manifest(design: Design) -> str:
                 "layer": "Excellon drill",
                 "description": "NC drill file (PTH + NPTH)",
             },
+            {
+                "file": ".IPC",
+                "layer": "Manufacturing netlist",
+                "description": "IPC-D-356 connectivity evidence",
+            },
         ],
         "tool": "ZapTrace AI-EDA",
         "tool_version": __version__,
@@ -197,6 +203,7 @@ def generate_manufacturing_bundle(
         - BOM CSV
         - Pick-and-place CSV
         - Manufacturing manifest JSON
+        - IPC-D-356 manufacturing netlist
         - ``<design>.zip`` containing all of the above
 
     Args:
@@ -240,6 +247,10 @@ def generate_manufacturing_bundle(
     pnp_path.write_text(pnp_csv, encoding="utf-8")
     result["pick_and_place"] = str(pnp_path)
 
+    # ── IPC-D-356 manufacturing netlist ─────────────────────────────────
+    ipc_path = write_ipcd356(design, out / f"{pfx}.ipc")
+    result["ipc_d356"] = str(ipc_path)
+
     # ── Manufacturing manifest ───────────────────────────────────────────
     manifest = generate_manufacturing_manifest(design)
     manifest_path = out / f"{pfx}-manifest.json"
@@ -267,7 +278,7 @@ def generate_manufacturing_bundle(
                 zf.write(fp, arcname=fp.name)
 
         # Add BOM, PnP, manifest
-        for label in ("bom", "pick_and_place", "manifest"):
+        for label in ("bom", "pick_and_place", "ipc_d356", "manifest"):
             fp = Path(result[label])
             if fp.exists():
                 zf.write(fp, arcname=fp.name)
