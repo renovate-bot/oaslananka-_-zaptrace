@@ -41,6 +41,10 @@ class ComponentSpec:
     lifecycle: str = "active"
     voltage_supply: str = ""
     pins: dict[str, dict[str, str]] = field(default_factory=dict)
+    electrical_limits: dict[str, Any] = field(default_factory=dict)
+    sourcing: dict[str, Any] = field(default_factory=dict)
+    compliance: dict[str, Any] = field(default_factory=dict)
+    provenance: dict[str, Any] = field(default_factory=dict)
     properties: dict[str, Any] = field(default_factory=dict)
 
     def _has_field(self, name: str) -> bool:
@@ -185,6 +189,18 @@ class LibraryLoader:
         ]
         report.sort(key=lambda row: (row["confidence_score"], row["id"]))
         return report
+
+    def governance_report(self) -> Any:
+        """Validate loaded parts against governed component schema v1."""
+        from zaptrace.library.governance import validate_component_library
+
+        return validate_component_library(self.load_all())
+
+    def write_governance_report(self, output_path: str | Path) -> Path:
+        """Write a machine-readable governed component schema report."""
+        from zaptrace.library.governance import write_component_governance_report
+
+        return write_component_governance_report(self.load_all(), output_path)
 
     def mean_confidence(self) -> float:
         """Mean governance confidence across the library (0..1), 0.0 if empty."""
