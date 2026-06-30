@@ -308,3 +308,49 @@ class TestDatasheetConfidenceAndConflicts:
 
         assert validation.blocked is True
         assert validation.missing_hash_count == 1
+
+
+class TestDatasheetHashReverification:
+    def test_matching_hash_keeps_facts_current(self) -> None:
+        from zaptrace.library.datasheet import DatasheetHashStatus, build_datasheet_fact_report, verify_datasheet_hash
+
+        report = build_datasheet_fact_report("ts2940", _LDO_DATASHEET)
+        result = verify_datasheet_hash(report, _LDO_DATASHEET)
+
+        assert result.status == DatasheetHashStatus.CURRENT
+        assert result.stale_fact_count == 0
+        assert result.affected_fields == []
+
+    def test_changed_hash_marks_dependent_facts_stale(self) -> None:
+        from zaptrace.library.datasheet import DatasheetHashStatus, build_datasheet_fact_report, verify_datasheet_hash
+
+        report = build_datasheet_fact_report("ts2940", _LDO_DATASHEET)
+        result = verify_datasheet_hash(report, _LDO_DATASHEET + "\nRevision changed output current table")
+
+        assert result.status == DatasheetHashStatus.STALE
+        assert result.stale_fact_count == report.fact_count
+        assert result.affected_fields
+        assert result.expected_sha256 == report.datasheet_sha256
+        assert result.observed_sha256 != report.datasheet_sha256
+
+    def test_missing_source_blocks_reverification_report(self) -> None:
+        from zaptrace.library.datasheet import DatasheetHashStatus, build_datasheet_fact_report, verify_datasheet_hashes
+
+        report = build_datasheet_fact_report("ts2940", _LDO_DATASHEET)
+        verification = verify_datasheet_hashes([(report, None)])
+
+        assert verification.blocked is True
+        assert verification.missing_source_count == 1
+        assert verification.items[0].status == DatasheetHashStatus.MISSING_SOURCE
+
+    def test_multiple_hash_reports_aggregate_mismatches(self) -> None:
+        from zaptrace.library.datasheet import build_datasheet_fact_report, verify_datasheet_hashes
+
+        ok = build_datasheet_fact_report("ok", _LDO_DATASHEET)
+        stale = build_datasheet_fact_report("stale", _LDO_DATASHEET)
+        verification = verify_datasheet_hashes([(ok, _LDO_DATASHEET), (stale, "changed")])
+
+        assert verification.blocked is True
+        assert verification.item_count == 2
+        assert verification.hash_mismatch_count == 1
+        assert verification.stale_fact_count == stale.fact_count

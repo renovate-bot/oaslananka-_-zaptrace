@@ -110,3 +110,25 @@ blocked=true                  -> datasheet-provenance fails and blocks autonomou
 human_review_required=true    -> datasheet-provenance becomes human-review-required
 no conflicts / no low confidence -> datasheet-provenance passes
 ```
+
+## Hash re-verification workflow
+
+A stored datasheet fact report can be re-verified against current source material:
+
+```bash
+uv run python scripts/ci_datasheet_hash_gate.py \
+  --pair datasheet-facts.json=datasheet.txt \
+  --strict \
+  --output datasheet-hash-gate.json
+```
+
+The gate compares `DatasheetFactReport.datasheet_sha256` with the current source hash.
+
+Policy behavior:
+
+- Matching hash: facts remain current.
+- Changed hash: all facts derived from that source are marked stale.
+- Missing current source: facts are stale because the source cannot be re-verified.
+- Missing stored hash: facts are stale because provenance is incomplete.
+
+Stale facts should be attached to proof-pack `datasheet_provenance` using `stale_fact_count`, `hash_mismatch_count`, and `blocked=true`. This blocks autonomous sign-off until the changed source material is reviewed and a new fact report is generated.

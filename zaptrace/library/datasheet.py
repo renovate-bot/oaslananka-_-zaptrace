@@ -219,6 +219,112 @@ class DatasheetFactReport(BaseModel):
         return len(self.facts)
 
 
+class DatasheetHashStatus(StrEnum):
+    """Datasheet source hash re-verification status."""
+
+    CURRENT = "current"
+    STALE = "stale"
+    MISSING_STORED_HASH = "missing-stored-hash"
+    MISSING_SOURCE = "missing-source"
+
+
+class DatasheetHashVerificationItem(BaseModel):
+    """One datasheet hash re-verification result."""
+
+    model_config = ConfigDict(strict=False)
+
+    component_id: str
+    expected_sha256: str = ""
+    observed_sha256: str = ""
+    status: DatasheetHashStatus
+    stale_fact_count: int = Field(default=0, ge=0)
+    affected_fields: list[str] = Field(default_factory=list)
+    message: str = ""
+
+
+class DatasheetHashVerificationReport(BaseModel):
+    """Machine-readable report for datasheet hash re-verification."""
+
+    schema_version: str = "1.0"
+    blocked: bool
+    item_count: int
+    stale_fact_count: int
+    hash_mismatch_count: int
+    missing_source_count: int
+    items: list[DatasheetHashVerificationItem]
+
+
+def verify_datasheet_hash(
+    report: DatasheetFactReport, current_source: str | bytes | None
+) -> DatasheetHashVerificationItem:
+    """Compare stored datasheet hash in a fact report against current source material."""
+    fields = [fact.field for fact in report.facts]
+    if not report.datasheet_sha256:
+        return DatasheetHashVerificationItem(
+            component_id=report.component_id,
+            status=DatasheetHashStatus.MISSING_STORED_HASH,
+            stale_fact_count=report.fact_count,
+            affected_fields=fields,
+            message="datasheet fact report has no stored SHA-256",
+        )
+    if current_source is None:
+        return DatasheetHashVerificationItem(
+            component_id=report.component_id,
+            expected_sha256=report.datasheet_sha256,
+            status=DatasheetHashStatus.MISSING_SOURCE,
+            stale_fact_count=report.fact_count,
+            affected_fields=fields,
+            message="current datasheet source material was not provided",
+        )
+    observed = datasheet_sha256(current_source)
+    if observed != report.datasheet_sha256:
+        return DatasheetHashVerificationItem(
+            component_id=report.component_id,
+            expected_sha256=report.datasheet_sha256,
+            observed_sha256=observed,
+            status=DatasheetHashStatus.STALE,
+            stale_fact_count=report.fact_count,
+            affected_fields=fields,
+            message="datasheet hash changed; dependent facts are stale until reviewed",
+        )
+    return DatasheetHashVerificationItem(
+        component_id=report.component_id,
+        expected_sha256=report.datasheet_sha256,
+        observed_sha256=observed,
+        status=DatasheetHashStatus.CURRENT,
+        stale_fact_count=0,
+        affected_fields=[],
+        message="datasheet hash matches stored provenance",
+    )
+
+
+def verify_datasheet_hashes(
+    items: list[tuple[DatasheetFactReport, str | bytes | None]],
+) -> DatasheetHashVerificationReport:
+    """Verify multiple datasheet fact reports against current source material."""
+    results = [verify_datasheet_hash(report, current) for report, current in items]
+    stale = sum(item.stale_fact_count for item in results)
+    mismatch = sum(1 for item in results if item.status == DatasheetHashStatus.STALE)
+    missing_source = sum(1 for item in results if item.status == DatasheetHashStatus.MISSING_SOURCE)
+    blocked = any(
+        item.status
+        in {
+            DatasheetHashStatus.STALE,
+            DatasheetHashStatus.MISSING_STORED_HASH,
+            DatasheetHashStatus.MISSING_SOURCE,
+        }
+        for item in results
+    )
+    return DatasheetHashVerificationReport(
+        blocked=blocked,
+        item_count=len(results),
+        stale_fact_count=stale,
+        hash_mismatch_count=mismatch,
+        missing_source_count=missing_source,
+        items=results,
+    )
+
+
 def datasheet_sha256(raw: str | bytes) -> str:
     """Return a stable SHA-256 for datasheet text or bytes."""
     payload = raw.encode("utf-8") if isinstance(raw, str) else raw

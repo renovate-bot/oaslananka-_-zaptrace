@@ -576,6 +576,8 @@ class ProofPack:
         summary = provenance.message
         if provenance.conflict_count:
             summary = f"{summary}; {provenance.conflict_count} conflicting datasheet fact group(s)"
+        if provenance.stale_fact_count:
+            summary = f"{summary}; {provenance.stale_fact_count} stale datasheet fact(s)"
         if provenance.low_confidence_count:
             summary = f"{summary}; {provenance.low_confidence_count} low-confidence fact(s)"
         return [

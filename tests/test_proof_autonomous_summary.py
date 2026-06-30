@@ -669,3 +669,32 @@ def test_low_confidence_datasheet_provenance_requires_human_review() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.HUMAN_REVIEW_REQUIRED
     assert report["autonomous_signoff"]["human_review_checks"] == ["datasheet-provenance"]
+
+
+def test_stale_datasheet_hash_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import DatasheetProvenanceEvidence
+
+    manifest = ProofManifest(
+        name="DatasheetStale",
+        design_path="design.yaml",
+        datasheet_provenance=DatasheetProvenanceEvidence(
+            report_path="datasheet-hash-gate.json",
+            component_count=1,
+            fact_count=4,
+            stale_fact_count=4,
+            hash_mismatch_count=1,
+            blocked=True,
+            message="datasheet source hash changed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["datasheet-provenance"]
+    evidence = next(item for item in pack.manifest.autonomous_signoff.evidence if item.name == "datasheet-provenance")
+    assert "stale datasheet fact" in evidence.summary

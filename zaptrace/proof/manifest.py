@@ -231,6 +231,8 @@ class DatasheetProvenanceEvidence(BaseModel):
     missing_hash_count: int = Field(default=0, ge=0, description="Facts without datasheet SHA-256 provenance")
     low_confidence_count: int = Field(default=0, ge=0, description="Facts below confidence policy threshold")
     conflict_count: int = Field(default=0, ge=0, description="Conflicting datasheet fact groups")
+    stale_fact_count: int = Field(default=0, ge=0, description="Facts stale because source hash changed")
+    hash_mismatch_count: int = Field(default=0, ge=0, description="Datasheet source hash mismatch count")
     human_review_required: bool = Field(default=False, description="Whether low-confidence facts require human review")
     blocked: bool = Field(default=False, description="Whether datasheet provenance blocks autonomous sign-off")
     message: str = Field(default="", description="Human-readable datasheet provenance summary")
