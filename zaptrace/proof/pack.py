@@ -525,6 +525,17 @@ class ProofPack:
     def _signoff_evidence_from_oracles(self) -> list[SignoffEvidence]:
         """Map manifest oracle records into sign-off evidence records."""
         evidence: list[SignoffEvidence] = []
+        if self.manifest.requires_kicad_oracle and not self.manifest.kicad_oracle:
+            return [
+                SignoffEvidence(
+                    name="kicad:missing_oracle",
+                    status=SignoffCheckStatus.UNKNOWN,
+                    source="kicad",
+                    summary="KiCad oracle evidence is required but no KiCad ERC/DRC evidence was recorded",
+                    release_blocking=True,
+                    evidence_required=True,
+                )
+            ]
         for oracle in self.manifest.kicad_oracle:
             status_raw = oracle.status.strip().lower()
             if status_raw in {"pass", "passed", "success"}:
@@ -574,6 +585,7 @@ class ProofPack:
         """Record explicit KiCad oracle availability/skip metadata."""
         from zaptrace.kicad.oracle import detect_kicad
 
+        self.manifest.requires_kicad_oracle = True
         oracle = detect_kicad()
         if oracle.available:
             self.manifest.kicad_oracle = [

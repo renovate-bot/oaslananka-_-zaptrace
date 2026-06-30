@@ -180,6 +180,7 @@ def generate_synthesis_proof(
         environment=capture_environment(),
         agent_decisions=_decision_records(synth["decision_log"]),
         check_records=_check_records(results),
+        requires_kicad_oracle=True,
         assumptions_evidence=AssumptionsEvidence(
             report_path="assumptions.json",
             requirements_hash=str(assumptions_report["requirements_hash"]),

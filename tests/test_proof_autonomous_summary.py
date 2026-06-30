@@ -270,3 +270,48 @@ def test_failed_kicad_pcb_drc_evidence_blocks_autonomous_pass() -> None:
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
     assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:pcb_drc"]
     assert "Blocking evidence: kicad:pcb_drc" in pack.summary
+
+
+def test_required_missing_kicad_oracle_blocks_autonomous_pass() -> None:
+    manifest = ProofManifest(
+        name="MissingRequiredKiCad",
+        design_path="design.yaml",
+        requires_kicad_oracle=True,
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:missing_oracle"]
+    assert "Blocking evidence: kicad:missing_oracle" in pack.summary
+
+
+def test_skipped_required_kicad_oracle_blocks_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import KiCadOracleEvidence
+
+    manifest = ProofManifest(
+        name="SkippedRequiredKiCad",
+        design_path="design.yaml",
+        requires_kicad_oracle=True,
+        kicad_oracle=[
+            KiCadOracleEvidence(
+                check="proof_pack_oracle",
+                status="skipped",
+                skip_reason="kicad-cli not found",
+                message="KiCad oracle unavailable",
+            )
+        ],
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["kicad:proof_pack_oracle"]

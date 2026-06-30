@@ -333,6 +333,10 @@ class ProofManifest(BaseModel):
         default_factory=list,
         description="KiCad oracle pass/fail/skip evidence metadata",
     )
+    requires_kicad_oracle: bool = Field(
+        default=False,
+        description="Whether missing/skipped KiCad oracle evidence blocks autonomous sign-off",
+    )
     bom_provenance: list[BomProvenanceEvidence] = Field(
         default_factory=list,
         description="BOM provider provenance, cache age, and risk summary evidence",
