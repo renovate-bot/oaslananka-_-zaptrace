@@ -403,7 +403,25 @@ def requirements_to_constraints(requirements: Requirements) -> Any:
     return constraints
 
 
-def requirements_assumptions(requirements: Requirements) -> list[dict[str, str]]:
+_ASSUMPTION_RISK: dict[str, str] = {
+    "rails_v": "high",
+    "max_current_a": "high",
+    "mcu": "medium",
+    "usb_c": "medium",
+    "battery": "high",
+}
+
+
+def _assumption_record(field: str, assumption: str) -> dict[str, Any]:
+    return {
+        "field": field,
+        "assumption": assumption,
+        "risk": _ASSUMPTION_RISK.get(field, "medium"),
+        "requires_confirmation": True,
+    }
+
+
+def requirements_assumptions(requirements: Requirements) -> list[dict[str, Any]]:
     """Register information a design needs that the intent did not state.
 
     Distinct from coverage (which maps *stated* requirements to constraints):
@@ -411,33 +429,73 @@ def requirements_assumptions(requirements: Requirements) -> list[dict[str, str]]
     assume, so every assumption is explicit and reviewable instead of silently
     baked in. (unspecified-assumption register.)
     """
-    assumptions: list[dict[str, str]] = []
+    assumptions: list[dict[str, Any]] = []
 
     if not requirements.rails_v:
         assumptions.append(
-            {
-                "field": "rails_v",
-                "assumption": "no supply voltage stated; downstream must choose a rail (commonly 3.3V)",
-            }
+            _assumption_record(
+                "rails_v",
+                "no supply voltage stated; downstream must choose a rail (commonly 3.3V)",
+            )
         )
     if requirements.max_current_a is None:
         assumptions.append(
-            {
-                "field": "max_current_a",
-                "assumption": "no current budget stated; regulator/thermal sizing cannot be verified",
-            }
+            _assumption_record(
+                "max_current_a",
+                "no current budget stated; regulator/thermal sizing cannot be verified",
+            )
         )
     if requirements.mcu is None:
-        assumptions.append({"field": "mcu", "assumption": "no controller/MCU stated"})
+        assumptions.append(_assumption_record("mcu", "no controller/MCU stated"))
     if requirements.usb_c:
         assumptions.append(
-            {"field": "usb_c", "assumption": "USB-C power role (UFP sink vs DFP source) not stated; assuming sink"}
+            _assumption_record("usb_c", "USB-C power role (UFP sink vs DFP source) not stated; assuming sink")
         )
     if requirements.battery:
-        assumptions.append(
-            {"field": "battery", "assumption": "battery chemistry/voltage and charge current not stated"}
-        )
+        assumptions.append(_assumption_record("battery", "battery chemistry/voltage and charge current not stated"))
     return assumptions
+
+
+def requirements_assumption_report(
+    requirements: Requirements,
+    approvals: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Build the proof-pack assumptions artifact for a requirements version.
+
+    Each assumption has a stable ID, risk class, and confirmation state. The
+    report exposes unconfirmed high-risk assumptions so sign-off policy can
+    block autonomous-pass instead of silently accepting design guesses.
+    """
+    approvals = approvals or {}
+    freeze_hash = freeze_requirements(requirements)["hash"]
+    assumptions: list[dict[str, Any]] = []
+    for index, item in enumerate(requirements_assumptions(requirements), start=1):
+        field = item["field"]
+        decision = approvals.get(field)
+        assumptions.append(
+            {
+                "id": f"ASM-{index:03d}",
+                "field": field,
+                "assumption": item["assumption"],
+                "risk": item["risk"],
+                "requires_confirmation": item["requires_confirmation"],
+                "confirmed": bool(decision),
+                "decision": decision or "",
+            }
+        )
+    unconfirmed_high_risk = [
+        item
+        for item in assumptions
+        if item["risk"] == "high" and item["requires_confirmation"] and not item["confirmed"]
+    ]
+    return {
+        "schema_version": "1.0",
+        "requirements_hash": freeze_hash,
+        "approved": not [item for item in assumptions if item["requires_confirmation"] and not item["confirmed"]],
+        "assumptions": assumptions,
+        "unconfirmed_high_risk": unconfirmed_high_risk,
+        "unconfirmed_high_risk_count": len(unconfirmed_high_risk),
+    }
 
 
 def _contract_fields(requirements: Requirements) -> dict[str, Any]:
@@ -506,8 +564,8 @@ def review_assumptions(requirements: Requirements, approvals: dict[str, str] | N
     """
     approvals = approvals or {}
     freeze_hash = freeze_requirements(requirements)["hash"]
-    reviewed: list[dict[str, str]] = []
-    pending: list[dict[str, str]] = []
+    reviewed: list[dict[str, Any]] = []
+    pending: list[dict[str, Any]] = []
     for item in requirements_assumptions(requirements):
         decision = approvals.get(item["field"])
         if decision:

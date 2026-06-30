@@ -10,6 +10,7 @@ from zaptrace.synthesis.requirements import (
     diff_requirements,
     freeze_requirements,
     parse_requirements,
+    requirements_assumption_report,
     requirements_assumptions,
     requirements_conflicts,
     requirements_coverage,
@@ -366,3 +367,24 @@ def test_requirements_coverage_report_reports_untraced_artifacts() -> None:
 
     assert report["fully_traced"] is False
     assert {row["id"] for row in report["untraced_artifacts"]} == {"X1"}
+
+
+def test_requirements_assumption_report_includes_risk_and_confirmation_state() -> None:
+    report = requirements_assumption_report(parse_requirements("usb-c sensor"))
+
+    assert report["schema_version"] == "1.0"
+    assert report["approved"] is False
+    fields = {item["field"]: item for item in report["assumptions"]}
+    assert fields["rails_v"]["risk"] == "high"
+    assert fields["rails_v"]["requires_confirmation"] is True
+    assert fields["rails_v"]["confirmed"] is False
+    assert report["unconfirmed_high_risk_count"] >= 1
+
+
+def test_requirements_assumption_report_marks_approved_assumptions_confirmed() -> None:
+    req = parse_requirements("a simple LED blinker")
+    report = requirements_assumption_report(req, {"rails_v": "3.3V", "max_current_a": "0.1A", "mcu": "attiny"})
+
+    assert report["approved"] is True
+    assert report["unconfirmed_high_risk"] == []
+    assert all(item["confirmed"] for item in report["assumptions"])

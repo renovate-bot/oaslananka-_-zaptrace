@@ -23,6 +23,7 @@ from .claims import (
 )
 from .manifest import (
     ArtifactRecord,
+    AssumptionsEvidence,
     CheckDefinition,
     CheckRecord,
     CheckSource,
@@ -47,6 +48,7 @@ from .signoff import (
 __all__ = [
     "ProofManifest",
     "ManifestModel",
+    "AssumptionsEvidence",
     "RequirementsCoverageEvidence",
     "CheckDefinition",
     "CheckRecord",

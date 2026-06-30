@@ -444,6 +444,7 @@ class ProofPack:
             self._signoff_evidence_from_results()
             + self._signoff_evidence_from_oracles()
             + self._signoff_evidence_from_requirements_coverage()
+            + self._signoff_evidence_from_assumptions()
         )
         self.manifest.autonomous_signoff = AutonomousSignoffPolicy().evaluate(evidence)
         return self.manifest.autonomous_signoff
@@ -475,6 +476,26 @@ class ProofPack:
                 )
             )
         return evidence
+
+    def _signoff_evidence_from_assumptions(self) -> list[SignoffEvidence]:
+        """Map assumptions evidence into release-blocking sign-off evidence."""
+        assumptions = self.manifest.assumptions_evidence
+        if assumptions is None:
+            return []
+        status = SignoffCheckStatus.PASS if assumptions.unconfirmed_high_risk_count == 0 else SignoffCheckStatus.FAIL
+        summary = assumptions.message
+        if assumptions.unconfirmed_high_risk_count:
+            summary = f"{summary}; {assumptions.unconfirmed_high_risk_count} unconfirmed high-risk assumption(s)"
+        return [
+            SignoffEvidence(
+                name="requirements-assumptions",
+                status=status,
+                source="zaptrace",
+                summary=summary,
+                release_blocking=True,
+                evidence_required=True,
+            )
+        ]
 
     def _signoff_evidence_from_requirements_coverage(self) -> list[SignoffEvidence]:
         """Map requirements coverage metadata into release-blocking evidence."""

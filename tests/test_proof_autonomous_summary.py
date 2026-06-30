@@ -118,3 +118,55 @@ def test_requirements_coverage_allows_pass_when_complete() -> None:
 
     assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS
     assert report["autonomous_signoff"]["blocking_checks"] == []
+
+
+def test_unconfirmed_high_risk_assumptions_block_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import AssumptionsEvidence
+
+    manifest = ProofManifest(
+        name="AssumptionsBlocked",
+        design_path="design.yaml",
+        assumptions_evidence=AssumptionsEvidence(
+            report_path="assumptions.json",
+            requirements_hash="abc123",
+            approved=False,
+            assumption_count=2,
+            unconfirmed_high_risk_count=1,
+            message="requirements assumptions require confirmation",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.BLOCKED_INSUFFICIENT_EVIDENCE
+    assert report["autonomous_signoff"]["blocking_checks"] == ["requirements-assumptions"]
+    assert "Blocking evidence: requirements-assumptions" in pack.summary
+
+
+def test_confirmed_assumptions_do_not_block_autonomous_pass() -> None:
+    from zaptrace.proof.manifest import AssumptionsEvidence
+
+    manifest = ProofManifest(
+        name="AssumptionsPass",
+        design_path="design.yaml",
+        assumptions_evidence=AssumptionsEvidence(
+            report_path="assumptions.json",
+            requirements_hash="abc123",
+            approved=True,
+            assumption_count=1,
+            unconfirmed_high_risk_count=0,
+            message="requirements assumptions confirmed",
+        ),
+    )
+    pack = ProofPack(
+        manifest=manifest,
+        results=[CheckResult(check=CheckDefinition(name="erc", type="erc"), status=CheckStatus.PASS)],
+    )
+
+    report = json.loads(pack.report_json())
+
+    assert report["autonomous_signoff"]["status"] == AutonomousSignoffStatus.AUTONOMOUS_PASS

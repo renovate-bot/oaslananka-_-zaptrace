@@ -24,6 +24,7 @@ import yaml
 from zaptrace.core.parser import design_to_dict
 from zaptrace.proof import (
     ArtifactRecord,
+    AssumptionsEvidence,
     CheckDefinition,
     InputRecord,
     ProofManifest,
@@ -37,7 +38,11 @@ from zaptrace.proof.checker import CheckResult, CheckStatus
 from zaptrace.proof.manifest import AgentDecisionRecord, CheckCategory, CheckRecord
 from zaptrace.proof.pack import hash_bytes
 from zaptrace.synthesis.fab import route_synthesized_design
-from zaptrace.synthesis.requirements import parse_requirements, requirements_coverage_report
+from zaptrace.synthesis.requirements import (
+    parse_requirements,
+    requirements_assumption_report,
+    requirements_coverage_report,
+)
 
 if TYPE_CHECKING:
     from zaptrace.core.models import Design
@@ -129,7 +134,8 @@ def generate_synthesis_proof(
     """Synthesize a board from *intent* and emit an auditable proof pack in *output_dir*.
 
     Writes ``design.yaml`` (the routed design, hashed), ``requirements_coverage.json``
-    (requirement ID traceability), ``proof.yaml`` (the manifest with synthesis
+    (requirement ID traceability), ``assumptions.json`` (explicit unresolved
+    assumptions), ``proof.yaml`` (the manifest with synthesis
     decisions, input/environment provenance, and check records), and ``report.json``
     (the check results). Returns the completed
     :class:`~zaptrace.proof.ProofPack`.
@@ -151,10 +157,13 @@ def generate_synthesis_proof(
         parsed_requirements,
         design=design,
         checks=checks,
-        exports=["design.yaml", "proof.yaml", "report.json"],
+        exports=["design.yaml", "proof.yaml", "report.json", "assumptions.json"],
     )
     coverage_path = out_dir / "requirements_coverage.json"
     coverage_path.write_text(json.dumps(coverage_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    assumptions_report = requirements_assumption_report(parsed_requirements)
+    assumptions_path = out_dir / "assumptions.json"
+    assumptions_path.write_text(json.dumps(assumptions_report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     manifest = ProofManifest(
         name=f"{name} synthesis proof",
@@ -171,6 +180,18 @@ def generate_synthesis_proof(
         environment=capture_environment(),
         agent_decisions=_decision_records(synth["decision_log"]),
         check_records=_check_records(results),
+        assumptions_evidence=AssumptionsEvidence(
+            report_path="assumptions.json",
+            requirements_hash=str(assumptions_report["requirements_hash"]),
+            approved=bool(assumptions_report["approved"]),
+            assumption_count=len(assumptions_report["assumptions"]),
+            unconfirmed_high_risk_count=int(assumptions_report["unconfirmed_high_risk_count"]),
+            message=(
+                "requirements assumptions confirmed"
+                if assumptions_report["approved"]
+                else "requirements assumptions require confirmation"
+            ),
+        ),
         requirements_coverage=RequirementsCoverageEvidence(
             report_path="requirements_coverage.json",
             requirements_hash=str(coverage_report["requirements_hash"]),
@@ -196,6 +217,12 @@ def generate_synthesis_proof(
                 kind="report",
                 sha256=hash_file(coverage_path),
                 size_bytes=coverage_path.stat().st_size,
+            ),
+            ArtifactRecord(
+                path="assumptions.json",
+                kind="report",
+                sha256=hash_file(assumptions_path),
+                size_bytes=assumptions_path.stat().st_size,
             ),
         ],
     )

@@ -201,6 +201,21 @@ class ManufacturingProofEvidence(BaseModel):
     message: str = Field(default="", description="Human-readable manufacturing evidence summary")
 
 
+class AssumptionsEvidence(BaseModel):
+    """Structured assumptions evidence stored in a proof-pack manifest."""
+
+    report_path: str = Field(description="Path to assumptions.json")
+    requirements_hash: str = Field(description="Hash of the frozen requirements contract")
+    approved: bool = Field(description="Whether all required assumptions are confirmed")
+    assumption_count: int = Field(default=0, ge=0, description="Number of assumptions in the artifact")
+    unconfirmed_high_risk_count: int = Field(
+        default=0,
+        ge=0,
+        description="Number of high-risk assumptions that still lack confirmation",
+    )
+    message: str = Field(default="", description="Human-readable assumptions summary")
+
+
 class RequirementsCoverageEvidence(BaseModel):
     """Structured requirements coverage evidence stored in a proof-pack manifest."""
 
@@ -333,6 +348,10 @@ class ProofManifest(BaseModel):
     requirements_coverage: RequirementsCoverageEvidence | None = Field(
         default=None,
         description="Requirements coverage and traceability evidence metadata",
+    )
+    assumptions_evidence: AssumptionsEvidence | None = Field(
+        default=None,
+        description="Assumptions artifact metadata and approval state",
     )
 
     autonomous_signoff: AutonomousSignoffDecision = Field(
