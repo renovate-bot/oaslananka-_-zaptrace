@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.3.0] - 2026-07-01 — Evidence Hardening and Benchmark Readiness
+
 ### Agent tools
 
 - **Simulation gate MCP tool** — `simulation_gate` runs the DC operating-point gate on a stored design and returns a blocking verdict. Rail references are derived from the design's power-rail net names. When ngspice is unavailable the gate is `skipped` (recorded as evidence, never a silent pass); `strict=True` makes a skip blocking. Tool catalog → 82.
@@ -86,9 +90,9 @@
 
 ### Governance and Release Readiness
 
-- Added v0.2.3 verification-gate matrix and blocker policy documentation for release-critical evidence.
+- Added verification-gate matrix and blocker policy documentation for release-critical evidence.
 - Added release-gate CI summary script/test coverage and workflow artifact upload for gate PASS/FAIL/SKIP evidence.
-- Reconciled README, roadmap, FAQ, and current-state audit status around the 0.2.2 baseline and M0/M1/M2/M3 GitHub milestone model.
+- Reconciled README, roadmap, FAQ, and current-state audit status around the 0.3.0 evidence-hardening baseline.
 - Added standardized issue templates and triage policy for epics, release gates, research tasks, bugs, and features.
 
 ## [0.2.2] - 2026-06-17 — Verification Foundation and Safety Hardening

@@ -84,13 +84,21 @@ No EDA dependency required, excellent EDA interoperability.
 | REST API server | ✅ Implemented |
 | Design diff | ✅ Implemented |
 | Full pipeline (autopilot) | ✅ Implemented |
-| Proof-pack system | 🚧 Experimental — v1 evidence hardening in M0 |
-| Plugin system | 🚧 Experimental — signed runtime planned in M2 |
-| Web-based viewer | 🔮 Planned |
-| SPICE netlist export | 🔮 Planned — M3+ |
-| DFM (Design for Manufacturing) | 🧪 Implemented foundation — fab-profile evidence hardening in M1 |
-| Multi-board design | 🔮 Planned — post-M3 |
+| Proof-pack system | ✅ Implemented — evidence/sign-off foundation; not a correctness guarantee |
+| Plugin system | 🚧 Experimental — signed runtime policy documented; production sandboxing still required |
+| Review Studio | ✅ Implemented — human-review panels, proof-pack evidence, benchmark readiness |
+| SPICE netlist export | ✅ Implemented foundation — DC gate is evidence/skip aware, not full analog sign-off |
+| DFM (Design for Manufacturing) | ✅ Implemented foundation — fab profiles, manufacturing evidence, current/thermal/SI risk reports |
+| Multi-board design | 🔮 Planned — post-0.3.0 |
 | RF/microwave awareness | 🔮 Planned |
+
+---
+
+## v0.3.0 Release Scope
+
+ZapTrace 0.3.0 is an evidence-hardening release. It adds bounded autonomous sign-off vocabulary, requirements coverage, assumption evidence, KiCad oracle evidence, manufacturing/DFM evidence, component/datasheet/footprint provenance, layout/power/SI/PI risk reports, known-failure benchmark mutation coverage, and Review Studio benchmark readiness panels.
+
+This release still makes no fabrication-readiness claim. A pass means the configured evidence gates did not block; it does **not** mean the design is manufacturer-approved, production-ready, or safe to fabricate without human engineering review.
 
 ---
 
@@ -407,10 +415,9 @@ See [examples/](examples/) for design YAML files and walkthroughs.
 
 | Horizon | Focus |
 |---------|-------|
-| **Now (v0.2)** | Proof-pack system, plugin architecture, manufacturing validation |
-| **Next (v0.3)** | SPICE netlist export, DFM checks, multi-board support |
-| **Soon (v0.4)** | Web-based viewer, interactive routing GUI, cloud CI integration |
-| **Future (v0.5+)** | RF/microwave awareness, thermal simulation, ML-assisted placement |
+| **Current (v0.3.0)** | Evidence hardening: proof-pack sign-off, KiCad oracle gates, governed component/datasheet/footprint evidence, layout/power/SI/PI reports, benchmark corpus, Review Studio readiness panel |
+| **Next** | Real board-family fixture expansion: requirements, golden KiCad projects, proof packs, manufacturing exports, mutation cases for all 12 manifest families |
+| **Later** | Larger component library, live distributor integrations, deeper routing fidelity, solver-grade SI/PI/thermal integrations, multi-board workflows |
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the full roadmap.
 
@@ -436,19 +443,15 @@ ZapTrace is free for commercial and personal use.
 ## Current Limitations
 
 - **Pre-1.0**: APIs are unstable and may change without notice.
-- **No GUI**: All interaction is CLI/SDK/MCP-based.
-- **No SPICE**: No analog or mixed-signal simulation.
-- **No interactive routing editor**: Routing is algorithmic (grid-based).
-- **Schematic synthesis is template-based**: Does not use LLM-generated designs.
-- **Limited package library**: ~50 common packages supported.
-- **No thermal analysis**: No thermal simulation or PDN analysis.
-- **No signal integrity analysis**: No SI/PI/EMI analysis.
-- **Not fabrication-ready**: No claim of manufacturing readiness is made.
-- **Not production-ready**: Pre-1.0; APIs, formats, and outputs may change without notice.
-- **Proof Pack is evidence, not guarantee**: A passing Proof Pack does not mean the design is correct, safe, or manufacturable.
+- **No interactive PCB GUI**: Primary surfaces are CLI, SDK, MCP, REST, generated artifacts, and Review Studio evidence views.
+- **No fabrication approval**: No claim of manufacturing readiness is made; all outputs require qualified human engineering review.
+- **Heuristic analysis**: Current thermal, SI/PI, impedance, current-density, and power reports are evidence pre-checks, not solver-grade sign-off.
+- **Algorithmic routing**: Routing is grid/net-aware, but not a professional push-and-shove interactive router.
+- **Bounded synthesis**: Synthesis is block/template/requirements driven, not open-ended from-scratch invention for arbitrary circuits.
+- **Limited package/library breadth**: Many module, DFN/LGA/aQFN/RJ45/RF land patterns still require datasheet-backed geometry expansion.
 - **KiCad Oracle is external validation**: KiCad's own ERC/DRC has limitations. A passing check does not guarantee circuit functionality.
-- **Fab profiles are not manufacturer approval**: Always verify with your specific fab house.
-- **GitHub hardware CI ≠ physical testing**: CI cannot reproduce all real-world conditions.
-- **KiCad export is unidirectional**: No KiCad file import.
-- **Plugin system is experimental**: Not yet stable. Runtime safety design in progress.
-- **Proof-pack system is experimental**: Format may change.
+- **Fab profiles are not manufacturer approval**: Always verify against your specific fab house and current manufacturer capabilities.
+- **Benchmark pass is regression evidence**: It does not imply fabrication safety or production readiness.
+- **GitHub hardware CI ≠ physical testing**: CI cannot reproduce all real-world failure modes.
+- **KiCad export is primarily outbound**: Import/round-trip fidelity is still a future hardening area.
+- **Plugin system is experimental**: Signed-runtime policy exists, but production sandboxing requires further hardening.

@@ -123,4 +123,4 @@ def test_help_documents_canonical_invocations(capsys) -> None:
     assert exc.value.code == 0
     assert "Examples:" in captured.out
     assert "--gate lint=success --gate tests=success" in captured.out
-    assert "The Python package version may" in captured.out
+    assert "v0.3.0" in captured.out

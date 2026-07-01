@@ -1,152 +1,43 @@
 # ZapTrace Roadmap
 
-## Vision
+## Current status — 2026-07-01
 
-ZapTrace is an AI-native, verification-first EDA kernel that turns design intent
-into reviewable schematic, PCB, manufacturing, and proof artifacts — usable
-entirely from an agent or a terminal, with **no GUI and no EDA tool as a runtime
-dependency**.
+ZapTrace 0.3.0 is the evidence-hardening baseline. The M0–M4 issue-backed roadmap has been completed in the repository: autonomous sign-off vocabulary, requirements coverage, KiCad oracle evidence, governed component/datasheet/footprint evidence, layout/power/SI/PI reports, benchmark corpus manifest, known-failure mutation corpus, and Review Studio benchmark readiness are implemented.
 
-The long-range goal is an engine where an agent can carry a professional board
-**from intent to fabrication-grade output end to end** — synthesize the
-topology, size every value, place, route, verify, and package — and hand a human
-reviewer an auditable evidence pack instead of an unexplained file dump.
+This does **not** mean ZapTrace is fabrication-ready or production-ready. A passing gate means the configured evidence did not block. Every generated schematic, PCB, export, and proof pack still requires qualified human engineering review before fabrication or use.
 
-"Flawless" and "fully autonomous" are an asymptote, not a shipping claim. The
-engineering target is concrete: the agent produces a *complete candidate* that
-passes simulation and rule checks in a closed loop, with every decision
-justified, so the only remaining step is human sign-off — not human authoring.
-ZapTrace is not a fabrication guarantee, not a substitute for engineering
-judgment, and every output requires human review before fabrication.
+## Completed roadmap tracks
 
-## Current State — 2026-06-29
+| Track | Status | Outcome |
+|-------|--------|---------|
+| M0 — Autonomous Sign-off Foundation | ✅ Complete | status model, proof-pack summaries, claim guard, requirements coverage, assumptions evidence |
+| M1 — Closed-loop KiCad & Manufacturing Oracle | ✅ Complete | KiCad ERC/DRC adapters, missing-oracle evidence, parity/export evidence foundations |
+| M2 — Governed Component & Footprint Intelligence | ✅ Complete | component schema/validator, lifecycle/sourcing risk, datasheet provenance, footprint proof, risky-package policy, IPC-7351 skeleton |
+| M3 — Constraint-aware Autonomous Layout | ✅ Complete | placement scorecard, diff-pair length evidence, impedance/return-path risk, repair proposals, rail/regulator/current-density/SI/PI reports |
+| M4 — Professional Review & v1.0 Release Gate | ✅ Complete | 12-family benchmark manifest, golden KiCad fixture format, known-failure mutation corpus, Review Studio benchmark panel |
 
-ZapTrace already spans the full pipeline; the gap is **maturity and loop
-closure**, not missing stages. What exists today, characterized honestly:
+## What remains for a v1.0-quality product
 
-| Stage | What is real today | Honest limitation |
-|-------|--------------------|-------------------|
-| Intent → requirements | Structured requirements extraction, assumption register, conflict detector, freeze gate | Heuristic NL parsing; not a planner |
-| Synthesis | **Template selection** + block-composition synthesis (power + **USB-C connector** + interface support + **functional core** MCU + **real peripherals**: I2C sensors and an SPI flash on the MCU-mastered bus) + **IPC-7351 footprint geometry**, provides/requires contracts, calculator library | I2C sensors + SPI flash only (UART peripherals, RF, signal-chain still deferred); standard packages (chip, SOT, SOIC/MSOP, LQFP, QFN, headers) resolve; module/DFN/LGA/aQFN land patterns need real datasheet geometry |
-| ERC | 29 connectivity-precise rules over an electrical graph, coverage reporting | Rules catch known faults only; no functional/timing proof |
-| Placement / routing | Constraint-aware placement, grid + net-aware routing, copper pour | Grid router; no push-and-shove, length-match, or controlled-impedance routing in the loop |
-| DRC | 16 geometric rules, fab-profile-aware | Geometry only; not a manufacturability guarantee |
-| Analysis | Deterministic textbook SI timing, thermal, impedance (IPC-2141), DfT, mechanical, EMC pre-check | Estimates, not field solvers or CFD |
-| Simulation | Always-available **behavioral DC bias resolver** (flags undriven rails ERC can't catch) feeding ideal source models to the ngspice **DC operating-point blocking gate** (skip-aware, strict-blocking; ngspice bundled) | Behavioral (ideal-regulator) models only; no device-level transient/AC, no load/droop analysis |
-| Supply | BOM intelligence provider interface; DigiKey/Mouser/TME/Farnell adapters | Fixture-backed, not live API |
-| Export | Gerber, Excellon, BOM, PnP, KiCad, SVG, IPC-2581/ODB++ foundation | KiCad export one-way |
-| Verification evidence | Proof-pack runner + manifest, KiCad Oracle (optional), fab profiles | Proof pack experimental; oracle skippable |
-| Surfaces | Python SDK, CLI, REST API, MCP server (87 tools) | — |
-| Library | ~86 parts (MCUs, sensors, SPI flash, crystals, ethernet, power, interface, protection) | Far short of professional breadth |
+The next work is not another broad scaffold milestone; it is depth, fixtures, and external validation.
 
-The README status table and this section are the source of truth; no claim of
-fabrication or production readiness is made.
+1. **Expand real benchmark fixtures** — for all 12 board families, add requirements, golden KiCad projects, proof packs, manufacturing exports, and known-failure mutations.
+2. **Run real KiCad environments in CI** — add optional or matrix-based KiCad CLI ERC/DRC/parity/export smoke jobs where the toolchain is installed.
+3. **Grow the governed component/footprint library** — prioritize module, DFN/LGA/aQFN/RJ45/RF packages with datasheet-backed geometry and provenance.
+4. **Improve routing fidelity** — push-and-shove/rip-up routing, pad-aware routing, length tuning, impedance stackup integration, and return-path/plane geometry evidence.
+5. **Integrate solver-grade analysis** — external SI/PI/thermal/PDN tools should become evidence producers for production validation workflows.
+6. **Harden plugin/runtime security** — enforce signed plugin admission and stronger sandboxing before recommending untrusted extensions.
+7. **Release governance** — keep semantic versioning, release notes, security policy, CI evidence, proof-pack non-claims, and benchmark regression results visible.
 
-## The Gap to the Vision
+## Non-goals
 
-Seven gaps separate "broad pipeline that runs" from "agent completes a
-professional board end to end." The milestones below are organized around
-closing them. Detailed technical design lives in
-[docs/design/autonomous-synthesis.md](design/autonomous-synthesis.md).
+ZapTrace does not claim to be:
 
-1. **From-scratch synthesis** — replace template selection with requirement-driven
-   parametric block composition (topology + values), beyond the power path.
-2. **Simulation as a gate** — make DC/transient SPICE a bundled, blocking check,
-   not an optional skip; add the device models the orchestrator lacks.
-3. **Professional routing** — differential pairs, length matching, controlled
-   impedance, and push-and-shove inside the routing loop.
-4. **Convergent self-correction** — ERC/DRC/sim failure → automatic patch →
-   re-verify, with measured convergence, not just a diagram.
-5. **Authoritative internal engines** — internal ERC/DRC/sim become the
-   authority so KiCad is an optional second opinion, removing the dependency.
-6. **Library depth + live supply** — thousands of IPC-7351-compliant parts and
-   live distributor data behind the existing provider interface.
-7. **A benchmark that measures "flawless"** — a release-blocking harness scoring
-   pass-rate against real, fabricable reference designs.
+- a full replacement for an interactive PCB editor;
+- a fabrication approval system;
+- a no-human-review autonomous production sign-off authority;
+- a field solver, compliance lab, or manufacturer DFM approval service;
+- a guarantee that a circuit is safe, functional, manufacturable, or certifiable.
 
-## Milestones
+## Contribution focus
 
-### M1 — Synthesis & Simulation Loop (closes gaps 1, 2, 4)
-
-**Goal:** an agent states an intent and gets a *complete, simulated* candidate
-design back, not a template.
-
-- Requirement-driven block-composition synthesis beyond the power tree
-  (signal-chain, MCU support circuitry, interface blocks).
-- Bundled ngspice path (container) with a curated device-model set; DC + transient
-  operating checks promoted to a **blocking** evidence gate.
-- Closed synthesize → ERC → sim → patch → re-verify loop with a measured
-  convergence rate and a hard iteration/termination policy.
-
-**Exit:** for a bounded class of boards, the loop produces a candidate that
-passes internal ERC and DC/transient sim without human edits, with a decision
-log explaining every value and stage.
-
-### M2 — Routing & Manufacturing Fidelity (closes gaps 3, 5)
-
-**Goal:** layouts and outputs are professional-grade and self-authoritative.
-
-- Routing upgrades: differential-pair routing, length matching, controlled
-  impedance fed from the IPC-2141 engine, and push-and-shove or rip-up-and-retry.
-- Internal ERC/DRC/sim declared the authority; KiCad Oracle reframed as an
-  optional cross-check, with fidelity scorecards instead of a dependency.
-- IPC-2581 / ODB++ evidence exports hardened from foundation to release-ready.
-
-**Exit:** a routed board passes internal DRC and a controlled-impedance check;
-KiCad Oracle, when present, agrees within a recorded tolerance.
-
-### M3 — Library, Supply & Benchmark (closes gaps 6, 7)
-
-**Goal:** breadth and proof that the engine is actually good.
-
-- Library scaled toward professional breadth with IPC-7351-compliant footprints
-  and provenance.
-- Live distributor adapters behind the existing provider interface, with
-  lifecycle/alternates/cache and a BOM risk gate.
-- A release-blocking benchmark harness scoring complete designs against
-  fabricable reference projects (pass-rate, not a single smoke test).
-
-**Exit:** the benchmark runs in CI as a release gate; regressions in synthesis,
-routing, or verification quality block a release.
-
-### M4 — Autonomy & Sign-off Discipline
-
-**Goal:** multiple candidates, bounded permissions, enterprise-grade evidence.
-
-- Specialist-agent orchestration generating and scoring multiple candidates on
-  verifiable evidence.
-- Long-running workflow checkpoint/resume/rollback; deny-by-default signed plugin
-  admission with an audit trail.
-- Sign-off policy separating pass/fail evidence, warnings, skipped checks, and
-  mandatory human-review items.
-
-**Exit:** an agent produces scored candidates under bounded permissions, and the
-proof pack cleanly separates what was verified from what still needs a human.
-
-## Non-Goals
-
-ZapTrace will not claim to be:
-
-- A full replacement for an interactive PCB editor (KiCad, Altium, Eagle) — it is
-  a backend engine, not a GUI.
-- A fully autonomous production sign-off authority.
-- A field solver or a substitute for lab compliance testing.
-- A substitute for human engineering review.
-- A manufacturer approval system.
-
-## Milestone Table
-
-| Milestone | Status | Theme | Closes gaps |
-|-----------|--------|-------|-------------|
-| Foundation | ✅ Shipped | Full pipeline, exports, MCP/REST/CLI, proof-pack scaffold | — |
-| M1 | ▶ Active | Synthesis & simulation loop | 1, 2, 4 |
-| M2 | Planned | Routing & manufacturing fidelity | 3, 5 |
-| M3 | Planned | Library, supply & benchmark | 6, 7 |
-| M4 | Planned | Autonomy & sign-off discipline | — |
-
-## How to Contribute
-
-See [CONTRIBUTING.md](../CONTRIBUTING.md) and
-[docs/strategy/triage-policy.md](strategy/triage-policy.md). For the technical
-design behind the milestones, see
-[docs/design/autonomous-synthesis.md](design/autonomous-synthesis.md).
+Good next contributions are narrow, evidence-producing changes: one board family fixture, one footprint proof, one datasheet fact extractor, one KiCad parity check, one mutation test, or one Review Studio panel improvement at a time.

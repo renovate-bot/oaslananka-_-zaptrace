@@ -4,7 +4,7 @@ from importlib.metadata import PackageNotFoundError, version
 try:
     __version__ = version("zaptrace")
 except PackageNotFoundError:
-    __version__ = "0.2.2"
+    __version__ = "0.3.0"
 
 from zaptrace.core.models import Component, Design, Net, resolve_variant
 from zaptrace.core.parser import parse_file, parse_str

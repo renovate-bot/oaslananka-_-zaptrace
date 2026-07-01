@@ -9,7 +9,7 @@ ZapTrace is an AI-native, verification-first, open-source EDA (Electronic Design
 No. ZapTrace is a backend engine for programmatic electronics design. You can use it alongside KiCad — ZapTrace generates KiCad-compatible files, and you can open them in KiCad for further editing.
 
 ### Is ZapTrace ready for production?
-ZapTrace is in alpha (v0.2.2). It works for simple to moderate designs, but **all outputs require human review before fabrication**. See [SAFETY.md](SAFETY.md).
+ZapTrace is in alpha (v0.3.0). It works for simple to moderate designs, but **all outputs require human review before fabrication**. See [SAFETY.md](SAFETY.md).
 
 ### Who is ZapTrace for?
 - **AI/Agent developers** building electronics design workflows
@@ -56,7 +56,7 @@ The MCP server exposes ZapTrace's design tools through the Model Context Protoco
 ```bash
 zaptrace-mcp
 ```
-Then configure your AI client to connect to it. See [MCP.md](MCP.md).
+Then configure your AI client to connect to it. See [MCP quickstart](mcp/quickstart.md).
 
 ## Safety
 

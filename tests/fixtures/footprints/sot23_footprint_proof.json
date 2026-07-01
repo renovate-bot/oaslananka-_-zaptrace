@@ -8,7 +8,7 @@
     "source_path": "",
     "source_sha256": "",
     "generator": "zaptrace.ee.footprints",
-    "generator_version": "0.2.2",
+    "generator_version": "0.3.0",
     "attribution": ""
   },
   "pad_count": 3,

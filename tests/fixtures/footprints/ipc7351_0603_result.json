@@ -69,7 +69,7 @@
       "source_path": "",
       "source_sha256": "",
       "generator": "zaptrace.ee.ipc7351.calculate_ipc7351_chip",
-      "generator_version": "0.2.2",
+      "generator_version": "0.3.0",
       "attribution": "Skeleton calculator; verify against the applicable IPC-7351 edition before production use."
     },
     "pad_count": 2,

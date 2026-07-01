@@ -48,5 +48,6 @@ The following are in scope:
 
 | Version | Supported |
 |---------|-----------|
-| 0.2.x   | ✅ Current |
+| 0.3.x   | ✅ Current |
+| 0.2.x   | ⚠️ Security fixes where practical |
 | < 0.2   | ❌ |

@@ -1,8 +1,8 @@
-"""Build a machine-readable v0.2.3 release-gate summary.
+"""Build a machine-readable v0.3.0 release-gate summary.
 
 The script is intentionally small and CI-friendly. GitHub Actions can pass job
 results as ``--gate name=result`` pairs; the script normalizes them into the
-same vocabulary used by the v0.2.3 gate policy:
+same vocabulary used by the v0.3.0 gate policy:
 
 - pass
 - fail
@@ -130,7 +130,7 @@ def require_external_oracles(
 
 def render_markdown(records: list[GateRecord]) -> str:
     blocked = [record for record in records if record.blocks_release]
-    lines = ["# ZapTrace v0.2.3 Release Gate Summary", ""]
+    lines = ["# ZapTrace v0.3.0 Release Gate Summary", ""]
     lines.append(f"Generated: {datetime.now(UTC).isoformat()}")
     lines.append("")
     lines.append("| Gate | Status | Blocks Release | Reason | Raw Result |")
@@ -160,7 +160,7 @@ def build_summary(records: list[GateRecord]) -> dict[str, object]:
     return {
         "schema_version": "1.0",
         "generated_at": datetime.now(UTC).isoformat(),
-        "release": "v0.2.3",
+        "release": "v0.3.0",
         "status_vocabulary": [PASS, FAIL, SKIP_APPROVED, SKIP_UNAPPROVED, WARN],
         "blocked": bool(blocked),
         "blocking_gates": [record.name for record in blocked],
@@ -180,8 +180,7 @@ Examples:
   python scripts/ci_release_gate.py --gate kicad-oracle=skipped --skip-reason kicad-oracle=APPROVAL-1 --strict
 
 Notes:
-  The summary is milestone evidence for v0.2.3. The Python package version may
-  intentionally remain lower until the release tag is cut. At least one --gate
+  The summary is milestone evidence for v0.3.0. At least one --gate
   entry is required. A skipped gate blocks strict mode unless an approved
   --skip-reason with the same gate name is supplied.
 """
@@ -189,7 +188,7 @@ Notes:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Generate a v0.2.3 release-gate summary",
+        description="Generate a v0.3.0 release-gate summary",
         epilog=_HELP_EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

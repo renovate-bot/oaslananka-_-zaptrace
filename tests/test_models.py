@@ -313,7 +313,7 @@ class TestCanonicalIRExtensions:
         pr = ProvRecord(
             record_id="prov-001",
             tool="zaptrace-erc",
-            tool_version="0.2.2",
+            tool_version="0.3.0",
             output_artifact_ids=["erc-result-001"],
             artifact_hashes={"erc-result-001": "abc123"},
             decision_summary="ERC ran 29 rules, 0 errors, 2 warnings",

@@ -1,0 +1,85 @@
+{
+  "blocked": false,
+  "blocking_gates": [],
+  "gates": [
+    {
+      "blocks_release": false,
+      "name": "ruff",
+      "raw_result": "success",
+      "reason": "",
+      "required": true,
+      "status": "pass"
+    },
+    {
+      "blocks_release": false,
+      "name": "format",
+      "raw_result": "success",
+      "reason": "",
+      "required": true,
+      "status": "pass"
+    },
+    {
+      "blocks_release": false,
+      "name": "pyright",
+      "raw_result": "success",
+      "reason": "",
+      "required": true,
+      "status": "pass"
+    },
+    {
+      "blocks_release": false,
+      "name": "tests",
+      "raw_result": "success",
+      "reason": "",
+      "required": true,
+      "status": "pass"
+    },
+    {
+      "blocks_release": false,
+      "name": "build",
+      "raw_result": "success",
+      "reason": "",
+      "required": true,
+      "status": "pass"
+    },
+    {
+      "blocks_release": false,
+      "name": "wheel-smoke",
+      "raw_result": "success",
+      "reason": "",
+      "required": true,
+      "status": "pass"
+    },
+    {
+      "blocks_release": false,
+      "name": "audit",
+      "raw_result": "success",
+      "reason": "",
+      "required": true,
+      "status": "pass"
+    },
+    {
+      "blocks_release": false,
+      "name": "semgrep",
+      "raw_result": "success",
+      "reason": "",
+      "required": true,
+      "status": "pass"
+    }
+  ],
+  "generated_at": "2026-07-01T00:41:48.473582+00:00",
+  "non_claims": [
+    "not fabrication-ready",
+    "not manufacturer-approved",
+    "not no-human-review autonomous signoff"
+  ],
+  "release": "v0.3.0",
+  "schema_version": "1.0",
+  "status_vocabulary": [
+    "pass",
+    "fail",
+    "skip-approved",
+    "skip-unapproved",
+    "warn"
+  ]
+}

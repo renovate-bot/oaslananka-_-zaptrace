@@ -9,7 +9,7 @@
 |-----------|-------|
 | **Repository** | github.com/oaslananka/zaptrace |
 | **License** | MIT |
-| **Version** | 0.2.2 |
+| **Version** | 0.3.0 |
 | **Language** | Python 3.12+ (with optional Rust extension) |
 | **Package manager** | uv (with uv.lock) |
 | **Build system** | hatchling |
@@ -188,8 +188,8 @@ ZapTrace has a layered architecture:
 
 This audit now separates implemented foundation, experimental evidence, and missing release gates:
 
-- `0.2.2` is the current released/package baseline in `pyproject.toml` and `CHANGELOG.md`.
-- `v0.2.3` / M0 is the next stabilization milestone, not a feature-expansion milestone.
+- `0.3.0` is the current package baseline in `pyproject.toml` and `CHANGELOG.md`.
+- The M0-M4 evidence-hardening roadmap has been implemented; remaining work is benchmark depth and external validation hardening.
 - KiCad Oracle, fab profiles, proof packs, REST hardening, and MCP transaction primitives exist as foundations, but the project must still make skipped external evidence explicit and release-blocking.
 - DFM is no longer purely planned; the foundation exists, while external manufacturing adapters and evidence gates remain planned under M1.
 - Several historical closed issues require audit labels because their titles may imply completeness beyond the current experimental/release-gated state.
@@ -280,7 +280,7 @@ This audit now separates implemented foundation, experimental evidence, and miss
 4. **KiCad oracle integration** — parse JSON DRC/ERC reports, attach evidence into proof packs, and fail on selected severities
 5. **Agent transaction safety** — session snapshots, rollback, dry-run tools, and idempotent write operations
 6. **Export regression corpus** — golden Gerber/Excellon/KiCad fixtures and strict diff gates
-7. **Release v0.2.2** — CI stability, proof evidence, and fab-profile foundation
+7. **Release v0.3.0** — M0-M4 evidence hardening, benchmark readiness, and review-studio proof visibility
 
 ## Recommended 60-Day Plan
 

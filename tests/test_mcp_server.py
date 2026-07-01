@@ -23,7 +23,7 @@ def test_server_name() -> None:
 
 
 def test_server_version() -> None:
-    assert SERVER_VERSION == "0.2.2"
+    assert SERVER_VERSION == "0.3.0"
 
 
 async def test_server_has_all_tools() -> None:
