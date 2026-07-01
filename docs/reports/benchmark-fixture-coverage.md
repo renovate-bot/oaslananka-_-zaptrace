@@ -1,7 +1,7 @@
 # Benchmark Fixture Coverage
 
-Complete families: 4/12
-Missing required artifacts: 32
+Complete families: 5/12
+Missing required artifacts: 28
 
 | Family | Status | Present required | Missing required |
 |--------|--------|------------------|------------------|
@@ -9,7 +9,7 @@ Missing required artifacts: 32
 | `stm32_rs485_industrial` | `complete` | 4 | 0 |
 | `nrf52_ble_multisensor` | `complete` | 4 | 0 |
 | `rp2040_can_node` | `complete` | 4 | 0 |
-| `usb_c_power_sink` | `incomplete` | 0 | 4 |
+| `usb_c_power_sink` | `complete` | 4 | 0 |
 | `lipo_charger_node` | `incomplete` | 0 | 4 |
 | `poe_ethernet_controller` | `incomplete` | 0 | 4 |
 | `motor_driver_hbridge` | `incomplete` | 0 | 4 |

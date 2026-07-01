@@ -1,6 +1,6 @@
 {
   "complete": false,
-  "complete_family_count": 4,
+  "complete_family_count": 5,
   "families": [
     {
       "artifact_count": 4,
@@ -249,47 +249,57 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "usb_c_power_sink",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/usb_c_power_sink/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/usb_c_power_sink/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "usb_c_power_sink",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/usb_c_power_sink/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/usb_c_power_sink/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "usb_c_power_sink",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/usb_c_power_sink/golden/usb_c_power_sink.kicad_pcb",
+            "benchmarks/usb_c_power_sink/golden/usb_c_power_sink.kicad_pro",
+            "benchmarks/usb_c_power_sink/golden/usb_c_power_sink.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/usb_c_power_sink/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "usb_c_power_sink",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/usb_c_power_sink/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/usb_c_power_sink/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "usb_c_power_sink",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "USB-C power sink"
     },
     {
@@ -644,8 +654,8 @@
     }
   ],
   "family_count": 12,
-  "incomplete_family_count": 8,
-  "missing_required_artifact_count": 32,
+  "incomplete_family_count": 7,
+  "missing_required_artifact_count": 28,
   "non_claims": [
     "fixture coverage is repository completeness evidence, not fabrication approval",
     "a complete fixture means required files exist; it does not mean the board is electrically correct",
