@@ -21,6 +21,13 @@ from zaptrace.generation.intent import (
     minimal_board_generation_intent_example,
     validate_board_generation_intent,
 )
+from zaptrace.generation.kicad_pcb import (
+    GeneratedKiCadPcbProject,
+    GeneratedKiCadPcbReport,
+    GeneratedPcbArtifact,
+    generate_kicad_pcb_project,
+    generated_kicad_pcb_report_json,
+)
 from zaptrace.generation.kicad_schematic import (
     GeneratedKiCadSchematicProject,
     GeneratedKiCadSchematicReport,
@@ -30,6 +37,11 @@ from zaptrace.generation.kicad_schematic import (
 )
 
 __all__ = [
+    "GeneratedKiCadPcbProject",
+    "GeneratedKiCadPcbReport",
+    "GeneratedPcbArtifact",
+    "generate_kicad_pcb_project",
+    "generated_kicad_pcb_report_json",
     "GeneratedKiCadSchematicProject",
     "GeneratedKiCadSchematicReport",
     "GeneratedSchematicArtifact",
