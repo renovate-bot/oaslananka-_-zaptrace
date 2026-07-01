@@ -21,8 +21,20 @@ from zaptrace.generation.intent import (
     minimal_board_generation_intent_example,
     validate_board_generation_intent,
 )
+from zaptrace.generation.kicad_schematic import (
+    GeneratedKiCadSchematicProject,
+    GeneratedKiCadSchematicReport,
+    GeneratedSchematicArtifact,
+    generate_kicad_schematic_project,
+    generated_kicad_schematic_report_json,
+)
 
 __all__ = [
+    "GeneratedKiCadSchematicProject",
+    "GeneratedKiCadSchematicReport",
+    "GeneratedSchematicArtifact",
+    "generate_kicad_schematic_project",
+    "generated_kicad_schematic_report_json",
     "CompiledDesignIR",
     "CompilationStatus",
     "DesignIRCompilationReport",
