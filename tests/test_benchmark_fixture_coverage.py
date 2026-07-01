@@ -1,0 +1,159 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from zaptrace.benchmark.families import (
+    AcceptanceThreshold,
+    BenchmarkBoardFamily,
+    BoardFamilyManifest,
+    RequiredBenchmarkArtifact,
+)
+from zaptrace.benchmark.fixtures import (
+    evaluate_fixture_coverage,
+    fixture_coverage_json,
+)
+from zaptrace.benchmark.kicad_fixtures import compare_golden_kicad_fixture, load_golden_kicad_fixture
+from zaptrace.proof.manifest import ProofManifest
+
+ESP32_FIXTURE_ROOT = Path("benchmarks/esp32_usb_sensor")
+
+
+def _single_family_manifest() -> BoardFamilyManifest:
+    return BoardFamilyManifest(
+        manifest_version="test",
+        families=[
+            BenchmarkBoardFamily(
+                family_id="fixture_family",
+                title="Fixture Family",
+                domain="test",
+                representative_intent="test fixture family",
+                tags=["test"],
+                supported_profiles=["proof-pack-required"],
+                required_artifacts=[
+                    RequiredBenchmarkArtifact(
+                        name="requirements",
+                        kind="requirements-json",
+                        path_pattern="benchmarks/fixture_family/requirements.json",
+                    ),
+                    RequiredBenchmarkArtifact(
+                        name="golden",
+                        kind="kicad-project",
+                        path_pattern="benchmarks/fixture_family/golden/*.kicad_*",
+                    ),
+                ],
+                acceptance_thresholds=[
+                    AcceptanceThreshold(metric="fixture.complete", operator="==", value=True, release_blocking=True)
+                ],
+            )
+        ],
+    )
+
+
+def test_fixture_coverage_detects_missing_required_artifacts(tmp_path: Path) -> None:
+    manifest = _single_family_manifest()
+
+    report = evaluate_fixture_coverage(tmp_path, manifest=manifest)
+
+    assert report.complete is False
+    assert report.complete_family_count == 0
+    assert report.missing_required_artifact_count == 2
+    family = report.families[0]
+    assert family.complete is False
+    assert {artifact.name for artifact in family.artifacts if not artifact.present} == {"requirements", "golden"}
+
+
+def test_fixture_coverage_detects_present_exact_and_glob_artifacts(tmp_path: Path) -> None:
+    (tmp_path / "benchmarks/fixture_family/golden").mkdir(parents=True)
+    (tmp_path / "benchmarks/fixture_family/requirements.json").write_text("{}\n", encoding="utf-8")
+    (tmp_path / "benchmarks/fixture_family/golden/example.kicad_pcb").write_text("pcb\n", encoding="utf-8")
+
+    report = evaluate_fixture_coverage(tmp_path, manifest=_single_family_manifest())
+
+    assert report.complete is True
+    assert report.complete_family_count == 1
+    family = report.families[0]
+    assert family.present_required_artifact_count == 2
+    assert family.missing_required_artifact_count == 0
+    assert family.artifacts[1].matched_paths == ["benchmarks/fixture_family/golden/example.kicad_pcb"]
+
+
+def test_committed_esp32_usb_sensor_fixture_is_complete() -> None:
+    report = evaluate_fixture_coverage(Path("."))
+    family = next(item for item in report.families if item.family_id == "esp32_usb_sensor")
+
+    assert family.complete is True
+    assert family.present_required_artifact_count == 4
+    assert family.missing_required_artifact_count == 0
+    assert {artifact.name for artifact in family.artifacts if artifact.present} == {
+        "requirements",
+        "proof-pack",
+        "kicad-project",
+        "manufacturing-exports",
+    }
+
+
+def test_committed_fixture_coverage_keeps_remaining_families_visible() -> None:
+    report = evaluate_fixture_coverage(Path("."))
+
+    assert report.family_count == 12
+    assert report.complete is False
+    assert report.complete_family_count == 1
+    assert report.incomplete_family_count == 11
+    assert report.missing_required_artifact_count == 44
+    assert "not fabrication approval" in " ".join(report.non_claims)
+
+
+def test_committed_esp32_golden_fixture_compares_cleanly() -> None:
+    fixture = load_golden_kicad_fixture(ESP32_FIXTURE_ROOT / "golden/fixture.json")
+    result = compare_golden_kicad_fixture(fixture, ESP32_FIXTURE_ROOT / "golden")
+
+    assert result.passed is True
+    assert result.checked_count == 3
+    assert result.missing_files == []
+    assert result.changed_files == []
+    assert result.unexpected_files == []
+
+
+def test_committed_esp32_proof_manifest_validates_as_proof_manifest() -> None:
+    data = json.loads((ESP32_FIXTURE_ROOT / "proof-pack/manifest.json").read_text(encoding="utf-8"))
+    manifest = ProofManifest.model_validate(data)
+
+    assert manifest.name == "esp32_usb_sensor_fixture_v1"
+    assert len(manifest.checks) == 3
+    assert manifest.check_records[0].status == "pass"
+    assert any("does not prove" in limitation for limitation in manifest.limitations)
+
+
+def test_fixture_coverage_json_round_trip() -> None:
+    payload = json.loads(fixture_coverage_json(evaluate_fixture_coverage(Path("."))))
+
+    assert payload["schema_version"] == "1.0"
+    assert payload["family_count"] == 12
+    assert payload["complete_family_count"] == 1
+
+
+def test_fixture_coverage_script_writes_json_and_markdown(tmp_path: Path) -> None:
+    from scripts.ci_benchmark_fixture_coverage import main
+
+    output = tmp_path / "coverage.json"
+    markdown = tmp_path / "coverage.md"
+
+    code = main(["--output", str(output), "--markdown", str(markdown), "--strict", "--min-complete-families", "1"])
+
+    assert code == 0
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["complete_family_count"] == 1
+    assert "Benchmark Fixture Coverage" in markdown.read_text(encoding="utf-8")
+
+
+def test_fixture_coverage_script_blocks_when_threshold_not_met(tmp_path: Path) -> None:
+    from scripts.ci_benchmark_fixture_coverage import main
+
+    output = tmp_path / "coverage.json"
+
+    code = main(["--output", str(output), "--strict", "--min-complete-families", "12"])
+
+    assert code == 1
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["complete_family_count"] == 1

@@ -1,0 +1,625 @@
+{
+  "complete": false,
+  "complete_family_count": 1,
+  "families": [
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "esp32_usb_sensor",
+          "kind": "requirements-json",
+          "matched_paths": [
+            "benchmarks/esp32_usb_sensor/requirements.json"
+          ],
+          "name": "requirements",
+          "path_pattern": "benchmarks/esp32_usb_sensor/requirements.json",
+          "present": true,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "esp32_usb_sensor",
+          "kind": "proof-pack",
+          "matched_paths": [
+            "benchmarks/esp32_usb_sensor/proof-pack/manifest.json"
+          ],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/esp32_usb_sensor/proof-pack/manifest.json",
+          "present": true,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "esp32_usb_sensor",
+          "kind": "kicad-project",
+          "matched_paths": [
+            "benchmarks/esp32_usb_sensor/golden/esp32_usb_sensor.kicad_pcb",
+            "benchmarks/esp32_usb_sensor/golden/esp32_usb_sensor.kicad_pro",
+            "benchmarks/esp32_usb_sensor/golden/esp32_usb_sensor.kicad_sch"
+          ],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/esp32_usb_sensor/golden/*.kicad_*",
+          "present": true,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "esp32_usb_sensor",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [
+            "benchmarks/esp32_usb_sensor/exports/manifest.json"
+          ],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/esp32_usb_sensor/exports/*",
+          "present": true,
+          "required": true
+        }
+      ],
+      "complete": true,
+      "family_id": "esp32_usb_sensor",
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
+      "title": "ESP32 USB sensor node"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "stm32_rs485_industrial",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/stm32_rs485_industrial/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "stm32_rs485_industrial",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/stm32_rs485_industrial/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "stm32_rs485_industrial",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/stm32_rs485_industrial/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "stm32_rs485_industrial",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/stm32_rs485_industrial/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "stm32_rs485_industrial",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "STM32 isolated RS485 industrial node"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "nrf52_ble_multisensor",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/nrf52_ble_multisensor/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "nrf52_ble_multisensor",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/nrf52_ble_multisensor/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "nrf52_ble_multisensor",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/nrf52_ble_multisensor/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "nrf52_ble_multisensor",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/nrf52_ble_multisensor/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "nrf52_ble_multisensor",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "nRF52 BLE multisensor"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "rp2040_can_node",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/rp2040_can_node/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "rp2040_can_node",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/rp2040_can_node/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "rp2040_can_node",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/rp2040_can_node/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "rp2040_can_node",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/rp2040_can_node/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "rp2040_can_node",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "RP2040 CAN node"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "usb_c_power_sink",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/usb_c_power_sink/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "usb_c_power_sink",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/usb_c_power_sink/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "usb_c_power_sink",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/usb_c_power_sink/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "usb_c_power_sink",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/usb_c_power_sink/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "usb_c_power_sink",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "USB-C power sink"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "lipo_charger_node",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/lipo_charger_node/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "lipo_charger_node",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/lipo_charger_node/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "lipo_charger_node",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/lipo_charger_node/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "lipo_charger_node",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/lipo_charger_node/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "lipo_charger_node",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "LiPo charger sensor node"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "poe_ethernet_controller",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/poe_ethernet_controller/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "poe_ethernet_controller",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/poe_ethernet_controller/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "poe_ethernet_controller",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/poe_ethernet_controller/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "poe_ethernet_controller",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/poe_ethernet_controller/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "poe_ethernet_controller",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "PoE Ethernet controller"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "motor_driver_hbridge",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/motor_driver_hbridge/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "motor_driver_hbridge",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/motor_driver_hbridge/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "motor_driver_hbridge",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/motor_driver_hbridge/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "motor_driver_hbridge",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/motor_driver_hbridge/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "motor_driver_hbridge",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "H-bridge motor driver"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "switching_regulator_module",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/switching_regulator_module/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "switching_regulator_module",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/switching_regulator_module/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "switching_regulator_module",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/switching_regulator_module/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "switching_regulator_module",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/switching_regulator_module/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "switching_regulator_module",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "Switching regulator module"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "high_current_led_driver",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/high_current_led_driver/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "high_current_led_driver",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/high_current_led_driver/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "high_current_led_driver",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/high_current_led_driver/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "high_current_led_driver",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/high_current_led_driver/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "high_current_led_driver",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "High-current LED driver"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "mcu_sd_datalogger",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/mcu_sd_datalogger/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "mcu_sd_datalogger",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/mcu_sd_datalogger/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "mcu_sd_datalogger",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/mcu_sd_datalogger/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "mcu_sd_datalogger",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/mcu_sd_datalogger/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "mcu_sd_datalogger",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "MCU SD-card datalogger"
+    },
+    {
+      "artifact_count": 4,
+      "artifacts": [
+        {
+          "description": "Versioned requirements contract for this board family",
+          "family_id": "lora_gateway_node",
+          "kind": "requirements-json",
+          "matched_paths": [],
+          "name": "requirements",
+          "path_pattern": "benchmarks/lora_gateway_node/requirements.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Proof-pack manifest with autonomous sign-off evidence",
+          "family_id": "lora_gateway_node",
+          "kind": "proof-pack",
+          "matched_paths": [],
+          "name": "proof-pack",
+          "path_pattern": "benchmarks/lora_gateway_node/proof-pack/manifest.json",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Golden KiCad schematic/PCB artifacts when available",
+          "family_id": "lora_gateway_node",
+          "kind": "kicad-project",
+          "matched_paths": [],
+          "name": "kicad-project",
+          "path_pattern": "benchmarks/lora_gateway_node/golden/*.kicad_*",
+          "present": false,
+          "required": true
+        },
+        {
+          "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
+          "family_id": "lora_gateway_node",
+          "kind": "manufacturing-bundle",
+          "matched_paths": [],
+          "name": "manufacturing-exports",
+          "path_pattern": "benchmarks/lora_gateway_node/exports/*",
+          "present": false,
+          "required": true
+        }
+      ],
+      "complete": false,
+      "family_id": "lora_gateway_node",
+      "missing_required_artifact_count": 4,
+      "present_required_artifact_count": 0,
+      "title": "LoRa gateway node"
+    }
+  ],
+  "family_count": 12,
+  "incomplete_family_count": 11,
+  "missing_required_artifact_count": 44,
+  "non_claims": [
+    "fixture coverage is repository completeness evidence, not fabrication approval",
+    "a complete fixture means required files exist; it does not mean the board is electrically correct",
+    "benchmark artifacts still require proof-pack gates and qualified human engineering review"
+  ],
+  "schema_version": "1.0"
+}

@@ -21,6 +21,14 @@ from zaptrace.benchmark.families import (
     manifest_json,
     validate_board_family_manifest,
 )
+from zaptrace.benchmark.fixtures import (
+    BenchmarkArtifactCoverage,
+    BenchmarkFamilyFixtureCoverage,
+    BenchmarkFixtureCoverageReport,
+    evaluate_family_fixture_coverage,
+    evaluate_fixture_coverage,
+    fixture_coverage_json,
+)
 from zaptrace.benchmark.kicad_fixtures import (
     GoldenKiCadComparisonResult,
     GoldenKiCadFile,
@@ -66,6 +74,12 @@ __all__ = [
     "compare_golden_kicad_fixture",
     "compute_kicad_file_record",
     "load_golden_kicad_fixture",
+    "fixture_coverage_json",
+    "evaluate_fixture_coverage",
+    "evaluate_family_fixture_coverage",
+    "BenchmarkFixtureCoverageReport",
+    "BenchmarkFamilyFixtureCoverage",
+    "BenchmarkArtifactCoverage",
     "AcceptanceThreshold",
     "BenchmarkBoardFamily",
     "BoardFamilyManifest",
