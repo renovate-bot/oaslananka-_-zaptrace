@@ -1,6 +1,6 @@
 {
   "complete": false,
-  "complete_family_count": 3,
+  "complete_family_count": 4,
   "families": [
     {
       "artifact_count": 4,
@@ -189,47 +189,57 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "rp2040_can_node",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/rp2040_can_node/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/rp2040_can_node/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "rp2040_can_node",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/rp2040_can_node/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/rp2040_can_node/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "rp2040_can_node",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/rp2040_can_node/golden/rp2040_can_node.kicad_pcb",
+            "benchmarks/rp2040_can_node/golden/rp2040_can_node.kicad_pro",
+            "benchmarks/rp2040_can_node/golden/rp2040_can_node.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/rp2040_can_node/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "rp2040_can_node",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/rp2040_can_node/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/rp2040_can_node/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "rp2040_can_node",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "RP2040 CAN node"
     },
     {
@@ -634,8 +644,8 @@
     }
   ],
   "family_count": 12,
-  "incomplete_family_count": 9,
-  "missing_required_artifact_count": 36,
+  "incomplete_family_count": 8,
+  "missing_required_artifact_count": 32,
   "non_claims": [
     "fixture coverage is repository completeness evidence, not fabrication approval",
     "a complete fixture means required files exist; it does not mean the board is electrically correct",
