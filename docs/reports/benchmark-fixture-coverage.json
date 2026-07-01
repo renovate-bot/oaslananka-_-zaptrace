@@ -1,6 +1,6 @@
 {
   "complete": false,
-  "complete_family_count": 1,
+  "complete_family_count": 2,
   "families": [
     {
       "artifact_count": 4,
@@ -69,47 +69,57 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "stm32_rs485_industrial",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/stm32_rs485_industrial/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/stm32_rs485_industrial/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "stm32_rs485_industrial",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/stm32_rs485_industrial/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/stm32_rs485_industrial/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "stm32_rs485_industrial",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/stm32_rs485_industrial/golden/stm32_rs485_industrial.kicad_pcb",
+            "benchmarks/stm32_rs485_industrial/golden/stm32_rs485_industrial.kicad_pro",
+            "benchmarks/stm32_rs485_industrial/golden/stm32_rs485_industrial.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/stm32_rs485_industrial/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "stm32_rs485_industrial",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/stm32_rs485_industrial/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/stm32_rs485_industrial/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "stm32_rs485_industrial",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "STM32 isolated RS485 industrial node"
     },
     {
@@ -614,8 +624,8 @@
     }
   ],
   "family_count": 12,
-  "incomplete_family_count": 11,
-  "missing_required_artifact_count": 44,
+  "incomplete_family_count": 10,
+  "missing_required_artifact_count": 40,
   "non_claims": [
     "fixture coverage is repository completeness evidence, not fabrication approval",
     "a complete fixture means required files exist; it does not mean the board is electrically correct",

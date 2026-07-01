@@ -1,12 +1,12 @@
 # Benchmark Fixture Coverage
 
-Complete families: 1/12
-Missing required artifacts: 44
+Complete families: 2/12
+Missing required artifacts: 40
 
 | Family | Status | Present required | Missing required |
 |--------|--------|------------------|------------------|
 | `esp32_usb_sensor` | `complete` | 4 | 0 |
-| `stm32_rs485_industrial` | `incomplete` | 0 | 4 |
+| `stm32_rs485_industrial` | `complete` | 4 | 0 |
 | `nrf52_ble_multisensor` | `incomplete` | 0 | 4 |
 | `rp2040_can_node` | `incomplete` | 0 | 4 |
 | `usb_c_power_sink` | `incomplete` | 0 | 4 |

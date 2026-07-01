@@ -13,25 +13,26 @@ The coverage report is intentionally a repository completeness gate. It does not
 
 ## Current committed coverage
 
-The first complete committed family fixture is:
+The first complete committed family fixtures are:
 
 ```text
 benchmarks/esp32_usb_sensor/
+benchmarks/stm32_rs485_industrial/
 ```
 
-It contains:
+Each fixture contains:
 
 ```text
 requirements.json
 proof-pack/manifest.json
-golden/esp32_usb_sensor.kicad_pro
-golden/esp32_usb_sensor.kicad_sch
-golden/esp32_usb_sensor.kicad_pcb
+golden/<family_id>.kicad_pro
+golden/<family_id>.kicad_sch
+golden/<family_id>.kicad_pcb
 golden/fixture.json
 exports/manifest.json
 ```
 
-The current coverage report intentionally shows the remaining 11 families as incomplete so future work can be measured one family at a time.
+The current coverage report intentionally shows the remaining 10 families as incomplete so future work can be measured one family at a time.
 
 ## Generate the report
 
@@ -40,7 +41,7 @@ python scripts/ci_benchmark_fixture_coverage.py \
   --output docs/reports/benchmark-fixture-coverage.json \
   --markdown docs/reports/benchmark-fixture-coverage.md \
   --strict \
-  --min-complete-families 1
+  --min-complete-families 2
 ```
 
 Raising `--min-complete-families` is the intended ratchet as more families gain real fixtures.
