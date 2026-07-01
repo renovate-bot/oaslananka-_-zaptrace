@@ -29,6 +29,14 @@ from zaptrace.benchmark.fixtures import (
     evaluate_fixture_coverage,
     fixture_coverage_json,
 )
+from zaptrace.benchmark.integrity import (
+    FamilyFixtureIntegrity,
+    FixtureIntegrityCheck,
+    FixtureIntegrityReport,
+    evaluate_family_fixture_integrity,
+    evaluate_fixture_integrity,
+    fixture_integrity_json,
+)
 from zaptrace.benchmark.kicad_fixtures import (
     GoldenKiCadComparisonResult,
     GoldenKiCadFile,
@@ -75,6 +83,12 @@ __all__ = [
     "compute_kicad_file_record",
     "load_golden_kicad_fixture",
     "fixture_coverage_json",
+    "FamilyFixtureIntegrity",
+    "FixtureIntegrityCheck",
+    "FixtureIntegrityReport",
+    "evaluate_family_fixture_integrity",
+    "evaluate_fixture_integrity",
+    "fixture_integrity_json",
     "evaluate_fixture_coverage",
     "evaluate_family_fixture_coverage",
     "BenchmarkFixtureCoverageReport",

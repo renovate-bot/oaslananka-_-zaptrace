@@ -1,0 +1,675 @@
+{
+  "failed_check_count": 0,
+  "failed_family_count": 0,
+  "families": [
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "esp32_usb_sensor",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/esp32_usb_sensor/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "esp32_usb_sensor",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/esp32_usb_sensor/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "esp32_usb_sensor_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "esp32_usb_sensor",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/esp32_usb_sensor/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "esp32_usb_sensor",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/esp32_usb_sensor/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "esp32_usb_sensor",
+      "status": "pass",
+      "title": "ESP32 USB sensor node"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "stm32_rs485_industrial",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/stm32_rs485_industrial/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "stm32_rs485_industrial",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/stm32_rs485_industrial/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "stm32_rs485_industrial_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "stm32_rs485_industrial",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/stm32_rs485_industrial/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "stm32_rs485_industrial",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/stm32_rs485_industrial/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "stm32_rs485_industrial",
+      "status": "pass",
+      "title": "STM32 isolated RS485 industrial node"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "nrf52_ble_multisensor",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/nrf52_ble_multisensor/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "nrf52_ble_multisensor",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/nrf52_ble_multisensor/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "nrf52_ble_multisensor_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "nrf52_ble_multisensor",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/nrf52_ble_multisensor/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "nrf52_ble_multisensor",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/nrf52_ble_multisensor/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "nrf52_ble_multisensor",
+      "status": "pass",
+      "title": "nRF52 BLE multisensor"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "rp2040_can_node",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/rp2040_can_node/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "rp2040_can_node",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/rp2040_can_node/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "rp2040_can_node_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "rp2040_can_node",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/rp2040_can_node/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "rp2040_can_node",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/rp2040_can_node/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "rp2040_can_node",
+      "status": "pass",
+      "title": "RP2040 CAN node"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "usb_c_power_sink",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/usb_c_power_sink/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "usb_c_power_sink",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/usb_c_power_sink/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "usb_c_power_sink_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "usb_c_power_sink",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/usb_c_power_sink/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "usb_c_power_sink",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/usb_c_power_sink/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "usb_c_power_sink",
+      "status": "pass",
+      "title": "USB-C power sink"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "lipo_charger_node",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/lipo_charger_node/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "lipo_charger_node",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/lipo_charger_node/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "lipo_charger_node_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "lipo_charger_node",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/lipo_charger_node/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "lipo_charger_node",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/lipo_charger_node/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "lipo_charger_node",
+      "status": "pass",
+      "title": "LiPo charger sensor node"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "poe_ethernet_controller",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/poe_ethernet_controller/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "poe_ethernet_controller",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/poe_ethernet_controller/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "poe_ethernet_controller_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "poe_ethernet_controller",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/poe_ethernet_controller/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "poe_ethernet_controller",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/poe_ethernet_controller/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "poe_ethernet_controller",
+      "status": "pass",
+      "title": "PoE Ethernet controller"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "motor_driver_hbridge",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/motor_driver_hbridge/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "motor_driver_hbridge",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/motor_driver_hbridge/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "motor_driver_hbridge_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "motor_driver_hbridge",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/motor_driver_hbridge/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "motor_driver_hbridge",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/motor_driver_hbridge/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "motor_driver_hbridge",
+      "status": "pass",
+      "title": "H-bridge motor driver"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "switching_regulator_module",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/switching_regulator_module/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "switching_regulator_module",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/switching_regulator_module/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "switching_regulator_module_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "switching_regulator_module",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/switching_regulator_module/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "switching_regulator_module",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/switching_regulator_module/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "switching_regulator_module",
+      "status": "pass",
+      "title": "Switching regulator module"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "high_current_led_driver",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/high_current_led_driver/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "high_current_led_driver",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/high_current_led_driver/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "high_current_led_driver_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "high_current_led_driver",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/high_current_led_driver/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "high_current_led_driver",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/high_current_led_driver/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "high_current_led_driver",
+      "status": "pass",
+      "title": "High-current LED driver"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "mcu_sd_datalogger",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/mcu_sd_datalogger/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "mcu_sd_datalogger",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/mcu_sd_datalogger/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "mcu_sd_datalogger_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "mcu_sd_datalogger",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/mcu_sd_datalogger/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "mcu_sd_datalogger",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/mcu_sd_datalogger/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "mcu_sd_datalogger",
+      "status": "pass",
+      "title": "MCU SD-card datalogger"
+    },
+    {
+      "checks": [
+        {
+          "details": {
+            "requirement_count": 4
+          },
+          "family_id": "lora_gateway_node",
+          "kind": "requirements",
+          "message": "requirements manifest is internally consistent",
+          "path": "benchmarks/lora_gateway_node/requirements.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "check_count": 3,
+            "limitation_count": 2
+          },
+          "family_id": "lora_gateway_node",
+          "kind": "proof-pack",
+          "message": "proof manifest validates and contains limitations",
+          "path": "benchmarks/lora_gateway_node/proof-pack/manifest.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "changed_files": [],
+            "checked_count": 3,
+            "fixture_id": "lora_gateway_node_kicad_fixture_v1",
+            "missing_files": [],
+            "passed": true,
+            "schema_version": "1.0",
+            "unexpected_files": []
+          },
+          "family_id": "lora_gateway_node",
+          "kind": "golden-kicad",
+          "message": "golden KiCad fixture hash comparison passed",
+          "path": "benchmarks/lora_gateway_node/golden/fixture.json",
+          "status": "pass"
+        },
+        {
+          "details": {
+            "warning_count": 2
+          },
+          "family_id": "lora_gateway_node",
+          "kind": "manufacturing-export",
+          "message": "export manifest contains manufacturing non-claims",
+          "path": "benchmarks/lora_gateway_node/exports/manifest.json",
+          "status": "pass"
+        }
+      ],
+      "failed_check_count": 0,
+      "family_id": "lora_gateway_node",
+      "status": "pass",
+      "title": "LoRa gateway node"
+    }
+  ],
+  "family_count": 12,
+  "non_claims": [
+    "fixture integrity means committed benchmark artifacts are internally consistent",
+    "fixture integrity is not electrical correctness, fabrication approval, or production readiness",
+    "golden KiCad hash comparison is regression evidence only"
+  ],
+  "passed": true,
+  "passed_family_count": 12,
+  "schema_version": "1.0"
+}
