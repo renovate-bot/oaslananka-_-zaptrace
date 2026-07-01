@@ -4,7 +4,7 @@ Review Studio is the surface where a person reviews evidence before accepting
 a design mutation, release export, or manufacturing handoff.  This module
 provides the data models (ReviewSession, ReviewPanel, ReviewDecision) and the
 aggregation functions that collect evidence from ERC, DRC, DFM, BOM, supply,
-manufacturing, simulation, proof-pack, and decision-log sources into unified
+manufacturing, simulation, proof-pack, benchmark, and decision-log sources into unified
 review panels.
 """
 

@@ -32,6 +32,8 @@ def test_review_studio_spec_maps_required_artifact_domains() -> None:
         "BOM risk",
         "manufacturing evidence",
         "release gate summary",
+        "benchmark summary",
+        "known-failure",
         "approval id",
     ]
     for domain in required_domains:

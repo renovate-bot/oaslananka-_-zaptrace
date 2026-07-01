@@ -394,3 +394,65 @@ class TestReviewApi:
         data = resp.json()
         assert data["ok"] is True
         assert "changes" in data
+
+
+def test_benchmark_panel_no_evidence_is_info(design: Design) -> None:
+    panels = collect_panels(design, panel_ids=["benchmark"])
+    panel = panels["benchmark"]
+
+    assert panel.status == "info"
+    assert panel.summary == "No benchmark evidence"
+    assert any(item.get("kind") == "non_claim" for item in panel.items)
+
+
+def test_benchmark_panel_passes_clean_report(design: Design) -> None:
+    object.__setattr__(
+        design,
+        "benchmark_report",
+        {
+            "passed": True,
+            "caught_count": 3,
+            "missed_count": 0,
+            "results": [{"mutation_id": "MUT-001", "caught": True}],
+            "non_claims": ["Benchmark pass is regression evidence only."],
+        },
+    )
+
+    panel = collect_panels(design, panel_ids=["benchmark"])["benchmark"]
+
+    assert panel.status == "pass"
+    assert "3 caught / 0 missed" in panel.summary
+    assert any(item.get("message") == "Benchmark pass is regression evidence only." for item in panel.items)
+
+
+def test_benchmark_panel_surfaces_blocking_missed_failure(design: Design) -> None:
+    object.__setattr__(
+        design,
+        "benchmark_report",
+        {
+            "passed": False,
+            "caught_count": 2,
+            "missed_count": 1,
+            "results": [
+                {"mutation_id": "MUT-001", "caught": True},
+                {"mutation_id": "MUT-002", "caught": False, "expected_detector": "current-density.violation"},
+            ],
+            "non_claims": ["Human review remains required before fabrication."],
+        },
+    )
+
+    panel = collect_panels(design, panel_ids=["benchmark"])["benchmark"]
+    bundle = collect_review_bundle(design, panel_ids=["benchmark"])
+
+    assert panel.status == "fail"
+    assert "2 caught / 1 missed" in panel.summary
+    assert any(item.get("caught") is False for item in panel.items)
+    assert any(item.get("kind") == "non_claim" for item in panel.items)
+    assert bundle.overall_status == "fail"
+
+
+def test_review_session_includes_benchmark_checklist_item() -> None:
+    session = create_review_session("BenchmarkReview")
+
+    assert "benchmark-review" in session.checklist
+    assert session.checklist["benchmark-review"].panel_id == "benchmark"

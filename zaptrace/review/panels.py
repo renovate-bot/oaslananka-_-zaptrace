@@ -22,6 +22,8 @@ from zaptrace.export.bom import generate_bom_json
 
 def _to_dict(obj: Any) -> dict[str, Any]:
     """Convert an object to a dict, handling BaseModel and dataclasses."""
+    if isinstance(obj, dict):
+        return obj
     if hasattr(obj, "model_dump"):
         return obj.model_dump(mode="json")
     from dataclasses import asdict
@@ -256,6 +258,61 @@ def _proof_pack_panel(design: Design) -> ReviewPanel:
     )
 
 
+def _benchmark_panel(design: Design) -> ReviewPanel:
+    """Aggregate benchmark/release-readiness evidence into a review panel."""
+    raw = None
+    for attr in ("benchmark_report", "benchmark_result", "benchmark_summary"):
+        raw = getattr(design, attr, None)
+        if raw is not None:
+            break
+    if raw is None:
+        return ReviewPanel(
+            panel_id="benchmark",
+            title="Benchmark Readiness",
+            status="info",
+            summary="No benchmark evidence",
+            items=[
+                {
+                    "kind": "non_claim",
+                    "message": "Benchmark pass is regression evidence, not fabrication approval.",
+                }
+            ],
+        )
+    data = _to_dict(raw)
+    items: list[dict[str, Any]] = []
+    results = data.get("results") or data.get("cases") or data.get("families") or []
+    if isinstance(results, list):
+        items.extend(item if isinstance(item, dict) else {"message": str(item)} for item in results)
+    blocking_items = [
+        item
+        for item in items
+        if item.get("caught") is False
+        or item.get("passed") is False
+        or item.get("status") in {"fail", "blocking"}
+        or item.get("blocking") is True
+    ]
+    missed = int(data.get("missed_count", 0) or 0)
+    passed = bool(data.get("passed", missed == 0 and not blocking_items))
+    status = "fail" if not passed or missed or blocking_items else "pass"
+    for claim in data.get("non_claims", []) or []:
+        items.append({"kind": "non_claim", "message": claim})
+    if not any(item.get("kind") == "non_claim" for item in items):
+        items.append({"kind": "non_claim", "message": "Benchmark evidence does not imply fabrication approval."})
+    summary = (
+        f"{data.get('caught_count', 0)} caught / {missed} missed known failure(s)"
+        if "caught_count" in data or "missed_count" in data
+        else f"{len(blocking_items)} blocking benchmark item(s)"
+    )
+    return ReviewPanel(
+        panel_id="benchmark",
+        title="Benchmark Readiness",
+        status=status,
+        summary=summary,
+        items=items,
+        actions=["open_benchmark_report", "open_release_gate_summary"],
+    )
+
+
 def _decision_log_panel(design: Design) -> ReviewPanel:
     """Aggregate decision log entries into a review panel."""
     decisions = getattr(design, "decision_log", None)
@@ -336,6 +393,7 @@ _PANEL_BUILDERS: dict[str, tuple[str, Any]] = {
     "manufacturing": ("Manufacturing Evidence", _manufacturing_panel),
     "simulation": ("Simulation & Analysis", _simulation_panel),
     "proof_pack": ("Proof Pack", _proof_pack_panel),
+    "benchmark": ("Benchmark Readiness", _benchmark_panel),
     "decision_log": ("Decision Log", _decision_log_panel),
 }
 

@@ -139,6 +139,7 @@ def create_review_session(
         "manufacturing",
         "simulation",
         "proof_pack",
+        "benchmark",
         "decision_log",
     ]
     for pid in ids:

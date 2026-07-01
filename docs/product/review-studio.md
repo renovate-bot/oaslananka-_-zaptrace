@@ -171,6 +171,19 @@ Required controls:
 
 Controls must show why they are disabled, such as missing validation evidence, failed blocker, missing approval id, or insufficient capability.
 
+### 8. Benchmark Readiness Panel
+
+Purpose: surface benchmark and release-readiness evidence before a human approves a design, export, or release candidate.
+
+Required widgets:
+
+- benchmark family/status summary;
+- known-failure mutation caught/missed count;
+- blocking benchmark failures and missed expected detectors;
+- golden KiCad fixture comparison status where available;
+- links to benchmark reports and release gate summaries;
+- non-claims that make clear benchmark pass is regression evidence, not fabrication approval.
+
 ## UI Data Contract
 
 Review Studio consumes generated artifacts and normalized JSON records. It should not infer release readiness from screenshots or raw EDA files alone.
@@ -185,6 +198,7 @@ Review Studio consumes generated artifacts and normalized JSON records. It shoul
 | BOM risk | BOM risk report | provider, cache policy, lifecycle, stock, alternates, risk score, flags |
 | Manufacturing | manufacturing evidence JSON | artifact kind, path, size, sha256, smoke validation status, fab profile |
 | Proof pack | proof manifest | inputs, environment, artifacts, checks, oracle evidence, transaction history, limitations |
+| Benchmark readiness | benchmark summary / mutation corpus / golden fixture reports | passed, caught_count, missed_count, blocking failures, non-claims |
 | Approval controls | permission/capability context | actor, capability, approval id, required gates, disabled reason |
 
 ## Static Viewer Mode for CI Artifacts
@@ -204,6 +218,8 @@ review-bundle/
     bom-risk.json
     manufacturing-evidence.json
     kicad-roundtrip-scorecard.json
+    benchmark-summary.json
+    known-failure-mutations.json
   artifacts/
     schematic.svg
     board-preview.svg
