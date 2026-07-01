@@ -1,6 +1,6 @@
 {
   "complete": false,
-  "complete_family_count": 2,
+  "complete_family_count": 3,
   "families": [
     {
       "artifact_count": 4,
@@ -129,47 +129,57 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "nrf52_ble_multisensor",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/nrf52_ble_multisensor/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/nrf52_ble_multisensor/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "nrf52_ble_multisensor",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/nrf52_ble_multisensor/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/nrf52_ble_multisensor/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "nrf52_ble_multisensor",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/nrf52_ble_multisensor/golden/nrf52_ble_multisensor.kicad_pcb",
+            "benchmarks/nrf52_ble_multisensor/golden/nrf52_ble_multisensor.kicad_pro",
+            "benchmarks/nrf52_ble_multisensor/golden/nrf52_ble_multisensor.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/nrf52_ble_multisensor/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "nrf52_ble_multisensor",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/nrf52_ble_multisensor/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/nrf52_ble_multisensor/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "nrf52_ble_multisensor",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "nRF52 BLE multisensor"
     },
     {
@@ -624,8 +634,8 @@
     }
   ],
   "family_count": 12,
-  "incomplete_family_count": 10,
-  "missing_required_artifact_count": 40,
+  "incomplete_family_count": 9,
+  "missing_required_artifact_count": 36,
   "non_claims": [
     "fixture coverage is repository completeness evidence, not fabrication approval",
     "a complete fixture means required files exist; it does not mean the board is electrically correct",
