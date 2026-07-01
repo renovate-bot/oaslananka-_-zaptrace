@@ -21,6 +21,7 @@ benchmarks/stm32_rs485_industrial/
 benchmarks/nrf52_ble_multisensor/
 benchmarks/rp2040_can_node/
 benchmarks/usb_c_power_sink/
+benchmarks/lipo_charger_node/
 ```
 
 Each fixture contains:
@@ -35,7 +36,7 @@ golden/fixture.json
 exports/manifest.json
 ```
 
-The current coverage report intentionally shows the remaining 7 families as incomplete so future work can be measured one family at a time.
+The current coverage report intentionally shows the remaining 6 families as incomplete so future work can be measured one family at a time.
 
 ## Generate the report
 
@@ -44,7 +45,7 @@ python scripts/ci_benchmark_fixture_coverage.py \
   --output docs/reports/benchmark-fixture-coverage.json \
   --markdown docs/reports/benchmark-fixture-coverage.md \
   --strict \
-  --min-complete-families 5
+  --min-complete-families 6
 ```
 
 Raising `--min-complete-families` is the intended ratchet as more families gain real fixtures.
