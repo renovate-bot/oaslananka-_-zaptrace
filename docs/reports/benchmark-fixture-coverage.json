@@ -1,6 +1,6 @@
 {
-  "complete": false,
-  "complete_family_count": 6,
+  "complete": true,
+  "complete_family_count": 12,
   "families": [
     {
       "artifact_count": 4,
@@ -369,47 +369,57 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "poe_ethernet_controller",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/poe_ethernet_controller/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/poe_ethernet_controller/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "poe_ethernet_controller",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/poe_ethernet_controller/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/poe_ethernet_controller/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "poe_ethernet_controller",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/poe_ethernet_controller/golden/poe_ethernet_controller.kicad_pcb",
+            "benchmarks/poe_ethernet_controller/golden/poe_ethernet_controller.kicad_pro",
+            "benchmarks/poe_ethernet_controller/golden/poe_ethernet_controller.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/poe_ethernet_controller/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "poe_ethernet_controller",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/poe_ethernet_controller/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/poe_ethernet_controller/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "poe_ethernet_controller",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "PoE Ethernet controller"
     },
     {
@@ -419,47 +429,57 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "motor_driver_hbridge",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/motor_driver_hbridge/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/motor_driver_hbridge/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "motor_driver_hbridge",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/motor_driver_hbridge/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/motor_driver_hbridge/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "motor_driver_hbridge",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/motor_driver_hbridge/golden/motor_driver_hbridge.kicad_pcb",
+            "benchmarks/motor_driver_hbridge/golden/motor_driver_hbridge.kicad_pro",
+            "benchmarks/motor_driver_hbridge/golden/motor_driver_hbridge.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/motor_driver_hbridge/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "motor_driver_hbridge",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/motor_driver_hbridge/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/motor_driver_hbridge/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "motor_driver_hbridge",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "H-bridge motor driver"
     },
     {
@@ -469,47 +489,57 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "switching_regulator_module",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/switching_regulator_module/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/switching_regulator_module/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "switching_regulator_module",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/switching_regulator_module/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/switching_regulator_module/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "switching_regulator_module",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/switching_regulator_module/golden/switching_regulator_module.kicad_pcb",
+            "benchmarks/switching_regulator_module/golden/switching_regulator_module.kicad_pro",
+            "benchmarks/switching_regulator_module/golden/switching_regulator_module.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/switching_regulator_module/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "switching_regulator_module",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/switching_regulator_module/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/switching_regulator_module/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "switching_regulator_module",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "Switching regulator module"
     },
     {
@@ -519,47 +549,57 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "high_current_led_driver",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/high_current_led_driver/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/high_current_led_driver/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "high_current_led_driver",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/high_current_led_driver/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/high_current_led_driver/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "high_current_led_driver",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/high_current_led_driver/golden/high_current_led_driver.kicad_pcb",
+            "benchmarks/high_current_led_driver/golden/high_current_led_driver.kicad_pro",
+            "benchmarks/high_current_led_driver/golden/high_current_led_driver.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/high_current_led_driver/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "high_current_led_driver",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/high_current_led_driver/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/high_current_led_driver/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "high_current_led_driver",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "High-current LED driver"
     },
     {
@@ -569,47 +609,57 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "mcu_sd_datalogger",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/mcu_sd_datalogger/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/mcu_sd_datalogger/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "mcu_sd_datalogger",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/mcu_sd_datalogger/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/mcu_sd_datalogger/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "mcu_sd_datalogger",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/mcu_sd_datalogger/golden/mcu_sd_datalogger.kicad_pcb",
+            "benchmarks/mcu_sd_datalogger/golden/mcu_sd_datalogger.kicad_pro",
+            "benchmarks/mcu_sd_datalogger/golden/mcu_sd_datalogger.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/mcu_sd_datalogger/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "mcu_sd_datalogger",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/mcu_sd_datalogger/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/mcu_sd_datalogger/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "mcu_sd_datalogger",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "MCU SD-card datalogger"
     },
     {
@@ -619,53 +669,63 @@
           "description": "Versioned requirements contract for this board family",
           "family_id": "lora_gateway_node",
           "kind": "requirements-json",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/lora_gateway_node/requirements.json"
+          ],
           "name": "requirements",
           "path_pattern": "benchmarks/lora_gateway_node/requirements.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Proof-pack manifest with autonomous sign-off evidence",
           "family_id": "lora_gateway_node",
           "kind": "proof-pack",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/lora_gateway_node/proof-pack/manifest.json"
+          ],
           "name": "proof-pack",
           "path_pattern": "benchmarks/lora_gateway_node/proof-pack/manifest.json",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Golden KiCad schematic/PCB artifacts when available",
           "family_id": "lora_gateway_node",
           "kind": "kicad-project",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/lora_gateway_node/golden/lora_gateway_node.kicad_pcb",
+            "benchmarks/lora_gateway_node/golden/lora_gateway_node.kicad_pro",
+            "benchmarks/lora_gateway_node/golden/lora_gateway_node.kicad_sch"
+          ],
           "name": "kicad-project",
           "path_pattern": "benchmarks/lora_gateway_node/golden/*.kicad_*",
-          "present": false,
+          "present": true,
           "required": true
         },
         {
           "description": "Gerber/drill/BOM/PnP or equivalent export bundle",
           "family_id": "lora_gateway_node",
           "kind": "manufacturing-bundle",
-          "matched_paths": [],
+          "matched_paths": [
+            "benchmarks/lora_gateway_node/exports/manifest.json"
+          ],
           "name": "manufacturing-exports",
           "path_pattern": "benchmarks/lora_gateway_node/exports/*",
-          "present": false,
+          "present": true,
           "required": true
         }
       ],
-      "complete": false,
+      "complete": true,
       "family_id": "lora_gateway_node",
-      "missing_required_artifact_count": 4,
-      "present_required_artifact_count": 0,
+      "missing_required_artifact_count": 0,
+      "present_required_artifact_count": 4,
       "title": "LoRa gateway node"
     }
   ],
   "family_count": 12,
-  "incomplete_family_count": 6,
-  "missing_required_artifact_count": 24,
+  "incomplete_family_count": 0,
+  "missing_required_artifact_count": 0,
   "non_claims": [
     "fixture coverage is repository completeness evidence, not fabrication approval",
     "a complete fixture means required files exist; it does not mean the board is electrically correct",

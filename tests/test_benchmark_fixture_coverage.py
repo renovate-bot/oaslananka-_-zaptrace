@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from zaptrace.benchmark.families import (
     AcceptanceThreshold,
     BenchmarkBoardFamily,
@@ -93,14 +95,14 @@ def test_committed_esp32_usb_sensor_fixture_is_complete() -> None:
     }
 
 
-def test_committed_fixture_coverage_keeps_remaining_families_visible() -> None:
+def test_committed_fixture_coverage_is_complete_for_all_families() -> None:
     report = evaluate_fixture_coverage(Path("."))
 
     assert report.family_count == 12
-    assert report.complete is False
-    assert report.complete_family_count == 6
-    assert report.incomplete_family_count == 6
-    assert report.missing_required_artifact_count == 24
+    assert report.complete is True
+    assert report.complete_family_count == 12
+    assert report.incomplete_family_count == 0
+    assert report.missing_required_artifact_count == 0
     assert "not fabrication approval" in " ".join(report.non_claims)
 
 
@@ -265,12 +267,46 @@ def test_committed_lipo_charger_node_proof_manifest_validates_as_proof_manifest(
     assert any("Li-ion charge safety" in limitation for limitation in manifest.limitations)
 
 
+REMAINING_BATCH_FAMILY_LIMITATIONS = [
+    ("poe_ethernet_controller", "PoE compliance"),
+    ("motor_driver_hbridge", "motor safety"),
+    ("switching_regulator_module", "switching stability"),
+    ("high_current_led_driver", "LED thermal safety"),
+    ("mcu_sd_datalogger", "SD-card compatibility"),
+    ("lora_gateway_node", "RF performance"),
+]
+
+
+@pytest.mark.parametrize("family_id, limitation", REMAINING_BATCH_FAMILY_LIMITATIONS)
+def test_committed_remaining_batch_fixture_is_complete(family_id: str, limitation: str) -> None:
+    report = evaluate_fixture_coverage(Path("."))
+    family = next(item for item in report.families if item.family_id == family_id)
+
+    assert family.complete is True
+    assert family.present_required_artifact_count == 4
+    assert family.missing_required_artifact_count == 0
+
+    root = Path("benchmarks") / family_id
+    fixture = load_golden_kicad_fixture(root / "golden/fixture.json")
+    result = compare_golden_kicad_fixture(fixture, root / "golden")
+
+    assert result.passed is True
+    assert result.checked_count == 3
+
+    data = json.loads((root / "proof-pack/manifest.json").read_text(encoding="utf-8"))
+    manifest = ProofManifest.model_validate(data)
+
+    assert manifest.name == f"{family_id}_fixture_v1"
+    assert len(manifest.checks) == 3
+    assert any(limitation in item for item in manifest.limitations)
+
+
 def test_fixture_coverage_json_round_trip() -> None:
     payload = json.loads(fixture_coverage_json(evaluate_fixture_coverage(Path("."))))
 
     assert payload["schema_version"] == "1.0"
     assert payload["family_count"] == 12
-    assert payload["complete_family_count"] == 6
+    assert payload["complete_family_count"] == 12
 
 
 def test_fixture_coverage_script_writes_json_and_markdown(tmp_path: Path) -> None:
@@ -279,11 +315,11 @@ def test_fixture_coverage_script_writes_json_and_markdown(tmp_path: Path) -> Non
     output = tmp_path / "coverage.json"
     markdown = tmp_path / "coverage.md"
 
-    code = main(["--output", str(output), "--markdown", str(markdown), "--strict", "--min-complete-families", "6"])
+    code = main(["--output", str(output), "--markdown", str(markdown), "--strict", "--min-complete-families", "12"])
 
     assert code == 0
     payload = json.loads(output.read_text(encoding="utf-8"))
-    assert payload["complete_family_count"] == 6
+    assert payload["complete_family_count"] == 12
     assert "Benchmark Fixture Coverage" in markdown.read_text(encoding="utf-8")
 
 
@@ -292,8 +328,8 @@ def test_fixture_coverage_script_blocks_when_threshold_not_met(tmp_path: Path) -
 
     output = tmp_path / "coverage.json"
 
-    code = main(["--output", str(output), "--strict", "--min-complete-families", "12"])
+    code = main(["--output", str(output), "--strict", "--min-complete-families", "13"])
 
     assert code == 1
     payload = json.loads(output.read_text(encoding="utf-8"))
-    assert payload["complete_family_count"] == 6
+    assert payload["complete_family_count"] == 12

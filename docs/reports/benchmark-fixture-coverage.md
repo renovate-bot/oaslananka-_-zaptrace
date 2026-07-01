@@ -1,7 +1,7 @@
 # Benchmark Fixture Coverage
 
-Complete families: 6/12
-Missing required artifacts: 24
+Complete families: 12/12
+Missing required artifacts: 0
 
 | Family | Status | Present required | Missing required |
 |--------|--------|------------------|------------------|
@@ -11,12 +11,12 @@ Missing required artifacts: 24
 | `rp2040_can_node` | `complete` | 4 | 0 |
 | `usb_c_power_sink` | `complete` | 4 | 0 |
 | `lipo_charger_node` | `complete` | 4 | 0 |
-| `poe_ethernet_controller` | `incomplete` | 0 | 4 |
-| `motor_driver_hbridge` | `incomplete` | 0 | 4 |
-| `switching_regulator_module` | `incomplete` | 0 | 4 |
-| `high_current_led_driver` | `incomplete` | 0 | 4 |
-| `mcu_sd_datalogger` | `incomplete` | 0 | 4 |
-| `lora_gateway_node` | `incomplete` | 0 | 4 |
+| `poe_ethernet_controller` | `complete` | 4 | 0 |
+| `motor_driver_hbridge` | `complete` | 4 | 0 |
+| `switching_regulator_module` | `complete` | 4 | 0 |
+| `high_current_led_driver` | `complete` | 4 | 0 |
+| `mcu_sd_datalogger` | `complete` | 4 | 0 |
+| `lora_gateway_node` | `complete` | 4 | 0 |
 
 ## Non-claims
 

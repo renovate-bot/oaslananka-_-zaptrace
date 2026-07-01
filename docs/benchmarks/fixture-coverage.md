@@ -22,6 +22,12 @@ benchmarks/nrf52_ble_multisensor/
 benchmarks/rp2040_can_node/
 benchmarks/usb_c_power_sink/
 benchmarks/lipo_charger_node/
+benchmarks/poe_ethernet_controller/
+benchmarks/motor_driver_hbridge/
+benchmarks/switching_regulator_module/
+benchmarks/high_current_led_driver/
+benchmarks/mcu_sd_datalogger/
+benchmarks/lora_gateway_node/
 ```
 
 Each fixture contains:
@@ -36,7 +42,7 @@ golden/fixture.json
 exports/manifest.json
 ```
 
-The current coverage report intentionally shows the remaining 6 families as incomplete so future work can be measured one family at a time.
+The current coverage report now shows all 12 manifest families as complete at the starter-fixture level. Future work can raise the bar from starter fixtures to richer board-specific proof packs and generated manufacturing bundles.
 
 ## Generate the report
 
@@ -45,7 +51,7 @@ python scripts/ci_benchmark_fixture_coverage.py \
   --output docs/reports/benchmark-fixture-coverage.json \
   --markdown docs/reports/benchmark-fixture-coverage.md \
   --strict \
-  --min-complete-families 6
+  --min-complete-families 12
 ```
 
 Raising `--min-complete-families` is the intended ratchet as more families gain real fixtures.
