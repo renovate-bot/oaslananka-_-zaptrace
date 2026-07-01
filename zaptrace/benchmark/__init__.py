@@ -30,6 +30,17 @@ from zaptrace.benchmark.kicad_fixtures import (
     compute_kicad_file_record,
     load_golden_kicad_fixture,
 )
+from zaptrace.benchmark.mutations import (
+    BUILTIN_MUTATIONS,
+    KnownFailureMutation,
+    MutationClass,
+    MutationCorpusReport,
+    MutationDetectionResult,
+    apply_known_failure_mutation,
+    detect_known_failure,
+    mutation_corpus_json,
+    run_known_failure_mutation_corpus,
+)
 
 __all__ = [
     "BUILTIN_BENCHMARKS",
@@ -39,6 +50,15 @@ __all__ = [
     "BenchmarkRunResult",
     "get_benchmark",
     "list_benchmarks",
+    "BUILTIN_MUTATIONS",
+    "KnownFailureMutation",
+    "MutationClass",
+    "MutationCorpusReport",
+    "MutationDetectionResult",
+    "apply_known_failure_mutation",
+    "detect_known_failure",
+    "mutation_corpus_json",
+    "run_known_failure_mutation_corpus",
     "GoldenKiCadComparisonResult",
     "GoldenKiCadFile",
     "GoldenKiCadProjectFixture",
