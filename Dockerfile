@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ngspice && \
 COPY --from=builder /build/dist/*.whl /app/dist/
 RUN mkdir -p /workspace && \
     WHEEL="$(find /app/dist -name '*.whl' -print -quit)" && \
-    uv pip install --system "${WHEEL}[mcp,server]" && rm -rf /app/dist && \
+    pip install --no-cache-dir "${WHEEL}[mcp,server]" && rm -rf /app/dist && \
     addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 appuser --ingroup appgroup && \
     chown -R appuser:appgroup /workspace
