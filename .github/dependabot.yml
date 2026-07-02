@@ -1,6 +1,9 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
+    # Version update PRs are handled by Renovate. Keep Dependabot
+    # enabled for GitHub-native security alerts/security updates.
+    open-pull-requests-limit: 0
     directory: "/"
     cooldown:
       default-days: 7
@@ -14,6 +17,9 @@ updates:
       - "security"
 
   - package-ecosystem: "pip"
+    # Version update PRs are handled by Renovate. Keep Dependabot
+    # enabled for GitHub-native security alerts/security updates.
+    open-pull-requests-limit: 0
     directory: "/"
     cooldown:
       default-days: 7
@@ -27,6 +33,9 @@ updates:
       - "python"
 
   - package-ecosystem: "cargo"
+    # Version update PRs are handled by Renovate. Keep Dependabot
+    # enabled for GitHub-native security alerts/security updates.
+    open-pull-requests-limit: 0
     directory: "/zaptrace_core"
     cooldown:
       default-days: 7
@@ -40,6 +49,9 @@ updates:
       - "rust"
 
   - package-ecosystem: "docker"
+    # Version update PRs are handled by Renovate. Keep Dependabot
+    # enabled for GitHub-native security alerts/security updates.
+    open-pull-requests-limit: 0
     directory: "/"
     cooldown:
       default-days: 7

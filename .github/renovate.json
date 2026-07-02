@@ -1,0 +1,123 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "timezone": "Europe/Istanbul",
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Dependency Dashboard",
+  "prConcurrentLimit": 4,
+  "prHourlyLimit": 2,
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "prCreation": "not-pending",
+  "labels": [
+    "dependencies"
+  ],
+  "rangeStrategy": "bump",
+  "commitMessagePrefix": "chore(deps):",
+  "automergeType": "pr",
+  "platformAutomerge": true,
+  "semanticCommits": "enabled",
+  "rebaseWhen": "conflicted",
+  "pre-commit": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 6am on monday"
+    ],
+    "automerge": true
+  },
+  "packageRules": [
+    {
+      "description": "Automerge low-risk patch, minor, pin, digest, and lockfile maintenance updates after CI and stability checks.",
+      "matchUpdateTypes": [
+        "patch",
+        "minor",
+        "digest",
+        "pin",
+        "lockFileMaintenance"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Never automerge major updates.",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "major-update",
+        "needs-review"
+      ]
+    },
+    {
+      "description": "Group GitHub Actions updates.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github-actions",
+      "addLabels": [
+        "github-actions"
+      ]
+    },
+    {
+      "description": "Group Dockerfile and Compose updates; Docker major updates are runtime-risk changes.",
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose"
+      ],
+      "groupName": "docker",
+      "addLabels": [
+        "docker"
+      ]
+    },
+    {
+      "description": "Require manual review for major Docker runtime updates.",
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "addLabels": [
+        "runtime-risk",
+        "needs-review"
+      ]
+    },
+    {
+      "description": "Group Rust/Cargo updates.",
+      "matchManagers": [
+        "cargo"
+      ],
+      "groupName": "rust-cargo",
+      "addLabels": [
+        "rust"
+      ]
+    },
+    {
+      "description": "Group Python project and uv lockfile updates.",
+      "matchManagers": [
+        "pep621"
+      ],
+      "groupName": "python",
+      "addLabels": [
+        "python"
+      ]
+    },
+    {
+      "description": "Group pre-commit hook updates.",
+      "matchManagers": [
+        "pre-commit"
+      ],
+      "groupName": "pre-commit",
+      "addLabels": [
+        "pre-commit"
+      ]
+    }
+  ]
+}
