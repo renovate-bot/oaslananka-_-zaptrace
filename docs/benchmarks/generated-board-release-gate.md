@@ -44,6 +44,10 @@ python scripts/ci_generated_board_release_gate.py \
 
 The `Quality` workflow runs this gate as `Generated board release gate`. The final release-gate summary depends on that job and treats it as a blocking gate.
 
+## Artifact regression checks
+
+The committed JSON report is treated as a regression snapshot. Tests compare a freshly generated report against `docs/reports/generated-board-release-gate.json`, including the required artifact kinds, relative paths, SHA-256 hashes, report structure, blocking reasons, and non-claims. Any intentional generated-artifact drift must update the committed report and tests together.
+
 ## Non-claims
 
 The gate is release evidence for a reviewable generated board project. It is not fabrication approval, not electrical correctness, not DRC/ERC approval, not manufacturer approval, not certification, and not production readiness.
