@@ -196,7 +196,7 @@ jobs:
         run: docker build --pull -t zaptrace:ci .
 
       - name: Smoke test CLI
-        run: docker run --rm zaptrace:ci zaptrace --help
+        run: docker run --rm zaptrace:ci --help
 
   kicad-oracle:
     name: KiCad Oracle
