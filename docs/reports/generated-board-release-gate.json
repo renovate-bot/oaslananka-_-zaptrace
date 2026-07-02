@@ -1,0 +1,59 @@
+{
+  "artifact_count": 9,
+  "artifact_hashes": {
+    "design-ir-compile-report": "1cb74987d98b141bf5361e1a308d8895f62e3a388562430c4f40ee1185dcabb1",
+    "intent": "a8ab42aff48cf91fe15396c3a1e219d7b1648d7bb46c5754005e7997df83958f",
+    "kicad-pcb": "6b322f8c9926661fb68bfcb5f65ca4c655116cb55d231dbdecddaf36c1f1fa73",
+    "kicad-project": "e672a2fd0ef2bf3edc4b29f5f44cc49bc3af3a9f6cc9a6f42ee249209b9ae2e7",
+    "kicad-schematic": "fce1da20c62cbdce8f4407c0faf5ee5d643104c076945c72df4f90ab2c9f5cf8",
+    "manufacturing-export-manifest": "1f49b6c584e94847734e89ac715f650a95ab19e4606df67d5532a3238e3a9576",
+    "pcb-generation-report": "b7844928fa4cc13738c94fba234efcd8499747724a89e05334702442275fcce8",
+    "review-handoff": "df586620a33f74ae270aa193e0a4bdf4e59eb947d7b45da2e34513b6680b30ed",
+    "schematic-generation-report": "ca6865f8d32a193bdd80cfff8f7e130921ed6fcc6b8954d39e2fcd77163861da"
+  },
+  "artifact_paths": {
+    "design-ir-compile-report": "esp32_usb_sensor_generated_v1.design_ir_compilation.json",
+    "intent": "board-generation-intent.json",
+    "kicad-pcb": "esp32_usb_sensor_generated_v1.kicad_pcb",
+    "kicad-project": "esp32_usb_sensor_generated_v1.kicad_pro",
+    "kicad-schematic": "esp32_usb_sensor_generated_v1.kicad_sch",
+    "manufacturing-export-manifest": "exports/manifest.json",
+    "pcb-generation-report": "esp32_usb_sensor_generated_v1.kicad_pcb_generation.json",
+    "review-handoff": "review/handoff.json",
+    "schematic-generation-report": "esp32_usb_sensor_generated_v1.kicad_schematic_generation.json"
+  },
+  "blocking_reasons": [],
+  "design_name": "esp32_usb_sensor_generated_v1",
+  "expected_artifact_kinds": [
+    "intent",
+    "design-ir-compile-report",
+    "kicad-project",
+    "kicad-schematic",
+    "schematic-generation-report",
+    "kicad-pcb",
+    "pcb-generation-report",
+    "manufacturing-export-manifest",
+    "review-handoff"
+  ],
+  "family_id": "esp32_usb_sensor",
+  "gate_id": "generated-board-release-gate-v1",
+  "generated_project_evidence_passed": true,
+  "manufacturing_manifest_present": true,
+  "missing_required_artifact_count": 0,
+  "non_claims": [
+    "generated board project is for engineering review only",
+    "not fabrication-ready",
+    "not manufacturer-approved",
+    "not production-ready"
+  ],
+  "non_claims_enforced": true,
+  "passed": true,
+  "path_policy": "generated artifacts are written to a working directory; this report stores relative paths and stable content hashes",
+  "pcb_passed": true,
+  "provenance_record_count": 1,
+  "required_artifact_count": 9,
+  "requirement_trace_count": 2,
+  "review_handoff_present": true,
+  "schema_version": "1.0",
+  "schematic_passed": true
+}

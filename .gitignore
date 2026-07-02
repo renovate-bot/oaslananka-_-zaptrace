@@ -75,3 +75,5 @@ kicad/
 
 # MkDocs build output
 site/
+
+.generated/
