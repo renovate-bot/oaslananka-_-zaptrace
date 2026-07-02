@@ -65,6 +65,11 @@ nav:
 
   - Analysis:
       - Electrical Analysis: analysis/electrical-analysis.md
+      - Component Derating: analysis/component-derating.md
+      - Current Density: analysis/current-density.md
+      - Rail Current Budget: analysis/rail-current-budget.md
+      - Regulator Margin: analysis/regulator-margin.md
+      - SI/PI Risk: analysis/sipi-risk.md
 
   - Manufacturing:
       - BOM Export: manufacturing/bom-export.md
@@ -72,6 +77,7 @@ nav:
       - Evidence Adapters: manufacturing/evidence-adapters.md
       - Export Capability Matrix: manufacturing/export-capability-matrix.md
       - BOM Provider Contract: manufacturing/bom-provider-contract.md
+      - Supply Chain Risk: manufacturing/supply-chain-risk.md
 
   - Interoperability:
       - Cross-EDA Readiness: interop/cross-eda-readiness.md
@@ -83,6 +89,12 @@ nav:
       - Autonomous Synthesis & Verification Loop: design/autonomous-synthesis.md
       - Hardware IR: design/hardware-ir.md
       - Plugin Runtime: design/plugin-runtime.md
+      - Board Generation Intent: design/board-generation-intent.md
+      - Intent to Design IR: design/intent-to-design-ir.md
+      - Generated KiCad Schematic: design/generated-kicad-schematic.md
+      - Generated KiCad PCB: design/generated-kicad-pcb.md
+      - Generated Project Evidence: design/generated-project-evidence.md
+      - Generated Board Acceptance: design/generated-board-acceptance.md
 
   - Product:
       - Manifesto: product/manifesto.md
@@ -101,3 +113,19 @@ nav:
 
   - Benchmarks:
       - KiCad Round-trip Scorecard: benchmarks/kicad-roundtrip-scorecard.md
+      - Board Family Manifest: benchmarks/board-family-manifest.md
+      - Fixture Coverage: benchmarks/fixture-coverage.md
+      - Fixture Integrity: benchmarks/fixture-integrity.md
+      - Golden KiCad Fixtures: benchmarks/golden-kicad-fixtures.md
+      - Known Failure Mutations: benchmarks/known-failure-mutations.md
+      - Generated Board Release Gate: benchmarks/generated-board-release-gate.md
+
+  - Reports:
+      - v0.3.0 Release Gate: reports/v0.3.0-release-gate.md
+      - Benchmark Fixture Coverage: reports/benchmark-fixture-coverage.md
+      - Benchmark Fixture Integrity: reports/benchmark-fixture-integrity.md
+      - Generated Board Release Gate Report: reports/generated-board-release-gate.md
+
+  - Releases:
+      - v0.3.0 Evidence Hardening: releases/v0.3.0-evidence-hardening.md
+      - v0.2.3 Verification Gate: releases/v0.2.3-verification-gate.md

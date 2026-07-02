@@ -1,24 +1,60 @@
-id: "atecc608b"
-name: "ATECC608B"
+id: atecc608b
+name: ATECC608B
 category: security
-manufacturer: "Microchip"
-mpn: "ATECC608B-SSHDA"
-description: "Crypto authentication IC, I2C, ECDSA/ECDH/SHA-256, secure key storage"
-datasheet: "https://ww1.microchip.com/downloads/en/DeviceDoc/ATECC608B-Data-Sheet-DS40002346.pdf"
-package: "SOIC-8"
-footprint: "ATECC608B-SOIC8"
-lifecycle: "active"
-voltage_supply: "3.3"
+manufacturer: Microchip
+mpn: ATECC608B-SSHDA
+description: Crypto authentication IC, I2C, ECDSA/ECDH/SHA-256, secure key storage
+datasheet: https://ww1.microchip.com/downloads/en/DeviceDoc/ATECC608B-Data-Sheet-DS40002346.pdf
+package: SOIC-8
+footprint: ATECC608B-SOIC8
+lifecycle: active
+voltage_supply: '3.3'
 pins:
-  VCC: {type: "power", description: "2.0-5.5V supply"}
-  GND: {type: "power", description: "Ground"}
-  SDA: {type: "bidirectional", description: "I2C data"}
-  SCL: {type: "input", description: "I2C clock"}
-  SDA2: {type: "bidirectional", description: "Secondary I2C data"}
-  SCL2: {type: "input", description: "Secondary I2C clock"}
-  RST: {type: "input", description: "Active-low reset"}
-  NC: {type: "no_connect", description: "No connect (leave open)"}
+  VCC:
+    type: power
+    description: 2.0-5.5V supply
+  GND:
+    type: power
+    description: Ground
+  SDA:
+    type: bidirectional
+    description: I2C data
+  SCL:
+    type: input
+    description: I2C clock
+  SDA2:
+    type: bidirectional
+    description: Secondary I2C data
+  SCL2:
+    type: input
+    description: Secondary I2C clock
+  RST:
+    type: input
+    description: Active-low reset
+  NC:
+    type: no_connect
+    description: No connect (leave open)
 properties:
-  interface: "i2c"
-  crypto: ["ECDSA", "ECDH", "SHA-256", "AES-128"]
+  interface: i2c
+  crypto:
+  - ECDSA
+  - ECDH
+  - SHA-256
+  - AES-128
   key_slots: 16
+electrical_limits:
+  voltage_supply: '3.3'
+sourcing:
+  mpn: ATECC608B-SSHDA
+  manufacturer: Microchip
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

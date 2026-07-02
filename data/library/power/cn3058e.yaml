@@ -1,25 +1,57 @@
-id: "cn3058e"
-name: "CN3058E"
+id: cn3058e
+name: CN3058E
 category: power
-manufacturer: "Consonance Electronics"
-mpn: "CN3058E"
-description: "1A LiFePO4 battery charger, CC/CV, 3.6V float voltage, SOP-8"
-datasheet: "https://www.consonance-elec.com/en/down/CN3058E_Datasheet.pdf"
-package: "SOP-8"
-footprint: "CN3058E-SOP8"
-lifecycle: "active"
-voltage_supply: "5"
+manufacturer: Consonance Electronics
+mpn: CN3058E
+description: 1A LiFePO4 battery charger, CC/CV, 3.6V float voltage, SOP-8
+datasheet: https://www.consonance-elec.com/en/down/CN3058E_Datasheet.pdf
+package: SOP-8
+footprint: CN3058E-SOP8
+lifecycle: active
+voltage_supply: '5'
 pins:
-  VIN: {type: "power", description: "4.5-6V input supply"}
-  GND: {type: "power", description: "Ground"}
-  BAT: {type: "output", description: "Battery connection (3.6V float)"}
-  CHRG: {type: "output", description: "Charging status indicator (open-drain)"}
-  DONE: {type: "output", description: "Charge complete indicator (open-drain)"}
-  PROG: {type: "input", description: "Charge current programming (resistor)"}
-  TEMP: {type: "input", description: "Temperature monitoring (NTC)"}
-  CE: {type: "input", description: "Chip enable (active high)"}
+  VIN:
+    type: power
+    description: 4.5-6V input supply
+  GND:
+    type: power
+    description: Ground
+  BAT:
+    type: output
+    description: Battery connection (3.6V float)
+  CHRG:
+    type: output
+    description: Charging status indicator (open-drain)
+  DONE:
+    type: output
+    description: Charge complete indicator (open-drain)
+  PROG:
+    type: input
+    description: Charge current programming (resistor)
+  TEMP:
+    type: input
+    description: Temperature monitoring (NTC)
+  CE:
+    type: input
+    description: Chip enable (active high)
 properties:
-  topology: "charger"
-  battery_type: "LiFePO4"
+  topology: charger
+  battery_type: LiFePO4
   float_voltage: 3.6
   max_charge_a: 1
+electrical_limits:
+  voltage_supply: '5'
+sourcing:
+  mpn: CN3058E
+  manufacturer: Consonance Electronics
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

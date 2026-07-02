@@ -1,76 +1,213 @@
-id: "nrf52840-qiaa"
-name: "nRF52840-QIAA"
+id: nrf52840-qiaa
+name: nRF52840-QIAA
 category: mcu
-manufacturer: "Nordic Semiconductor"
-mpn: "nRF52840-QIAA"
-description: "ARM Cortex-M4F BLE SoC, 64MHz, 1MB flash, 256KB SRAM, NFC, USB"
-datasheet: "https://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.1.pdf"
-package: "aQFN-73"
-footprint: "nRF52840-QIAA"
-lifecycle: "active"
-voltage_supply: "3.3"
+manufacturer: Nordic Semiconductor
+mpn: nRF52840-QIAA
+description: ARM Cortex-M4F BLE SoC, 64MHz, 1MB flash, 256KB SRAM, NFC, USB
+datasheet: https://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.1.pdf
+package: aQFN-73
+footprint: nRF52840-QIAA
+lifecycle: active
+voltage_supply: '3.3'
 pins:
-  P0_00: {type: "bidirectional", description: "GPIO P0.00"}
-  P0_01: {type: "bidirectional", description: "GPIO P0.01"}
-  P0_02: {type: "bidirectional", description: "GPIO P0.02"}
-  P0_03: {type: "bidirectional", description: "GPIO P0.03"}
-  P0_04: {type: "bidirectional", description: "GPIO P0.04"}
-  P0_05: {type: "bidirectional", description: "GPIO P0.05"}
-  P0_06: {type: "bidirectional", description: "GPIO P0.06"}
-  P0_07: {type: "bidirectional", description: "GPIO P0.07"}
-  P0_08: {type: "bidirectional", description: "GPIO P0.08"}
-  P0_09: {type: "bidirectional", description: "GPIO P0.09"}
-  P0_10: {type: "bidirectional", description: "GPIO P0.10"}
-  P0_11: {type: "bidirectional", description: "GPIO P0.11"}
-  P0_12: {type: "bidirectional", description: "GPIO P0.12"}
-  P0_13: {type: "bidirectional", description: "GPIO P0.13"}
-  P0_14: {type: "bidirectional", description: "GPIO P0.14"}
-  P0_15: {type: "bidirectional", description: "GPIO P0.15"}
-  P0_16: {type: "bidirectional", description: "GPIO P0.16"}
-  P0_17: {type: "bidirectional", description: "GPIO P0.17"}
-  P0_18: {type: "bidirectional", description: "GPIO P0.18"}
-  P0_19: {type: "bidirectional", description: "GPIO P0.19"}
-  P0_20: {type: "bidirectional", description: "GPIO P0.20"}
-  P0_21: {type: "bidirectional", description: "GPIO P0.21"}
-  P0_22: {type: "bidirectional", description: "GPIO P0.22"}
-  P0_23: {type: "bidirectional", description: "GPIO P0.23"}
-  P0_24: {type: "bidirectional", description: "GPIO P0.24"}
-  P0_25: {type: "bidirectional", description: "GPIO P0.25"}
-  P0_26: {type: "bidirectional", description: "GPIO P0.26"}
-  P0_27: {type: "bidirectional", description: "GPIO P0.27"}
-  P0_28: {type: "bidirectional", description: "GPIO P0.28"}
-  P0_29: {type: "bidirectional", description: "GPIO P0.29"}
-  P0_30: {type: "bidirectional", description: "GPIO P0.30"}
-  P0_31: {type: "bidirectional", description: "GPIO P0.31"}
-  P1_00: {type: "bidirectional", description: "GPIO P1.00"}
-  P1_01: {type: "bidirectional", description: "GPIO P1.01"}
-  P1_02: {type: "bidirectional", description: "GPIO P1.02"}
-  P1_03: {type: "bidirectional", description: "GPIO P1.03"}
-  P1_04: {type: "bidirectional", description: "GPIO P1.04"}
-  P1_05: {type: "bidirectional", description: "GPIO P1.05"}
-  P1_06: {type: "bidirectional", description: "GPIO P1.06"}
-  P1_07: {type: "bidirectional", description: "GPIO P1.07"}
-  P1_08: {type: "bidirectional", description: "GPIO P1.08"}
-  P1_09: {type: "bidirectional", description: "GPIO P1.09"}
-  P1_10: {type: "bidirectional", description: "GPIO P1.10"}
-  P1_11: {type: "bidirectional", description: "GPIO P1.11"}
-  P1_12: {type: "bidirectional", description: "GPIO P1.12"}
-  P1_13: {type: "bidirectional", description: "GPIO P1.13"}
-  P1_14: {type: "bidirectional", description: "GPIO P1.14"}
-  P1_15: {type: "bidirectional", description: "GPIO P1.15"}
-  VDD: {type: "power", description: "1.7-3.6V supply"}
-  VDDMAIN: {type: "power", description: "Main supply"}
-  GND: {type: "power", description: "Ground"}
-  SWDIO: {type: "bidirectional", description: "SWD data"}
-  SWDCLK: {type: "input", description: "SWD clock"}
-  RESET: {type: "input", description: "Reset (active low)"}
-  NFC1: {type: "bidirectional", description: "NFC antenna 1"}
-  NFC2: {type: "bidirectional", description: "NFC antenna 2"}
-  USB_DP: {type: "bidirectional", description: "USB D+"}
-  USB_DM: {type: "bidirectional", description: "USB D-"}
+  P0_00:
+    type: bidirectional
+    description: GPIO P0.00
+  P0_01:
+    type: bidirectional
+    description: GPIO P0.01
+  P0_02:
+    type: bidirectional
+    description: GPIO P0.02
+  P0_03:
+    type: bidirectional
+    description: GPIO P0.03
+  P0_04:
+    type: bidirectional
+    description: GPIO P0.04
+  P0_05:
+    type: bidirectional
+    description: GPIO P0.05
+  P0_06:
+    type: bidirectional
+    description: GPIO P0.06
+  P0_07:
+    type: bidirectional
+    description: GPIO P0.07
+  P0_08:
+    type: bidirectional
+    description: GPIO P0.08
+  P0_09:
+    type: bidirectional
+    description: GPIO P0.09
+  P0_10:
+    type: bidirectional
+    description: GPIO P0.10
+  P0_11:
+    type: bidirectional
+    description: GPIO P0.11
+  P0_12:
+    type: bidirectional
+    description: GPIO P0.12
+  P0_13:
+    type: bidirectional
+    description: GPIO P0.13
+  P0_14:
+    type: bidirectional
+    description: GPIO P0.14
+  P0_15:
+    type: bidirectional
+    description: GPIO P0.15
+  P0_16:
+    type: bidirectional
+    description: GPIO P0.16
+  P0_17:
+    type: bidirectional
+    description: GPIO P0.17
+  P0_18:
+    type: bidirectional
+    description: GPIO P0.18
+  P0_19:
+    type: bidirectional
+    description: GPIO P0.19
+  P0_20:
+    type: bidirectional
+    description: GPIO P0.20
+  P0_21:
+    type: bidirectional
+    description: GPIO P0.21
+  P0_22:
+    type: bidirectional
+    description: GPIO P0.22
+  P0_23:
+    type: bidirectional
+    description: GPIO P0.23
+  P0_24:
+    type: bidirectional
+    description: GPIO P0.24
+  P0_25:
+    type: bidirectional
+    description: GPIO P0.25
+  P0_26:
+    type: bidirectional
+    description: GPIO P0.26
+  P0_27:
+    type: bidirectional
+    description: GPIO P0.27
+  P0_28:
+    type: bidirectional
+    description: GPIO P0.28
+  P0_29:
+    type: bidirectional
+    description: GPIO P0.29
+  P0_30:
+    type: bidirectional
+    description: GPIO P0.30
+  P0_31:
+    type: bidirectional
+    description: GPIO P0.31
+  P1_00:
+    type: bidirectional
+    description: GPIO P1.00
+  P1_01:
+    type: bidirectional
+    description: GPIO P1.01
+  P1_02:
+    type: bidirectional
+    description: GPIO P1.02
+  P1_03:
+    type: bidirectional
+    description: GPIO P1.03
+  P1_04:
+    type: bidirectional
+    description: GPIO P1.04
+  P1_05:
+    type: bidirectional
+    description: GPIO P1.05
+  P1_06:
+    type: bidirectional
+    description: GPIO P1.06
+  P1_07:
+    type: bidirectional
+    description: GPIO P1.07
+  P1_08:
+    type: bidirectional
+    description: GPIO P1.08
+  P1_09:
+    type: bidirectional
+    description: GPIO P1.09
+  P1_10:
+    type: bidirectional
+    description: GPIO P1.10
+  P1_11:
+    type: bidirectional
+    description: GPIO P1.11
+  P1_12:
+    type: bidirectional
+    description: GPIO P1.12
+  P1_13:
+    type: bidirectional
+    description: GPIO P1.13
+  P1_14:
+    type: bidirectional
+    description: GPIO P1.14
+  P1_15:
+    type: bidirectional
+    description: GPIO P1.15
+  VDD:
+    type: power
+    description: 1.7-3.6V supply
+  VDDMAIN:
+    type: power
+    description: Main supply
+  GND:
+    type: power
+    description: Ground
+  SWDIO:
+    type: bidirectional
+    description: SWD data
+  SWDCLK:
+    type: input
+    description: SWD clock
+  RESET:
+    type: input
+    description: Reset (active low)
+  NFC1:
+    type: bidirectional
+    description: NFC antenna 1
+  NFC2:
+    type: bidirectional
+    description: NFC antenna 2
+  USB_DP:
+    type: bidirectional
+    description: USB D+
+  USB_DM:
+    type: bidirectional
+    description: USB D-
 properties:
-  core: "ARM Cortex-M4F"
+  core: ARM Cortex-M4F
   frequency_mhz: 64
   flash_mb: 1
   sram_kb: 256
-  wireless: ["ble_5.3", "nfc", "thread", "zigbee"]
+  wireless:
+  - ble_5.3
+  - nfc
+  - thread
+  - zigbee
+electrical_limits:
+  frequency_mhz: 64
+  voltage_supply: '3.3'
+sourcing:
+  mpn: nRF52840-QIAA
+  manufacturer: Nordic Semiconductor
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

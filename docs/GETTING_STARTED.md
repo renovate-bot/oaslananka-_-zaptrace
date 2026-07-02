@@ -147,6 +147,6 @@ zaptrace pipeline --source my-board.yaml --output build/
 
 - Read the [Architecture Guide](ARCHITECTURE.md)
 - Explore the [examples](../examples/)
-- Set up the [MCP server](MCP.md) for AI agent integration
-- Learn about [Proof Packs](PROOF_PACK.md)
+- Set up the [MCP server](mcp/quickstart.md) for AI agent integration
+- Learn about [Proof Packs](strategy/proof-pack-spec.md)
 - Review the [Roadmap](ROADMAP.md)

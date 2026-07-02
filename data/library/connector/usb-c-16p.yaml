@@ -1,25 +1,59 @@
-id: "usb-c-16p"
-name: "USB-C-16P"
+id: usb-c-16p
+name: USB-C-16P
 category: connector
-manufacturer: "Generic"
-mpn: "USB-C-16P-SMD"
-description: "USB Type-C 16-pin receptacle, SMD"
-datasheet: "https://www.usb.org/document-library/usb-type-c-specification"
-package: "SMD-16P"
-footprint: "USB-C-16P-SMD"
-lifecycle: "active"
-voltage_supply: "5.0"
+manufacturer: Generic
+mpn: USB-C-16P-SMD
+description: USB Type-C 16-pin receptacle, SMD
+datasheet: https://www.usb.org/document-library/usb-type-c-specification
+package: SMD-16P
+footprint: USB-C-16P-SMD
+lifecycle: active
+voltage_supply: '5.0'
 pins:
-  VBUS: {type: "power", description: "5V bus power"}
-  GND: {type: "power", description: "Ground"}
-  D+: {type: "bidirectional", description: "USB D+"}
-  D-: {type: "bidirectional", description: "USB D-"}
-  CC1: {type: "bidirectional", description: "Configuration channel 1"}
-  CC2: {type: "bidirectional", description: "Configuration channel 2"}
-  SBU1: {type: "bidirectional", description: "Sideband use 1"}
-  SBU2: {type: "bidirectional", description: "Sideband use 2"}
-  SHIELD: {type: "power", description: "Connector shield"}
+  VBUS:
+    type: power
+    description: 5V bus power
+  GND:
+    type: power
+    description: Ground
+  D+:
+    type: bidirectional
+    description: USB D+
+  D-:
+    type: bidirectional
+    description: USB D-
+  CC1:
+    type: bidirectional
+    description: Configuration channel 1
+  CC2:
+    type: bidirectional
+    description: Configuration channel 2
+  SBU1:
+    type: bidirectional
+    description: Sideband use 1
+  SBU2:
+    type: bidirectional
+    description: Sideband use 2
+  SHIELD:
+    type: power
+    description: Connector shield
 properties:
-  type: "USB-C"
+  type: USB-C
   pins: 16
-  orientation: "reversible"
+  orientation: reversible
+electrical_limits:
+  voltage_supply: '5.0'
+sourcing:
+  mpn: USB-C-16P-SMD
+  manufacturer: Generic
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

@@ -21,7 +21,6 @@ import tempfile
 from pathlib import Path
 
 from zaptrace.algo.placer import place_components
-from zaptrace.algo.router import route_design_smart
 from zaptrace.core.models import BoardConfig, Component, Design, DesignMeta, Net, NetNode
 from zaptrace.ee.classifier import classify_design
 from zaptrace.export.kicad import export_kicad_pcb, export_kicad_schematic
@@ -109,8 +108,7 @@ def _build_smoke_design() -> Design:
         nodes=[NetNode(component_ref="U1", pin_name="GND"), NetNode(component_ref="C1", pin_name="p2")],
     )
     classify_design(design)
-    positions = place_components(design)
-    _, design.routing = route_design_smart(design, positions)
+    design.placement = place_components(design)
     return design
 
 
@@ -127,13 +125,15 @@ def _run_kicad_cli(args: list[str], timeout: int = 30) -> subprocess.CompletedPr
 def _validate_schematic(sch_path: Path) -> int:
     """Validate a .kicad_sch file with kicad-cli."""
     print(f"\n--- Validating schematic: {sch_path.name} ---")
-    result = _run_kicad_cli(["sch", "export", "svg", str(sch_path), "--output", str(sch_path.with_suffix(".svg"))])
+    svg_out = sch_path.with_name(f"{sch_path.stem}.sch.svg")
+    if svg_out.exists():
+        svg_out.unlink()
+    result = _run_kicad_cli(["sch", "export", "svg", str(sch_path), "--output", str(svg_out)])
     if result.returncode != 0:
         msg = f"kicad-cli sch export failed: {result.stderr.strip()}"
         _record_check("schematic_export_svg", "failed", msg, exit_code=result.returncode)
         print(f"FAIL: {msg}")
         return 1
-    svg_out = sch_path.with_suffix(".svg")
     if not svg_out.exists() or svg_out.stat().st_size == 0:
         msg = f"SVG output missing or empty: {svg_out}"
         _record_check("schematic_export_svg", "failed", msg, exit_code=result.returncode)
@@ -155,6 +155,9 @@ def _validate_pcb(pcb_path: Path) -> int:
     print(f"\n--- Validating PCB: {pcb_path.name} ---")
 
     # Step 1: try to export SVG (validates that KiCad can parse the file)
+    svg_out = pcb_path.with_name(f"{pcb_path.stem}.pcb.svg")
+    if svg_out.exists():
+        svg_out.unlink()
     result = _run_kicad_cli(
         [
             "pcb",
@@ -163,8 +166,9 @@ def _validate_pcb(pcb_path: Path) -> int:
             str(pcb_path),
             "--layers",
             "F.Cu,B.Cu",
+            "--mode-single",
             "--output",
-            str(pcb_path.with_suffix(".svg")),
+            str(svg_out),
         ]
     )
     if result.returncode != 0:
@@ -180,7 +184,6 @@ def _validate_pcb(pcb_path: Path) -> int:
         _record_check("pcb_export_svg", "failed", msg, exit_code=result.returncode)
         print(f"FAIL: {msg}")
         return 1
-    svg_out = pcb_path.with_suffix(".svg")
     if not svg_out.exists() or svg_out.stat().st_size == 0:
         msg = f"PCB SVG output missing or empty: {svg_out}"
         _record_check("pcb_export_svg", "failed", msg, exit_code=result.returncode)
@@ -216,12 +219,19 @@ def _validate_pcb(pcb_path: Path) -> int:
         print(f"DRC report ({drc_out.stat().st_size} bytes):")
         for line in drc_text.splitlines()[:20]:
             print(f"  {line}")
-        # Check for errors (warnings are informational)
-        if "** Errors" in drc_text or "error" in drc_text.lower()[:500]:
-            _record_check("pcb_drc", "failed", "DRC reported violations", report_path=str(drc_out))
-            print("WARN: DRC reported violations (review recommended)")
+        # KiCad text DRC reports can include the word "Errors" in the header
+        # even when all findings are warnings. Treat warnings as review evidence,
+        # but fail the oracle only on explicit error-severity findings.
+        has_error_finding = "local override; error" in drc_text.lower() or "severity: error" in drc_text.lower()
+        if has_error_finding:
+            _record_check("pcb_drc", "failed", "DRC reported error-severity violations", report_path=str(drc_out))
+            print("FAIL: DRC reported error-severity violations")
         else:
-            _record_check("pcb_drc", "passed", "DRC report generated", report_path=str(drc_out))
+            message = "DRC report generated"
+            if "** Found 0 DRC violations **" not in drc_text:
+                message = "DRC report generated with warnings only"
+                print("WARN: DRC reported warnings (review recommended)")
+            _record_check("pcb_drc", "passed", message, report_path=str(drc_out))
     else:
         detail = drc_result.stderr.strip()
         if detail:

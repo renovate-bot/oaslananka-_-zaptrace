@@ -1,27 +1,64 @@
-id: "ina226"
-name: "INA226AIDGSR"
+id: ina226
+name: INA226AIDGSR
 category: sensor
-manufacturer: "Texas Instruments"
-mpn: "INA226AIDGSR"
-description: "High-side current and power monitor, I2C, 0-36V"
-datasheet: "https://www.ti.com/lit/ds/symlink/ina226.pdf"
-package: "MSOP-10"
-footprint: "INA226-MSOP10"
-lifecycle: "active"
-voltage_supply: "3.3"
+manufacturer: Texas Instruments
+mpn: INA226AIDGSR
+description: High-side current and power monitor, I2C, 0-36V
+datasheet: https://www.ti.com/lit/ds/symlink/ina226.pdf
+package: MSOP-10
+footprint: INA226-MSOP10
+lifecycle: active
+voltage_supply: '3.3'
 pins:
-  VBUS: {type: "input", description: "Bus voltage sensing"}
-  VBP: {type: "input", description: "Bus sense positive"}
-  IN+: {type: "input", description: "Shunt positive"}
-  IN-: {type: "input", description: "Shunt negative"}
-  SDA: {type: "bidirectional", description: "I2C data"}
-  SCL: {type: "input", description: "I2C clock"}
-  A0: {type: "input", description: "Address pin 0"}
-  A1: {type: "input", description: "Address pin 1"}
-  ALERT: {type: "output", description: "Alert output"}
-  GND: {type: "power", description: "Ground"}
+  VBUS:
+    type: input
+    description: Bus voltage sensing
+  VBP:
+    type: input
+    description: Bus sense positive
+  IN+:
+    type: input
+    description: Shunt positive
+  IN-:
+    type: input
+    description: Shunt negative
+  SDA:
+    type: bidirectional
+    description: I2C data
+  SCL:
+    type: input
+    description: I2C clock
+  A0:
+    type: input
+    description: Address pin 0
+  A1:
+    type: input
+    description: Address pin 1
+  ALERT:
+    type: output
+    description: Alert output
+  GND:
+    type: power
+    description: Ground
 properties:
-  interface: ["i2c"]
+  interface:
+  - i2c
   voltage_max_v: 36
   resolution_bit: 16
-  accuracy: "+/-0.1%"
+  accuracy: +/-0.1%
+electrical_limits:
+  voltage_supply: '3.3'
+sourcing:
+  mpn: INA226AIDGSR
+  manufacturer: Texas Instruments
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

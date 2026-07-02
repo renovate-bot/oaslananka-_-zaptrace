@@ -18,6 +18,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -47,6 +48,12 @@ _COMMON_KICAD_PATHS: list[str] = [
 # ======================================================================
 # Result models
 # ======================================================================
+
+
+def _secure_temp_report_path(*, suffix: str) -> Path:
+    """Create and close a unique temporary report path for kicad-cli output."""
+    with tempfile.NamedTemporaryFile(prefix="zaptrace-kicad-", suffix=suffix, delete=False) as handle:
+        return Path(handle.name)
 
 
 @dataclass
@@ -368,7 +375,6 @@ class KiCadOracle:
             base.message = "KiCad CLI not found"
             return base
 
-        import tempfile
         import time
 
         start = time.perf_counter()
@@ -379,7 +385,7 @@ class KiCadOracle:
             base.duration_ms = (time.perf_counter() - start) * 1000
             return base
 
-        out = Path(output_path) if output_path else Path(tempfile.mktemp(suffix="-erc.json"))
+        out = Path(output_path) if output_path else _secure_temp_report_path(suffix="-erc.json")
         base.report_path = str(out)
 
         cmd = [
@@ -503,7 +509,6 @@ class KiCadOracle:
             base.message = "KiCad CLI not found"
             return base
 
-        import tempfile
         import time
 
         start = time.perf_counter()
@@ -514,7 +519,7 @@ class KiCadOracle:
             base.duration_ms = (time.perf_counter() - start) * 1000
             return base
 
-        out = Path(output_path) if output_path else Path(tempfile.mktemp(suffix="-drc.json"))
+        out = Path(output_path) if output_path else _secure_temp_report_path(suffix="-drc.json")
         base.report_path = str(out)
 
         cmd = [

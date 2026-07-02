@@ -1,23 +1,54 @@
-id: "bme280"
-name: "BME280"
+id: bme280
+name: BME280
 category: sensor
-manufacturer: "Bosch"
-mpn: "BME280"
-description: "Humidity, temperature, and pressure sensor, I2C/SPI"
-datasheet: "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf"
-package: "LGA-8"
-footprint: "BME280-LGA8"
-lifecycle: "active"
-voltage_supply: "3.3"
+manufacturer: Bosch
+mpn: BME280
+description: Humidity, temperature, and pressure sensor, I2C/SPI
+datasheet: https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf
+package: LGA-8
+footprint: BME280-LGA8
+lifecycle: active
+voltage_supply: '3.3'
 pins:
-  VDD: {type: "power", description: "1.71-3.6V supply"}
-  GND: {type: "power", description: "Ground"}
-  SDO: {type: "input", description: "I2C address select / SPI data out"}
-  CSB: {type: "input", description: "SPI chip select"}
-  SDA: {type: "bidirectional", description: "I2C data / SPI data in"}
-  SCK: {type: "input", description: "I2C clock / SPI clock"}
+  VDD:
+    type: power
+    description: 1.71-3.6V supply
+  GND:
+    type: power
+    description: Ground
+  SDO:
+    type: input
+    description: I2C address select / SPI data out
+  CSB:
+    type: input
+    description: SPI chip select
+  SDA:
+    type: bidirectional
+    description: I2C data / SPI data in
+  SCK:
+    type: input
+    description: I2C clock / SPI clock
 properties:
-  interface: ["i2c", "spi"]
-  humidity_range: "0-100%"
-  pressure_range: "300-1100 hPa"
-  temperature_range: "-40..85 C"
+  interface:
+  - i2c
+  - spi
+  humidity_range: 0-100%
+  pressure_range: 300-1100 hPa
+  temperature_range: -40..85 C
+electrical_limits:
+  temperature_range: -40..85 C
+  voltage_supply: '3.3'
+sourcing:
+  mpn: BME280
+  manufacturer: Bosch
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

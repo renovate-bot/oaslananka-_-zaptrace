@@ -7,6 +7,7 @@ the official KiCad DRC before fabrication.
 from __future__ import annotations
 
 import json
+import re
 import uuid as _uuid
 from collections import Counter
 from pathlib import Path
@@ -29,6 +30,27 @@ from zaptrace.core.net_identity import canonical_routing_net_ids
 # ======================================================================
 
 
+_SAFE_FILENAME_RE = re.compile(r"[^A-Za-z0-9_.-]+")
+
+
+def _safe_filename_stem(name: str) -> str:
+    """Return a KiCad artifact filename stem that cannot escape output_dir."""
+    cleaned = _SAFE_FILENAME_RE.sub("_", name.strip()).strip("._")
+    return cleaned or "zaptrace_design"
+
+
+def _artifact_path(output_dir: Path, design: Design, suffix: str) -> Path:
+    """Build a path for a generated artifact and keep it inside output_dir."""
+    root = output_dir.resolve()
+    candidate = output_dir / f"{_safe_filename_stem(design.meta.name)}{suffix}"
+    resolved = candidate.resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(f"KiCad artifact path escapes output directory: {design.meta.name!r}") from exc
+    return candidate
+
+
 def export_kicad(design: Design, output_dir: Path) -> dict[str, Path]:
     """Export both schematic and PCB to KiCad files.
 
@@ -48,11 +70,11 @@ def export_kicad_schematic(design: Design, output_dir: Path) -> dict[str, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     files: dict[str, Path] = {}
 
-    sch_path = output_dir / f"{design.meta.name}.kicad_sch"
+    sch_path = _artifact_path(output_dir, design, ".kicad_sch")
     sch_path.write_text(_build_schematic(design), encoding="utf-8")
     files["schematic"] = sch_path
 
-    pro_path = output_dir / f"{design.meta.name}.kicad_pro"
+    pro_path = _artifact_path(output_dir, design, ".kicad_pro")
     pro_path.write_text(_build_project(design), encoding="utf-8")
     files["project"] = pro_path
 
@@ -67,7 +89,7 @@ def export_kicad_pcb(design: Design, output_dir: Path) -> dict[str, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     files: dict[str, Path] = {}
 
-    pcb_path = output_dir / f"{design.meta.name}.kicad_pcb"
+    pcb_path = _artifact_path(output_dir, design, ".kicad_pcb")
     pcb_path.write_text(_build_pcb(design), encoding="utf-8")
     files["pcb"] = pcb_path
 
@@ -82,7 +104,7 @@ def export_kicad_netlist_evidence(design: Design, output_dir: Path) -> dict[str,
     represented by the generated KiCad artifact set.
     """
     output_dir.mkdir(parents=True, exist_ok=True)
-    evidence_path = output_dir / f"{design.meta.name}.kicad_netlist_evidence.json"
+    evidence_path = _artifact_path(output_dir, design, ".kicad_netlist_evidence.json")
     evidence_path.write_text(
         json.dumps(_build_netlist_evidence(design), indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -136,8 +158,10 @@ def _build_pcb(design: Design) -> str:
     lines: list[str] = []
     _w = lines.append
 
-    _w('(kicad_pcb (version 20231014) (generator "zaptrace")')
-    _w(f'  (host "zaptrace" (version "{design.meta.version}"))')
+    _w("(kicad_pcb")
+    _w("  (version 20241229)")
+    _w('  (generator "zaptrace")')
+    _w(f'  (generator_version "{design.meta.version}")')
     _w("  (general")
     _w("    (thickness 1.6)")
     _w("    (legacy_teardrops no)")
@@ -159,10 +183,8 @@ def _build_pcb(design: Design) -> str:
 
     # Setup (design rules)
     _w("  (setup")
-    _w("    (trace_width 0.25)")
     _w("    (via_size 0.6)")
     _w("    (via_drill 0.3)")
-    _w("    (min_through_hole_drill 0.2)")
     _w("    (uvia_size 0.3)")
     _w("    (uvia_drill 0.1)")
     _w("  )")
@@ -233,30 +255,34 @@ def _copper_layers(num_layers: int) -> list[str]:
 
 
 def _build_layers(lines: list[str], num_layers: int) -> None:
-    """Emit layer definitions to *lines*."""
+    """Emit KiCad 9/10 layer definitions to *lines*."""
+    copper_layer_ids = [0] if num_layers <= 1 else [0, *range(4, 4 + max(num_layers - 2, 0) * 2, 2), 2]
+    copper_names = _copper_layers(max(num_layers, 2))
     lines.append("  (layers")
-    for i in range(max(num_layers, 2)):
-        name = _layer_name(i, num_layers)
-        lines.append(f'    ({i} "{name}" signal)')
-    # User layers
-    lines.append('    (32 "B.Adhes" user (hide))')
-    lines.append('    (33 "F.Adhes" user (hide))')
-    lines.append('    (34 "B.Paste" user (hide))')
-    lines.append('    (35 "F.Paste" user (hide))')
-    lines.append('    (36 "B.SilkS" user (hide))')
-    lines.append('    (37 "F.SilkS" user (hide))')
-    lines.append('    (38 "B.Mask" user (hide))')
-    lines.append('    (39 "F.Mask" user (hide))')
-    lines.append('    (40 "Dwgs.User" user (hide))')
-    lines.append('    (41 "Cmts.User" user (hide))')
-    lines.append('    (42 "Eco1.User" user (hide))')
-    lines.append('    (43 "Eco2.User" user (hide))')
-    lines.append('    (44 "Edge.Cuts" user)')
-    lines.append('    (45 "Margin" user (hide))')
-    lines.append('    (46 "B.CrtYd" user (hide))')
-    lines.append('    (47 "F.CrtYd" user (hide))')
-    lines.append('    (48 "B.Fab" user (hide))')
-    lines.append('    (49 "F.Fab" user (hide))')
+    for layer_id, name in zip(copper_layer_ids, copper_names, strict=False):
+        lines.append(f'    ({layer_id} "{name}" signal)')
+    lines.extend(
+        [
+            '    (9 "F.Adhes" user "F.Adhesive")',
+            '    (11 "B.Adhes" user "B.Adhesive")',
+            '    (13 "F.Paste" user)',
+            '    (15 "B.Paste" user)',
+            '    (5 "F.SilkS" user "F.Silkscreen")',
+            '    (7 "B.SilkS" user "B.Silkscreen")',
+            '    (1 "F.Mask" user)',
+            '    (3 "B.Mask" user)',
+            '    (17 "Dwgs.User" user "User.Drawings")',
+            '    (19 "Cmts.User" user "User.Comments")',
+            '    (21 "Eco1.User" user "User.Eco1")',
+            '    (23 "Eco2.User" user "User.Eco2")',
+            '    (25 "Edge.Cuts" user)',
+            '    (27 "Margin" user)',
+            '    (31 "F.CrtYd" user "F.Courtyard")',
+            '    (29 "B.CrtYd" user "B.Courtyard")',
+            '    (35 "F.Fab" user)',
+            '    (33 "B.Fab" user)',
+        ]
+    )
     lines.append("  )")
 
 

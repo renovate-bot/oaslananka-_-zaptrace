@@ -1,17 +1,38 @@
-id: "sma-edge"
-name: "SMA Edge Connector"
+id: sma-edge
+name: SMA Edge Connector
 category: connector
-manufacturer: "Generic"
-mpn: "SMA-EDGE-RP"
-description: "SMA coaxial edge-mount connector, RP-SMA female"
-datasheet: ""
-package: "SMD"
-footprint: "SMA-EDGE"
-lifecycle: "active"
-voltage_supply: ""
+manufacturer: Generic
+mpn: SMA-EDGE-RP
+description: SMA coaxial edge-mount connector, RP-SMA female
+datasheet: internal://zaptrace/component-family/sma-edge
+package: SMD
+footprint: SMA-EDGE
+lifecycle: active
+voltage_supply: ''
 pins:
-  SIGNAL: {type: "passive", description: "Signal center pin"}
-  GND: {type: "power", description: "Ground / shield"}
+  SIGNAL:
+    type: passive
+    description: Signal center pin
+  GND:
+    type: power
+    description: Ground / shield
 properties:
-  type: "SMA RP"
+  type: SMA RP
   impedance_ohm: 50
+electrical_limits:
+  review_note: numeric limits not captured in starter library; verify against exact
+    supplier part before production
+sourcing:
+  mpn: SMA-EDGE-RP
+  manufacturer: Generic
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: generic-family-placeholder

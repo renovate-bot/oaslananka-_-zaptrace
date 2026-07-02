@@ -1,25 +1,61 @@
-id: "lis3dh"
-name: "LIS3DH"
+id: lis3dh
+name: LIS3DH
 category: sensor
-manufacturer: "STMicroelectronics"
-mpn: "LIS3DHTR"
-description: "3-axis accelerometer, I2C/SPI, +-2/4/8/16g"
-datasheet: "https://www.st.com/resource/en/datasheet/lis3dh.pdf"
-package: "LGA-16"
-footprint: "LIS3DH-LGA16"
-lifecycle: "active"
-voltage_supply: "3.3"
+manufacturer: STMicroelectronics
+mpn: LIS3DHTR
+description: 3-axis accelerometer, I2C/SPI, +-2/4/8/16g
+datasheet: https://www.st.com/resource/en/datasheet/lis3dh.pdf
+package: LGA-16
+footprint: LIS3DH-LGA16
+lifecycle: active
+voltage_supply: '3.3'
 pins:
-  VDD: {type: "power", description: "1.71-3.6V supply"}
-  VDDIO: {type: "power", description: "I/O supply"}
-  GND: {type: "power", description: "Ground"}
-  CS: {type: "input", description: "SPI chip select / I2C mode"}
-  SCL: {type: "input", description: "SPI/I2C clock"}
-  SDA: {type: "bidirectional", description: "SPI data in / I2C data"}
-  SDO: {type: "bidirectional", description: "SPI data out / I2C address"}
-  INT1: {type: "output", description: "Interrupt 1"}
-  INT2: {type: "output", description: "Interrupt 2"}
+  VDD:
+    type: power
+    description: 1.71-3.6V supply
+  VDDIO:
+    type: power
+    description: I/O supply
+  GND:
+    type: power
+    description: Ground
+  CS:
+    type: input
+    description: SPI chip select / I2C mode
+  SCL:
+    type: input
+    description: SPI/I2C clock
+  SDA:
+    type: bidirectional
+    description: SPI data in / I2C data
+  SDO:
+    type: bidirectional
+    description: SPI data out / I2C address
+  INT1:
+    type: output
+    description: Interrupt 1
+  INT2:
+    type: output
+    description: Interrupt 2
 properties:
-  interface: ["i2c", "spi"]
-  accel_range: "+/-2/4/8/16g"
+  interface:
+  - i2c
+  - spi
+  accel_range: +/-2/4/8/16g
   resolution_bit: 16
+electrical_limits:
+  voltage_supply: '3.3'
+sourcing:
+  mpn: LIS3DHTR
+  manufacturer: STMicroelectronics
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

@@ -1,4 +1,4 @@
-"""Standalone implementations of all 63 agent tools.
+"""Standalone implementations of all registered agent tools.
 
 Each tool is a standalone function with typed parameters.
 Tools share a common signature pattern: (session_id, **params) -> dict.

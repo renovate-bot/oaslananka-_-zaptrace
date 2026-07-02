@@ -1,17 +1,37 @@
-id: "crystal-25mhz"
-name: "25MHz Crystal"
+id: crystal-25mhz
+name: 25MHz Crystal
 category: timing
-manufacturer: "Abracon"
-mpn: "ABM8-25.000MHZ-B2-T"
-description: "25 MHz SMD crystal, 3.2x2.5mm, 18pF load, ±30ppm (Ethernet PHY clock)"
-datasheet: "https://abracon.com/Resonators/ABM8.pdf"
-package: "SMD-3225-4P"
-footprint: "Crystal_SMD_3225-4Pin_3.2x2.5mm"
-lifecycle: "active"
-voltage_supply: ""
+manufacturer: Abracon
+mpn: ABM8-25.000MHZ-B2-T
+description: 25 MHz SMD crystal, 3.2x2.5mm, 18pF load, ±30ppm (Ethernet PHY clock)
+datasheet: https://abracon.com/Resonators/ABM8.pdf
+package: SMD-3225-4P
+footprint: Crystal_SMD_3225-4Pin_3.2x2.5mm
+lifecycle: active
+voltage_supply: ''
 pins:
-  XI: {type: "passive", description: "Crystal terminal 1"}
-  XO: {type: "passive", description: "Crystal terminal 2"}
+  XI:
+    type: passive
+    description: Crystal terminal 1
+  XO:
+    type: passive
+    description: Crystal terminal 2
 properties:
   frequency_mhz: 25
   load_pf: 18
+electrical_limits:
+  frequency_mhz: 25
+sourcing:
+  mpn: ABM8-25.000MHZ-B2-T
+  manufacturer: Abracon
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

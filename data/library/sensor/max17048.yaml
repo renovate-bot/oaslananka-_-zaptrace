@@ -1,23 +1,54 @@
-id: "max17048"
-name: "MAX17048G+"
+id: max17048
+name: MAX17048G+
 category: sensor
-manufacturer: "Maxim Integrated"
-mpn: "MAX17048G+T10"
-description: "1-cell Li+ fuel gauge with ModelGauge, I2C"
-datasheet: "https://www.analog.com/media/en/technical-documentation/data-sheets/MAX17048-MAX17049.pdf"
-package: "WLP-8"
-footprint: "MAX17048-WLP8"
-lifecycle: "active"
-voltage_supply: "3.3"
+manufacturer: Maxim Integrated
+mpn: MAX17048G+T10
+description: 1-cell Li+ fuel gauge with ModelGauge, I2C
+datasheet: https://www.analog.com/media/en/technical-documentation/data-sheets/MAX17048-MAX17049.pdf
+package: WLP-8
+footprint: MAX17048-WLP8
+lifecycle: active
+voltage_supply: '3.3'
 pins:
-  VDD: {type: "power", description: "2.5-4.5V supply"}
-  GND: {type: "power", description: "Ground"}
-  SDA: {type: "bidirectional", description: "I2C data"}
-  SCL: {type: "input", description: "I2C clock"}
-  ALT: {type: "output", description: "Alert output"}
-  QST: {type: "input", description: "Quick-start"}
-  CELL: {type: "input", description: "Cell connection"}
+  VDD:
+    type: power
+    description: 2.5-4.5V supply
+  GND:
+    type: power
+    description: Ground
+  SDA:
+    type: bidirectional
+    description: I2C data
+  SCL:
+    type: input
+    description: I2C clock
+  ALT:
+    type: output
+    description: Alert output
+  QST:
+    type: input
+    description: Quick-start
+  CELL:
+    type: input
+    description: Cell connection
 properties:
-  interface: ["i2c"]
-  cell_type: "1S Li+"
-  accuracy: "+/- 1%"
+  interface:
+  - i2c
+  cell_type: 1S Li+
+  accuracy: +/- 1%
+electrical_limits:
+  voltage_supply: '3.3'
+sourcing:
+  mpn: MAX17048G+T10
+  manufacturer: Maxim Integrated
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

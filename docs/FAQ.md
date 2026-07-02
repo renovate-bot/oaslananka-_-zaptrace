@@ -75,7 +75,7 @@ See [SAFETY.md](SAFETY.md) for the full disclaimers.
 ## Development
 
 ### How do I contribute?
-See [CONTRIBUTING.md](../CONTRIBUTING.md).
+See [CONTRIBUTING.md](https://github.com/oaslananka/zaptrace/blob/main/CONTRIBUTING.md).
 
 ### What's the license?
 MIT — free for commercial and personal use.

@@ -226,16 +226,16 @@ class TestKiCad:
         files = export_kicad_pcb(self._pcb_design(), tmp_path)
         content = files["pcb"].read_text(encoding="utf-8")
         assert '(0 "F.Cu" signal)' in content
-        assert '(1 "In1.Cu" signal)' in content
-        assert '(2 "In2.Cu" signal)' in content
-        assert '(3 "B.Cu" signal)' in content
+        assert '(4 "In1.Cu" signal)' in content
+        assert '(6 "In2.Cu" signal)' in content
+        assert '(2 "B.Cu" signal)' in content
 
     def test_pcb_layers_2layer_default(self, tmp_path: Path) -> None:
         d = Design(meta=DesignMeta(name="two"), board=BoardConfig(width_mm=10, height_mm=10, layers=2))
         files = export_kicad_pcb(d, tmp_path)
         content = files["pcb"].read_text(encoding="utf-8")
         assert '(0 "F.Cu" signal)' in content
-        assert '(1 "B.Cu" signal)' in content
+        assert '(2 "B.Cu" signal)' in content
 
     def test_pcb_copper_pour_without_routing(self, tmp_path: Path) -> None:
         d = Design(

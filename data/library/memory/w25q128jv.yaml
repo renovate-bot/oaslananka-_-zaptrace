@@ -1,24 +1,57 @@
-id: "w25q128jv"
-name: "W25Q128JVSIQ"
+id: w25q128jv
+name: W25Q128JVSIQ
 category: memory
-manufacturer: "Winbond"
-mpn: "W25Q128JVSIQ"
-description: "128 Mbit (16 MB) SPI/Quad-SPI NOR flash memory"
-datasheet: "https://www.winbond.com/resource-files/w25q128jv_dtr%20revc%2003272018%20plus.pdf"
-package: "SOIC-8"
-footprint: "SOIC-8"
-lifecycle: "active"
-voltage_supply: "3.3"
+manufacturer: Winbond
+mpn: W25Q128JVSIQ
+description: 128 Mbit (16 MB) SPI/Quad-SPI NOR flash memory
+datasheet: https://www.winbond.com/resource-files/w25q128jv_dtr%20revc%2003272018%20plus.pdf
+package: SOIC-8
+footprint: SOIC-8
+lifecycle: active
+voltage_supply: '3.3'
 pins:
-  CS: {type: "input", description: "Chip select (active low)"}
-  DO: {type: "bidirectional", description: "Data out / IO1 (MISO)"}
-  WP: {type: "input", description: "Write protect / IO2 (active low)"}
-  GND: {type: "power", description: "Ground"}
-  DI: {type: "bidirectional", description: "Data in / IO0 (MOSI)"}
-  CLK: {type: "input", description: "Serial clock"}
-  HOLD: {type: "input", description: "Hold / IO3 (active low)"}
-  VCC: {type: "power", description: "2.7-3.6V supply"}
+  CS:
+    type: input
+    description: Chip select (active low)
+  DO:
+    type: bidirectional
+    description: Data out / IO1 (MISO)
+  WP:
+    type: input
+    description: Write protect / IO2 (active low)
+  GND:
+    type: power
+    description: Ground
+  DI:
+    type: bidirectional
+    description: Data in / IO0 (MOSI)
+  CLK:
+    type: input
+    description: Serial clock
+  HOLD:
+    type: input
+    description: Hold / IO3 (active low)
+  VCC:
+    type: power
+    description: 2.7-3.6V supply
 properties:
-  interface: ["spi"]
+  interface:
+  - spi
   capacity_mbit: 128
   max_clock_mhz: 133
+electrical_limits:
+  voltage_supply: '3.3'
+sourcing:
+  mpn: W25Q128JVSIQ
+  manufacturer: Winbond
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: manufacturer-url

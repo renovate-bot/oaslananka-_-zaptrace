@@ -1,17 +1,38 @@
-id: "ferrite-bead-0805"
-name: "Ferrite Bead 0805"
+id: ferrite-bead-0805
+name: Ferrite Bead 0805
 category: passive
-manufacturer: "Generic"
-mpn: "FB0805"
-description: "SMD ferrite bead, 0805 package"
-datasheet: ""
-package: "0805"
-footprint: "FB0805"
-lifecycle: "active"
-voltage_supply: ""
+manufacturer: Generic
+mpn: FB0805
+description: SMD ferrite bead, 0805 package
+datasheet: internal://zaptrace/component-family/ferrite-bead-0805
+package: 0805
+footprint: FB0805
+lifecycle: active
+voltage_supply: ''
 pins:
-  P1: {type: "passive", description: "Terminal 1"}
-  P2: {type: "passive", description: "Terminal 2"}
+  P1:
+    type: passive
+    description: Terminal 1
+  P2:
+    type: passive
+    description: Terminal 2
 properties:
-  package_size: "0805"
+  package_size: 0805
   impedance_ohm_100mhz: 600
+electrical_limits:
+  review_note: numeric limits not captured in starter library; verify against exact
+    supplier part before production
+sourcing:
+  mpn: FB0805
+  manufacturer: Generic
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  source: zaptrace curated starter component library
+  review_status: starter-data
+  production_note: human review required before fabrication or procurement
+  datasheet_reference_type: generic-family-placeholder
