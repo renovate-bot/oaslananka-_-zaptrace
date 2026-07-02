@@ -154,6 +154,37 @@ jobs:
           path: benchmark-001-report.json
 
 
+  generated-board-release-gate:
+    name: Generated board release gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --all-groups
+
+      - name: Run generated-board release gate
+        run: |
+          uv run python scripts/ci_generated_board_release_gate.py \
+            --output generated-board-release-gate.json \
+            --markdown "$GITHUB_STEP_SUMMARY" \
+            --strict
+
+      - name: Upload generated-board release gate report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: generated-board-release-gate
+          path: generated-board-release-gate.json
+
+
   build:
     name: Build package
     runs-on: ubuntu-latest
@@ -212,7 +243,7 @@ jobs:
   release-gate-summary:
     name: Release gate summary
     runs-on: ubuntu-latest
-    needs: [lint, test, rust, build, docs-stale, benchmark-001]
+    needs: [lint, test, rust, build, docs-stale, benchmark-001, generated-board-release-gate]
     if: always()
     steps:
       - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
@@ -237,6 +268,7 @@ jobs:
             --gate "build=${{ needs.build.result }}" \
             --gate "docs-stale=${{ needs.docs-stale.result }}" \
             --gate "benchmark-001=${{ needs.benchmark-001.result }}" \
+            --gate "generated-board-release-gate=${{ needs.generated-board-release-gate.result }}" \
             --gate "kicad-oracle=skipped" \
             --skip-reason "kicad-oracle=separate-workflow-path-filtered-or-tool-unavailable" \
             --required-oracle "kicad-oracle" \

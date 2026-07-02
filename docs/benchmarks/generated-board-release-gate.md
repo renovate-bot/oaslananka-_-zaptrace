@@ -40,6 +40,10 @@ python scripts/ci_generated_board_release_gate.py \
 - Manufacturing export and review handoff placeholders are present.
 - Non-claims remain visible.
 
+## CI integration
+
+The `Quality` workflow runs this gate as `Generated board release gate`. The final release-gate summary depends on that job and treats it as a blocking gate.
+
 ## Non-claims
 
 The gate is release evidence for a reviewable generated board project. It is not fabrication approval, not electrical correctness, not DRC/ERC approval, not manufacturer approval, not certification, and not production readiness.
