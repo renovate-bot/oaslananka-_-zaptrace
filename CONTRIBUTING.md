@@ -136,3 +136,48 @@ zaptrace/
 - Open a [Discussion](https://github.com/oaslananka/zaptrace/discussions)
 - Join our community (TBA)
 - Read the [docs](docs/)
+
+<!-- professional-oss-contribution-policy -->
+## Professional OSS Contribution Policy
+
+ZapTrace accepts contributions through GitHub pull requests. The project currently operates with a solo-maintainer governance model, so contributor expectations are intentionally explicit and evidence-oriented.
+
+### Acceptable contributions
+
+A contribution is acceptable when it is narrow, reviewable, and includes the evidence needed to evaluate it. For non-documentation changes, include tests or a written rationale explaining why tests are not applicable.
+
+Required before requesting review:
+
+- Run the relevant quality gates listed in the pull request template.
+- Update user-facing documentation for public behavior changes.
+- Update `CHANGELOG.md` for user-visible changes.
+- Preserve the pre-1.0 non-claims: no fabrication-readiness, manufacturer approval, or no-human-review correctness claims.
+- Avoid broad rewrites unless the issue or design note explicitly scopes them.
+
+### Conventional commits
+
+Use the conventional commit format documented in [commit conventions](docs/development/commit-conventions.md). Common prefixes are `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `refactor:`, `chore:`, and `security:`.
+
+### DCO
+
+ZapTrace uses a Developer Certificate of Origin style assertion. By contributing, you certify that you have the right to submit the work under the project license. Add a sign-off line to non-trivial commits when possible:
+
+```text
+Signed-off-by: Your Name <you@example.com>
+```
+
+### Code review expectations
+
+The current solo-maintainer model does not permit claiming regular independent human review. Pull requests should still be structured for review: small diffs, clear evidence, and explicit risk. If additional maintainers are added, branch protection should require at least one non-author human approval before merge.
+
+### Security-sensitive changes
+
+Security-sensitive work must follow [SECURITY.md](SECURITY.md), [release integrity](docs/security/release-integrity.md), and [input validation](docs/security/input-validation.md). Do not disclose private vulnerabilities in public issues or pull requests until coordinated disclosure is complete.
+
+### Where to find deeper guidance
+
+- [Coding standards](docs/development/coding-standards.md)
+- [Testing policy](docs/development/testing-policy.md)
+- [Release process](docs/development/release-process.md)
+- [Dependency management](docs/development/dependency-management.md)
+- [Governance](GOVERNANCE.md)

@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-No unreleased changes.
+### Repository maturity
+
+- Added professional open-source maturity documentation covering governance, support, maintainers, OpenSSF evidence, development policies, release integrity, and security assurance.
+- Added advisory workflows for repository hygiene, OpenSSF Scorecard, secret scanning, and dependency review.
 
 ## [0.3.0] - 2026-07-01 — Evidence Hardening and Benchmark Readiness
 

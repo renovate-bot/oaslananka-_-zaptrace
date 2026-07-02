@@ -455,3 +455,22 @@ ZapTrace is free for commercial and personal use.
 - **GitHub hardware CI ≠ physical testing**: CI cannot reproduce all real-world failure modes.
 - **KiCad export is primarily outbound**: Import/round-trip fidelity is still a future hardening area.
 - **Plugin system is experimental**: Signed-runtime policy exists, but production sandboxing requires further hardening.
+
+<!-- repo-maturity-links -->
+## Repository Maturity and Community Health
+
+ZapTrace is managed as a pre-1.0 professional open-source project. The repository keeps its maturity evidence, governance, contribution expectations, release process, and security posture public so users and contributors can review the project's operating model.
+
+- [Repository maturity report](docs/repo-maturity-report.md)
+- [OpenSSF evidence](docs/openssf-evidence.md)
+- [OpenSSF gap analysis](docs/openssf-gap-analysis.md)
+- [Governance](GOVERNANCE.md)
+- [Maintainers and access continuity](MAINTAINERS.md)
+- [Support policy](SUPPORT.md)
+- [Development standards](docs/development/coding-standards.md)
+- [Testing policy](docs/development/testing-policy.md)
+- [Release process](docs/development/release-process.md)
+- [Dependency management](docs/development/dependency-management.md)
+- [Release integrity verification](docs/security/release-integrity.md)
+
+Current maturity target: **Professional OSS / Mature OSS**. ZapTrace does not claim OpenSSF Gold or foundation-grade maturity until independent maintainers/contributors and regular human PR review are demonstrably in place.

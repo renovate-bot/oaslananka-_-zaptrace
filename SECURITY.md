@@ -51,3 +51,35 @@ The following are in scope:
 | 0.3.x   | ✅ Current |
 | 0.2.x   | ⚠️ Security fixes where practical |
 | < 0.2   | ❌ |
+
+<!-- professional-oss-security-process -->
+## Coordinated Vulnerability Disclosure Process
+
+Preferred reporting channel: GitHub private vulnerability reporting for this repository. If private reporting is unavailable to the reporter, contact the maintainer using the public profile contact information and include enough detail to reproduce the issue privately.
+
+Expected response targets:
+
+| Step | Target |
+|------|--------|
+| Acknowledge report | within 48 hours |
+| Initial triage | within 7 calendar days |
+| Fix plan for confirmed vulnerabilities | within 14 calendar days where practical |
+| Public advisory or release note | after fix availability and coordinated disclosure |
+
+Security advisories should identify affected versions, fixed versions, impact, workarounds, and whether the issue affects generated artifacts, runtime services, MCP tools, REST API, plugins, or release infrastructure.
+
+## Supported Release Policy
+
+ZapTrace is pre-1.0. The current minor release line receives security fixes where practical. Older release lines may receive fixes only when the patch is low-risk and does not conflict with the current architecture. This policy is also summarized in [SUPPORT.md](SUPPORT.md).
+
+## Supply-Chain Security
+
+- GitHub Actions are pinned by immutable commit SHA where practical.
+- Renovate manages normal dependency updates; Dependabot remains enabled for GitHub-native security alerting.
+- Release workflows generate SBOM/provenance artifacts where configured.
+- The release process and verification instructions are documented in [release integrity](docs/security/release-integrity.md).
+- Dependency selection and tracking are documented in [dependency management](docs/development/dependency-management.md).
+
+## Security Non-Claims
+
+A clean security scan does not prove that ZapTrace is safe for untrusted multi-tenant execution. Network-exposed API/MCP deployments and untrusted plugins require additional sandboxing, authentication, resource limits, and operational controls outside this repository.

@@ -48,3 +48,19 @@ List generated or updated evidence:
 ## Additional context
 
 Add screenshots, logs, generated artifacts, or design notes here.
+
+<!-- maturity-review-checklist -->
+## Maturity checklist
+
+- [ ] Contribution follows `CONTRIBUTING.md` and conventional commit guidance.
+- [ ] Public behavior changes update docs and/or examples.
+- [ ] User-visible changes update `CHANGELOG.md`.
+- [ ] Security-sensitive changes follow `SECURITY.md` and avoid public vulnerability disclosure.
+- [ ] Release, support, or compatibility impact is documented.
+- [ ] If this PR changes CI/release/security posture, the risk is explicitly described.
+
+## Human review
+
+- [ ] Human review required: yes.
+- [ ] Independent/non-author review completed, if available.
+- [ ] If no independent reviewer is available, this PR should not be used as evidence for Gold/foundation-grade review maturity.
