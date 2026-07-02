@@ -50,6 +50,14 @@ def _overall_status() -> str:
     return "passed"
 
 
+def _kicad_major(version: str) -> int:
+    """Return KiCad major version from strings like '10.0.4' or '7.0.11'."""
+    try:
+        return int(version.split(".", 1)[0])
+    except (ValueError, IndexError):
+        return 0
+
+
 def _write_summary(path: str | None, *, status: str, version: str = "", cli_path: str = "") -> None:
     if not path:
         return
@@ -264,6 +272,13 @@ def main() -> int:
 
     if args.check:
         _write_summary(args.output, status="passed", version=version, cli_path=str(KICAD_CLI))
+        return 0
+
+    if _kicad_major(version) < 9:
+        msg = f"kicad-cli {version} is too old for the modern KiCad PCB format emitted by ZapTrace"
+        _record_check("version", "skipped", msg)
+        _write_summary(args.output, status="skipped", version=version, cli_path=str(KICAD_CLI))
+        print(f"SKIP-APPROVED: {msg}")
         return 0
 
     with tempfile.TemporaryDirectory(prefix="zaptrace-kicad-oracle-") as tmpdir:
