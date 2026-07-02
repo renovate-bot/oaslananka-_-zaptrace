@@ -114,7 +114,7 @@ def generate_kicad_schematic_project(
     report = GeneratedKiCadSchematicReport(
         design_name=compiled.design.meta.name,
         family_id=compiled.report.family_id,
-        output_dir=out.as_posix(),
+        output_dir=".",
         passed=not claim_violations,
         generated_files=[
             _artifact("project", project_path, out),

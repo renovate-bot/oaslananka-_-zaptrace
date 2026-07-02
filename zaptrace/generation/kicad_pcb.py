@@ -125,7 +125,7 @@ def generate_kicad_pcb_project(
     report = GeneratedKiCadPcbReport(
         design_name=compiled.design.meta.name,
         family_id=compiled.report.family_id,
-        output_dir=out.as_posix(),
+        output_dir=".",
         passed=not claim_violations,
         generated_files=[_artifact(pcb_path, out)],
         board_width_mm=board.width,

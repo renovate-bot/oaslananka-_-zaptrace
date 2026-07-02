@@ -9,6 +9,13 @@ from zaptrace.generation.compiler import (
     design_ir_compilation_report_json,
     supported_generation_families,
 )
+from zaptrace.generation.evidence import (
+    GeneratedProjectArtifact,
+    GeneratedProjectEvidenceBundle,
+    GeneratedProjectEvidenceResult,
+    generate_project_evidence_bundle,
+    generated_project_evidence_bundle_json,
+)
 from zaptrace.generation.intent import (
     ArtifactPolicy,
     BoardGenerationIntent,
@@ -37,6 +44,11 @@ from zaptrace.generation.kicad_schematic import (
 )
 
 __all__ = [
+    "GeneratedProjectArtifact",
+    "GeneratedProjectEvidenceBundle",
+    "GeneratedProjectEvidenceResult",
+    "generate_project_evidence_bundle",
+    "generated_project_evidence_bundle_json",
     "GeneratedKiCadPcbProject",
     "GeneratedKiCadPcbReport",
     "GeneratedPcbArtifact",
