@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS builder
+FROM python:3.14-slim AS builder
 WORKDIR /build
 RUN pip install maturin uv
 RUN apt-get update && apt-get install -y curl build-essential && \
@@ -7,7 +7,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 COPY . .
 RUN maturin build --release --out dist --manifest-path zaptrace_core/Cargo.toml
 
-FROM python:3.12-slim
+FROM python:3.14-slim
 WORKDIR /app
 # Bundle ngspice so the DC operating-point simulation gate is real in the
 # container/CI: a skipped gate then means an environment fault, not an accepted gap.
