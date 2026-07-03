@@ -1,10 +1,4 @@
-<p align="center">
-  <a href="https://www.buymeacoffee.com/oaslananka">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=oaslananka&button_colour=FFDD00&font_colour=000000&font_family=Arial&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" />
-  </a>
-</p>
-
-# ⚡ ZapTrace — Prompt-to-Fab
+# ⚡ ZapTrace
 
 <p align="center">
   <a href="https://github.com/oaslananka/zaptrace/actions/workflows/quality.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/quality.yml/badge.svg" alt="Quality" /></a>
@@ -14,6 +8,13 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+" />
   <img src="https://img.shields.io/badge/status-pre--1.0-orange.svg" alt="Pre-1.0" />
+    <a href="https://www.bestpractices.dev/projects/13403"><img src="https://www.bestpractices.dev/projects/13403/badge"></a>
+</p>
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/oaslananka">
+    <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=oaslananka&button_colour=FFDD00&font_colour=000000&font_family=Arial&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" />
+  </a>
 </p>
 
 **ZapTrace** is an AI-native, verification-first, open-source electronic design automation (EDA) kernel for agents and engineers.
