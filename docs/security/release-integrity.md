@@ -31,8 +31,12 @@ The expected workflow is the repository release workflow under `.github/workflow
 
 ## Hashes and checksums
 
-If a release includes a checksum manifest, compare local artifact hashes against that manifest. If a release does not include a checksum manifest, rely on GitHub release transport security plus available attestations/SBOM and track checksum-manifest automation as a release hardening improvement.
+Recent release automation generates a `SHA256SUMS` manifest for release artifacts. Compare local artifact hashes against that manifest using `sha256sum --check SHA256SUMS`. If an older release does not include a checksum manifest, rely on GitHub release transport security plus available attestations/SBOM and prefer upgrading to a release with checksum evidence.
 
 ## Non-claims
 
 Release integrity verifies artifact origin and tamper evidence. It does not prove that generated hardware is safe, manufacturable, compliant, or correct.
+
+## Detailed verification guide
+
+For commands and expected identities, see [Release Verification Guide](release-verification.md).

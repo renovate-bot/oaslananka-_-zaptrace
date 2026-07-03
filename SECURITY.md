@@ -8,7 +8,7 @@ Instead, please report them privately via email to the maintainers or by using
 GitHub's private vulnerability reporting feature.
 
 We will acknowledge receipt within 48 hours and provide a timeline for a fix
-and disclosure.
+and disclosure. See [Vulnerability Response Process](docs/security/vulnerability-response.md) for triage targets, reporter credit, and disclosure workflow.
 
 ## Scope
 
@@ -77,7 +77,7 @@ ZapTrace is pre-1.0. The current minor release line receives security fixes wher
 - GitHub Actions are pinned by immutable commit SHA where practical.
 - Renovate manages normal dependency updates; Dependabot remains enabled for GitHub-native security alerting.
 - Release workflows generate SBOM/provenance artifacts where configured.
-- The release process and verification instructions are documented in [release integrity](docs/security/release-integrity.md).
+- The release process and verification instructions are documented in [release integrity](docs/security/release-integrity.md) and the [release verification guide](docs/security/release-verification.md).
 - Dependency selection and tracking are documented in [dependency management](docs/development/dependency-management.md).
 
 ## Security Non-Claims

@@ -36,3 +36,7 @@ For EDA behavior, tests should prefer observable evidence:
 ## Slow/external tests
 
 Tests requiring external tools such as KiCad or ngspice must clearly distinguish pass, fail, and approved skip. A missing external tool must not be reported as a silent pass.
+
+## OpenSSF evidence
+
+This document supports criteria requiring public documentation of when and how tests are run. A concise quality policy version is available at [Testing and Quality Policy](../quality/testing-policy.md).

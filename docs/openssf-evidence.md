@@ -23,7 +23,7 @@ This file maps repository artifacts to OpenSSF Best Practices and Baseline-style
 | Contribution requirements | Passed | Coding standards, test policy, DCO-style assertion, CI requirements. |
 | FLOSS license | Passed | MIT license in top-level `LICENSE`. |
 | Basic documentation | Passed | README, docs site, getting started, CLI/SDK/MCP docs. |
-| Interface documentation | Partial | CLI/SDK/MCP docs exist; API/reference docs should continue to be generated or kept synchronized. |
+| Interface documentation | Passed | CLI examples, REST/API docs, MCP tools reference, and docs site navigation provide external interface documentation. |
 | HTTPS project sites | Passed | GitHub and docs URLs use HTTPS. |
 | Discussion | Passed | GitHub issues and pull requests are URL-addressable and searchable. |
 | Maintained | Passed | Recent releases, CI, and active dependency maintenance. |
@@ -42,8 +42,8 @@ This file maps repository artifacts to OpenSSF Best Practices and Baseline-style
 | Architecture | Passed | `docs/ARCHITECTURE.md`, `docs/explanation/architecture.md`. |
 | Security requirements | Passed | `SECURITY.md`, `docs/security/threat-model.md`, `docs/security/assurance-case.md`. |
 | Quick start | Passed | README and `docs/tutorials/getting-started.md`. |
-| Current docs | Partial | MkDocs strict build helps; ongoing maintenance required. |
-| Achievements | Partial | Badge should be added to README only after actual BadgeApp recognition. |
+| Current docs | Passed | Docs-status-sync checks MCP/rule-count drift and stale status claims; ongoing review remains required. |
+| Achievements | Partial | README includes current CI/security/docs/Scorecard/Best Practices evidence; badge status should only be upgraded after BadgeApp recognition. |
 | Password storage for project site | Not applicable | GitHub-hosted repository; no project-operated password store identified. |
 
 ## Gold feasibility evidence
@@ -73,3 +73,7 @@ This file maps repository artifacts to OpenSSF Best Practices and Baseline-style
 | Build instructions | Passed | README, CONTRIBUTING, release process docs. |
 | Member list and roles | Passed | `MAINTAINERS.md`, `GOVERNANCE.md`. |
 | Vulnerability disclosure | Passed | `SECURITY.md`; private vulnerability reporting must be enabled in settings. |
+
+## Detailed evidence map
+
+See [OpenSSF Evidence Map](openssf-evidence-map.md) for an expanded mapping of Passing, Baseline Level 1, and Baseline Level 2 criteria to repository evidence.

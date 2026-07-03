@@ -1,0 +1,21 @@
+name: DCO
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    name: DCO sign-off
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+        with:
+          fetch-depth: 0
+      - name: Fetch base branch
+        run: git fetch origin "${{ github.base_ref }}" --depth=1
+      - name: Check DCO sign-offs for code-sensitive changes
+        run: python scripts/ci_dco_check.py --base "origin/${{ github.base_ref }}" --head HEAD

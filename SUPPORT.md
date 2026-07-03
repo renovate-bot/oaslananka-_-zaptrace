@@ -27,3 +27,11 @@ ZapTrace can help with project usage, examples, generated evidence, and reproduc
 ## End-of-life policy
 
 A release line may be marked unsupported when the current architecture has moved on, security fixes cannot be backported safely, or maintainer capacity is unavailable. Unsupported versions should not be used for new work.
+
+## Release verification
+
+Users can verify release asset checksums, GitHub artifact attestations, expected repository identity, and release tags using [Release Verification Guide](docs/security/release-verification.md).
+
+## Dependency and build support
+
+Dependency selection and tracking are documented in [Dependency Policy](docs/supply-chain/dependency-policy.md). Build and validation prerequisites are documented in [Validation Environment](docs/development/validation-environment.md).

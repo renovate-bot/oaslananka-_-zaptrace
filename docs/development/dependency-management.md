@@ -30,3 +30,7 @@ Dependency PRs should include:
 ## License awareness
 
 The repository uses a permissive MIT license. New dependencies should be compatible with the project license and distribution model. A dedicated third-party license report/checker is recommended before claiming full REUSE or enterprise-grade legal maturity.
+
+## OpenSSF evidence
+
+This document supports OpenSSF/OSPS dependency selection, dependency ingest, and dependency tracking criteria. A concise policy version is available at [Dependency Policy](../supply-chain/dependency-policy.md).

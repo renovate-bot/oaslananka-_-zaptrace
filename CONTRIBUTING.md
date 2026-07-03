@@ -160,7 +160,7 @@ Use the conventional commit format documented in [commit conventions](docs/devel
 
 ### DCO
 
-ZapTrace uses a Developer Certificate of Origin style assertion. By contributing, you certify that you have the right to submit the work under the project license. Add a sign-off line to non-trivial commits when possible:
+ZapTrace uses a Developer Certificate of Origin style assertion for non-trivial code contributions. By contributing, you certify that you have the right to submit the work under the project license. Add a sign-off line to non-trivial commits:
 
 ```text
 Signed-off-by: Your Name <you@example.com>
@@ -173,6 +173,8 @@ The current solo-maintainer model does not permit claiming regular independent h
 ### Security-sensitive changes
 
 Security-sensitive work must follow [SECURITY.md](SECURITY.md), [release integrity](docs/security/release-integrity.md), and [input validation](docs/security/input-validation.md). Do not disclose private vulnerabilities in public issues or pull requests until coordinated disclosure is complete.
+
+A DCO check is provided by `scripts/ci_dco_check.py` and is intended to enforce sign-offs for pull requests that modify code or workflow-sensitive files.
 
 ### Where to find deeper guidance
 

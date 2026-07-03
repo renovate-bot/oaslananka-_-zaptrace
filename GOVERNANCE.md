@@ -18,7 +18,7 @@ ZapTrace targets **Professional OSS / Mature OSS** practices. It does not claim 
 | Contributor | Submit issues, pull requests, docs, tests, examples, fixtures, and review comments | Community contributors |
 | Security reporter | Report suspected vulnerabilities privately and coordinate disclosure | External reporters |
 
-See `MAINTAINERS.md` for access and continuity details.
+See `MAINTAINERS.md`, [Access Continuity Plan](docs/governance/access-continuity.md), and [Maintainer Access Policy](docs/governance/maintainer-access.md) for access and continuity details.
 
 ## Change acceptance process
 
@@ -34,7 +34,7 @@ The lead maintainer resolves disputes after considering project safety, evidence
 
 ## Access continuity
 
-Solo-maintainer projects have inherent bus-factor risk. The current mitigation is documented public process, public CI/release automation, explicit governance, and issue-based tracking. Full continuity requires at least one additional trusted maintainer with release and repository administration capability.
+Solo-maintainer projects have inherent bus-factor risk. The current mitigation is documented public process, public CI/release automation, explicit governance, and issue-based tracking. Full continuity requires at least one additional trusted maintainer or emergency steward with documented release and repository administration capability. Until that exists, access-continuity and bus-factor criteria should remain partial/unmet rather than overstated.
 
 ## Non-goals
 

@@ -28,3 +28,11 @@ The current continuity risk is the single-maintainer bus factor. Recommended nex
 ## Gold/foundation-grade gap
 
 Gold/foundation-grade maturity requires at least two active, significant, and preferably unassociated contributors or maintainers, plus regular non-author human review.
+
+## Related policies
+
+- [Governance](GOVERNANCE.md)
+- [Maintainer Access Policy](docs/governance/maintainer-access.md)
+- [Access Continuity Plan](docs/governance/access-continuity.md)
+- [Security Policy](SECURITY.md)
+- [Support Policy](SUPPORT.md)

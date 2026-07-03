@@ -60,8 +60,13 @@ nav:
   - Repository Maturity:
       - Maturity Report: repo-maturity-report.md
       - OpenSSF Evidence: openssf-evidence.md
+      - OpenSSF Evidence Map: openssf-evidence-map.md
       - OpenSSF Gap Analysis: openssf-gap-analysis.md
       - OpenSSF Proposal Links: openssf-proposal-links.md
+
+  - Governance:
+      - Access Continuity: governance/access-continuity.md
+      - Maintainer Access: governance/maintainer-access.md
 
   - Documentation System:
       - Tutorial - Getting Started: tutorials/getting-started.md
@@ -75,10 +80,13 @@ nav:
       - Release Process: development/release-process.md
       - Dependency Management: development/dependency-management.md
       - Commit Conventions: development/commit-conventions.md
+      - Validation Environment: development/validation-environment.md
 
   - Security Assurance:
       - Threat Model: security/threat-model.md
       - Release Integrity: security/release-integrity.md
+      - Release Verification: security/release-verification.md
+      - Vulnerability Response: security/vulnerability-response.md
       - Input Validation: security/input-validation.md
       - Assurance Case: security/assurance-case.md
 
@@ -95,6 +103,12 @@ nav:
       - Rail Current Budget: analysis/rail-current-budget.md
       - Regulator Margin: analysis/regulator-margin.md
       - SI/PI Risk: analysis/sipi-risk.md
+
+  - Supply Chain:
+      - Dependency Policy: supply-chain/dependency-policy.md
+
+  - Quality:
+      - Testing and Quality Policy: quality/testing-policy.md
 
   - Manufacturing:
       - BOM Export: manufacturing/bom-export.md
