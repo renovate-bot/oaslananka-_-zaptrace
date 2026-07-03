@@ -1,38 +1,49 @@
+<div align="center">
+
 # ⚡ ZapTrace
 
-<p align="center">
-  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/quality.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/quality.yml/badge.svg" alt="Quality" /></a>
-  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/security-scan.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/security-scan.yml/badge.svg" alt="Security" /></a>
-  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/docs.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/docs.yml/badge.svg" alt="Docs" /></a>
-  <a href="https://oaslananka.github.io/zaptrace"><img src="https://img.shields.io/badge/docs-mkdocs-blue.svg" alt="Documentation" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+### AI-native, verification-first EDA kernel for prompt-to-fab electronics.
+
+**Prompt-to-Fab, with proofs.**<br />
+Intent → normalized design → schematic → ERC → placement → routing → DRC → BOM → manufacturing package → auditable proof pack.
+
+<p>
+  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/quality.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/quality.yml/badge.svg?branch=main" alt="Quality" /></a>
+  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/security-scan.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/security-scan.yml/badge.svg?branch=main" alt="Security" /></a>
+  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/docs.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/docs.yml/badge.svg?branch=main" alt="Docs" /></a>
+  <a href="https://github.com/oaslananka/zaptrace/actions/workflows/scorecard.yml"><img src="https://github.com/oaslananka/zaptrace/actions/workflows/scorecard.yml/badge.svg?branch=main" alt="OpenSSF Scorecard" /></a>
+</p>
+
+<p>
+  <a href="https://oaslananka.github.io/zaptrace"><img src="https://img.shields.io/badge/docs-mkdocs-0A7BBB?logo=materialformkdocs&logoColor=white" alt="Documentation" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+" />
-  <img src="https://img.shields.io/badge/status-pre--1.0-orange.svg" alt="Pre-1.0" />
-    <a href="https://www.bestpractices.dev/projects/13403"><img src="https://www.bestpractices.dev/projects/13403/badge"></a>
+  <img src="https://img.shields.io/badge/MCP-87%20tools-7c3aed" alt="MCP: 87 tools" />
+  <img src="https://img.shields.io/badge/status-pre--1.0-orange.svg" alt="Status: pre-1.0" />
+  <a href="https://www.bestpractices.dev/projects/13403"><img src="https://www.bestpractices.dev/projects/13403/badge" alt="OpenSSF Best Practices" /></a>
 </p>
 
-<p align="center">
-  <a href="https://www.buymeacoffee.com/oaslananka">
-    <img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=oaslananka&button_colour=FFDD00&font_colour=000000&font_family=Arial&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" />
-  </a>
+<p>
+  <a href="https://oaslananka.github.io/zaptrace"><strong>Documentation</strong></a> ·
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="docs/development/validation-environment.md">Validation Environment</a> ·
+  <a href="ROADMAP.md">Roadmap</a> ·
+  <a href="GOVERNANCE.md">Governance</a> ·
+  <a href="SECURITY.md">Security</a> ·
+  <a href="docs/SAFETY.md">Safety</a>
 </p>
 
-**ZapTrace** is an AI-native, verification-first, open-source electronic design automation (EDA) kernel for agents and engineers.
+<p>
+  <a href="https://www.buymeacoffee.com/oaslananka"><img src="https://img.shields.io/badge/support-Buy%20me%20a%20coffee-ffdd00?style=flat&logo=buymeacoffee&logoColor=000&labelColor=111" alt="Buy me a coffee" /></a>
+</p>
 
-> **Pre-1.0.** All outputs require human engineering review before fabrication or use.
-> See [Safety Disclaimer](#safety-disclaimer).
+</div>
 
-> From intent → normalized design → schematic → ERC → placement → routing → DRC → BOM → manufacturing package → auditable proof pack.
+> [!WARNING]
+> **Pre-1.0.** ZapTrace is a verification-first EDA kernel, not a fabrication guarantee. All generated outputs require human engineering review before fabrication or use. See [Safety Disclaimer](#safety-disclaimer).
 
-```
-Prompt-to-Fab, with proofs.
-AI-native EDA kernel for agents.
-Verification-first electronics design.
-Deterministic core, AI-assisted workflow.
-No EDA dependency required, excellent EDA interoperability.
-```
-
-> **Proof Pack = evidence layer, not a guarantee.** See [verification model](#verification-model).
+> [!NOTE]
+> **Proof Pack = evidence layer, not absolute correctness.** Proof packs record configured checks, artifacts, assumptions, and pass/fail evidence. A clean proof pack does not mean a board is manufacturer-approved, production-ready, or safe to fabricate without review.
 
 ---
 
