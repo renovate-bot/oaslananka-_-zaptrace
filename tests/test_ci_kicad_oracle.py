@@ -50,3 +50,27 @@ def test_oracle_overall_status_requires_release_gate_skip_for_partial_skips() ->
     ci_kicad_oracle._record_check("pcb_export_svg", "passed", "ok")
     ci_kicad_oracle._record_check("pcb_drc", "skipped", "kicad-cli lacks pcb drc")
     assert ci_kicad_oracle._overall_status() == "skipped"
+
+
+def test_oracle_summary_includes_commands_and_hashes(tmp_path: Path) -> None:
+    output = tmp_path / "summary.json"
+    artifact = tmp_path / "oracle.txt"
+    artifact.write_text("oracle evidence", encoding="utf-8")
+    ci_kicad_oracle._CHECKS.clear()
+    ci_kicad_oracle._SKIP_REASONS.clear()
+    ci_kicad_oracle._record_check(
+        "pcb_drc",
+        "passed",
+        "DRC report generated",
+        command=["kicad-cli", "pcb", "drc"],
+        report_path=str(artifact),
+        report_sha256=ci_kicad_oracle._sha256_file(artifact),
+    )
+
+    ci_kicad_oracle._write_summary(str(output), status="passed", version="9.0.0", cli_path="/usr/bin/kicad-cli")
+
+    data = json.loads(output.read_text(encoding="utf-8"))
+    assert data["schema_version"] == "1.0"
+    assert data["commands"] == [["kicad-cli", "pcb", "drc"]]
+    assert data["artifact_hashes"][str(artifact)] == ci_kicad_oracle._sha256_file(artifact)
+    assert data["skip_policy"].startswith("skips are explicit")

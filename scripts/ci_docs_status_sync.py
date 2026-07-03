@@ -14,6 +14,8 @@ BANNED_REFERENCES = {
     "8 ERC rules": "ERC rule count is generated from zaptrace.erc.runner._ALL_RULES",
     'ERC "8 rules"': "ERC rule count is generated from zaptrace.erc.runner._ALL_RULES",
     "629+ tests": "test totals should not be hard-coded in docs",
+    "629 passing": "test totals should not be hard-coded in docs",
+    "629 tests": "test totals should not be hard-coded in docs",
     "543 tests passing": "test totals should not be hard-coded in docs",
 }
 
@@ -83,6 +85,10 @@ def validate_docs() -> dict[str, Any]:
         (re.compile(r"\bDRC[ \t]*\((\d+)[ \t]+rules?\)", re.IGNORECASE), drc_count, "DRC rules"),
         (re.compile(r"(?<![\d.])(\d+)[ \t]+agent[- ]facing[ \t]+tools\b", re.IGNORECASE), tool_count, "agent tools"),
         (re.compile(r"MCP server[ \t]*\((\d+)[ \t]+tools\)", re.IGNORECASE), tool_count, "MCP tools"),
+        (re.compile(r"(?<![\d.])(\d+)[ \t]+tools[ \t]+total\b", re.IGNORECASE), tool_count, "MCP tools"),
+        (re.compile(r"(?<![\d.])(\d+)[ \t]+exposed[ \t]+tools\b", re.IGNORECASE), tool_count, "MCP tools"),
+        (re.compile(r"(?<![\d.])(\d+)[ \t]+design[ \t]+tools\b", re.IGNORECASE), tool_count, "MCP tools"),
+        (re.compile(r"Tool Registry[^(\n]*\((\d+)[ \t]+tools", re.IGNORECASE), tool_count, "MCP tools"),
     ]
 
     for path in _iter_docs():

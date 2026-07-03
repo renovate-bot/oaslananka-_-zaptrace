@@ -1,6 +1,11 @@
 version: '3'
 
 tasks:
+  doctor:
+    desc: Check local validation toolchain parity
+    cmds:
+      - python scripts/ci_validation_environment.py --strict --output validation-environment.json
+
   install:
     desc: Install all dependencies
     cmds:
@@ -40,7 +45,7 @@ tasks:
 
   release:
     desc: Run the release quality gate and build artifacts
-    deps: [lint, typecheck, test, test-rust, build]
+    deps: [doctor, lint, typecheck, test, test-rust, build, oracle-kicad-strict]
 
   test-rust:
     desc: Rust unit tests
@@ -84,6 +89,11 @@ tasks:
     desc: Verify kicad-cli is available for the oracle
     cmds:
       - uv run python scripts/ci_kicad_oracle.py --check
+
+  oracle-kicad-strict:
+    desc: Run KiCad CLI oracle and fail on unapproved skips
+    cmds:
+      - uv run python scripts/ci_kicad_oracle.py --strict-skips --output kicad-oracle-summary.json
 
   kicad-roundtrip-scorecard:
     desc: Run deterministic KiCad round-trip fidelity scorecard

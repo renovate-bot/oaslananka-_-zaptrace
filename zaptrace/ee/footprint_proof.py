@@ -203,7 +203,32 @@ class FootprintProofValidationReport(BaseModel):
     diagnostics: list[FootprintProofDiagnostic]
 
 
-RISKY_PACKAGE_FAMILIES: tuple[str, ...] = ("AQFN", "BGA", "DFN", "LGA", "QFN", "RJ45", "USB-C", "USB_C")
+RISKY_PACKAGE_FAMILIES: tuple[str, ...] = (
+    "ESP32-C3-MINI",
+    "ESP32-MINI",
+    "MODULE",
+    "CASTELLATED",
+    "AQFN",
+    "BGA",
+    "DFN",
+    "LGA",
+    "QFN",
+    "RJ45",
+    "USB-C",
+    "USB_C",
+)
+
+DATASHEET_BACKED_RISKY_FAMILIES: tuple[str, ...] = (
+    "ESP32-C3-MINI",
+    "ESP32-MINI",
+    "MODULE",
+    "CASTELLATED",
+    "AQFN",
+    "DFN",
+    "LGA",
+    "RJ45",
+    "USB-C",
+)
 
 
 class RiskyPackagePolicyResult(BaseModel):
@@ -239,6 +264,7 @@ def validate_risky_package_policy(
     family = classify_risky_package(proof.package_id, proof.footprint_name)
     required = [
         "human-reviewed footprint proof",
+        "datasheet-backed, vendored, or imported source for high-risk part-specific packages",
         "source SHA-256 or generator version",
         "pin-1 evidence",
         "non-zero courtyard",
@@ -267,6 +293,17 @@ def validate_risky_package_policy(
                 message=f"{family} package requires source hash or generator version provenance",
                 expected="source_sha256 or generator_version",
                 observed="missing",
+            )
+        )
+    if family in DATASHEET_BACKED_RISKY_FAMILIES and proof.source.source_type == FootprintSourceType.GENERATED:
+        diagnostics.append(
+            FootprintProofDiagnostic(
+                package_id=proof.package_id,
+                code="risky-package-requires-datasheet-backed-source",
+                severity=FootprintProofSeverity.ERROR,
+                message=f"{family} package requires datasheet-backed, vendored, or imported footprint evidence",
+                expected="vendored/imported source with source_sha256 or reviewed datasheet-derived proof",
+                observed=proof.source.source_type.value,
             )
         )
     if not proof.pin1.present:

@@ -534,36 +534,31 @@ def pipeline(source: str | None, intent: str | None, output: str | None) -> None
 
 
 @cli.command()
-def doctor() -> None:
-    """Run system diagnostics — check installation and environment."""
+@click.option("--strict", is_flag=True, help="Fail if required validation tools are missing")
+@click.option("--json", "json_output", is_flag=True, help="Print machine-readable JSON evidence")
+@click.option("--output", type=click.Path(), default=None, help="Write JSON evidence to this path")
+def doctor(strict: bool, json_output: bool, output: str | None) -> None:
+    """Run system diagnostics and validation toolchain checks."""
     import platform
     import sys
+    from pathlib import Path
 
-    from zaptrace.cli.output import console, print_panel
+    from scripts.ci_validation_environment import build_report, render_text, report_json
 
-    python_version = sys.version.split()[0]
-    platform_info = platform.platform()
-
-    lines: list[str] = [
-        f"[bold]Python:[/] {python_version}",
-        f"[bold]Platform:[/] {platform_info}",
-        f"[bold]zaptrace version:[/] {__version__}",
-    ]
-
-    extras = {
-        "fastapi": "REST API",
-        "fastmcp": "MCP server",
-        "uvicorn": "API server",
-    }
-    for mod, label in extras.items():
-        try:
-            __import__(mod)
-            lines.append(f"[green]✓[/] {label} available")
-        except ImportError:
-            lines.append(f"[yellow]✗[/] {label} [dim]not installed[/]")
-
-    console.print("\n".join(lines))
-    print_panel("Diagnostics", "All checks completed")
+    report = build_report()
+    if output:
+        out = Path(output)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(report_json(report), encoding="utf-8")
+    if json_output:
+        console.print_json(report_json(report))
+    else:
+        console.print(f"Python: {sys.version.split()[0]}")
+        console.print(f"Platform: {platform.platform()}")
+        console.print(f"zaptrace version: {__version__}")
+        console.print(render_text(report))
+    if strict and not report["passed"]:
+        raise click.Abort()
 
 
 # ---------------------------------------------------------------------------
@@ -658,6 +653,8 @@ def proof_pack(design_path: str, output: str | None, verbose: bool, output_forma
 
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
+
+# -------------------------------------------
 
 # ---------------------------------------------------------------------------
 # 20. proof group (run, list, info)

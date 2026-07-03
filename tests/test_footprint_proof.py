@@ -234,3 +234,39 @@ def test_non_risky_package_does_not_require_review() -> None:
 
     assert result.risky is False
     assert result.blocked is False
+
+
+def test_part_specific_module_is_risky_and_requires_datasheet_source() -> None:
+    from zaptrace.ee.footprint_proof import validate_risky_package_policy
+    from zaptrace.ee.footprints import footprint_qfn
+
+    fp = footprint_qfn("QFN-16")
+    assert fp is not None
+    proof = build_footprint_proof("ESP32-C3-MINI-1", fp, expected_pin_count=16)
+
+    result = validate_risky_package_policy(proof, reviewed=True, approval_id="FP-REVIEW-2")
+
+    assert result.risky is True
+    assert result.family == "ESP32-C3-MINI"
+    assert result.blocked is True
+    assert any(item.code == "risky-package-requires-datasheet-backed-source" for item in result.diagnostics)
+
+
+def test_vendored_rj45_risky_package_can_pass_with_review_and_hash() -> None:
+    from zaptrace.core.models import FootprintDef, Pad
+    from zaptrace.ee.footprint_proof import validate_risky_package_policy
+
+    source_path = Path("data/footprints/vendor/ATTRIBUTION.md")
+    fp = FootprintDef(courtyard=(16.0, 21.0), pads=[Pad(id=str(i), position=(float(i), 0.0)) for i in range(1, 9)])
+    source = FootprintSourceProvenance(
+        source_type=FootprintSourceType.VENDORED,
+        source_name="RJ45-8P8C",
+        source_path=str(source_path),
+        source_sha256=file_sha256(source_path),
+    )
+    proof = build_footprint_proof("RJ45-8P8C", fp, source=source, expected_pin_count=8)
+
+    result = validate_risky_package_policy(proof, reviewed=True, approval_id="FP-REVIEW-RJ45")
+
+    assert result.risky is True
+    assert result.blocked is False

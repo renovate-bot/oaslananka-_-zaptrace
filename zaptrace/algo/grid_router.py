@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from zaptrace.core.board import canonical_board_definition
-from zaptrace.core.models import Design, NetClass, RouteResult, TraceSegment, Via
+from zaptrace.core.models import Component, Design, NetClass, RouteResult, TraceSegment, Via
 from zaptrace.ee.classifier import classify_design, get_net_class
 from zaptrace.ee.knowledge import KnowledgeBase
 from zaptrace.ee.routing.defaults import DEFAULT_VIA_SPECS
@@ -290,11 +290,15 @@ class GridRouter:
 
         # -- Ref -> position lookup ---------------------------------------
         ref_positions: dict[str, tuple[float, float]] = {}
+        component_by_ref: dict[str, Component] = {}
         for c in design.components.values():
+            component_by_ref[c.ref] = c
             if c.id in positions:
                 ref_positions[c.ref] = positions[c.id]
             if c.ref in positions:
                 ref_positions[c.ref] = positions[c.ref]
+            if c.position is not None and c.ref not in ref_positions:
+                ref_positions[c.ref] = c.position
 
         def _to_grid(p: tuple[float, float]) -> tuple[int, int]:
             return (
@@ -324,11 +328,15 @@ class GridRouter:
                 # GROUND and unclassified — leave for copper pour
                 continue
 
-            # Collect node positions
+            # Collect pad-aware route endpoints. Fallback to component centers
+            # only when no footprint/pad evidence is available.
             node_positions: list[tuple[float, float]] = []
             for node in net.nodes:
-                if node.component_ref in ref_positions:
-                    node_positions.append(ref_positions[node.component_ref])
+                comp = component_by_ref.get(node.component_ref)
+                comp_pos = ref_positions.get(node.component_ref)
+                if comp is None or comp_pos is None:
+                    continue
+                node_positions.append(self._route_point_for_node(comp, node.pin_name, comp_pos))
 
             if len(node_positions) < 2:
                 continue
@@ -339,11 +347,14 @@ class GridRouter:
             clear_cells = max(int(math.ceil(rule.clearance / self.resolution)), 1)
 
             grid_positions = [_to_grid(p) for p in node_positions]
+            for gx, gy in grid_positions:
+                self._unblock_endpoint(obs, GridPos(gx, gy, layer), max(clear_cells, 1))
 
             # MST decomposition
             mst_edges = self._mst(grid_positions)
 
             success = True
+            edge_paths: list[list[GridPos]] = []
 
             for i, j in mst_edges:
                 gx1, gy1 = grid_positions[i]
@@ -358,6 +369,7 @@ class GridRouter:
                     break
 
                 smooth = _simplify_path(path)
+                edge_paths.append(smooth)
 
                 # Block path for subsequent nets
                 for pi in range(len(smooth) - 1):
@@ -368,42 +380,34 @@ class GridRouter:
 
             routed_count += 1
 
-            # Convert all MST edge paths to TraceSegments
-            # (Re-run A* for each edge since we don't cache paths)
-            for i, j in mst_edges:
-                gx1, gy1 = grid_positions[i]
-                gx2, gy2 = grid_positions[j]
+            # Convert cached MST edge paths to TraceSegments. Re-running A*
+            # after blocking the route can make the router fail against its own
+            # trace, so cached paths are the evidence source for this net.
+            for smooth in edge_paths:
+                for pi in range(len(smooth) - 1):
+                    n0 = smooth[pi]
+                    n1 = smooth[pi + 1]
 
-                start_pos = GridPos(gx1, gy1, layer)
-                goal_pos = GridPos(gx2, gy2, layer)
+                    x0 = round(n0.x * self.resolution, 3)
+                    y0 = round(n0.y * self.resolution, 3)
+                    x1 = round(n1.x * self.resolution, 3)
+                    y1 = round(n1.y * self.resolution, 3)
 
-                path = self._astar(obs, start_pos, goal_pos)
-                if path:
-                    smooth = _simplify_path(path)
-                    for pi in range(len(smooth) - 1):
-                        n0 = smooth[pi]
-                        n1 = smooth[pi + 1]
+                    layer_name = f"layer_{n0.layer}"
+                    layers_used.add(layer_name)
 
-                        x0 = round(n0.x * self.resolution, 3)
-                        y0 = round(n0.y * self.resolution, 3)
-                        x1 = round(n1.x * self.resolution, 3)
-                        y1 = round(n1.y * self.resolution, 3)
-
-                        layer_name = f"layer_{n0.layer}"
-                        layers_used.add(layer_name)
-
-                        all_traces.append(
-                            TraceSegment(
-                                layer=layer_name,
-                                start=(x0, y0),
-                                end=(x1, y1),
-                                width=width_mm,
-                                net_id=net.id,
-                            )
+                    all_traces.append(
+                        TraceSegment(
+                            layer=layer_name,
+                            start=(x0, y0),
+                            end=(x1, y1),
+                            width=width_mm,
+                            net_id=net.id,
                         )
+                    )
 
-                        if n0.layer != n1.layer:
-                            all_vias.append((x0, y0, via_pad, via_hole, net.id))
+                    if n0.layer != n1.layer:
+                        all_vias.append((x0, y0, via_pad, via_hole, net.id))
 
         total_length = sum(math.dist(t.start, t.end) for t in all_traces)
 
@@ -530,6 +534,75 @@ class GridRouter:
                     visited.add(key)
                     q.append((np, dist + 1))
         return None
+
+    @staticmethod
+    def _pin_aliases(pin_name: str) -> set[str]:
+        raw = pin_name.strip().lower()
+        aliases = {raw}
+        if raw.startswith("p") and raw[1:].isdigit():
+            aliases.add(raw[1:])
+        if raw.isdigit():
+            aliases.add(f"p{raw}")
+        return aliases
+
+    @staticmethod
+    def _component_footprint(comp: Component) -> Any:
+        if comp.footprint_def is not None:
+            return comp.footprint_def
+        if not comp.footprint:
+            return None
+        from zaptrace.ee.footprints import generate_footprint_for_component
+
+        fp = generate_footprint_for_component(comp.footprint, comp.type or "")
+        if fp is not None:
+            comp.footprint_def = fp
+        return fp
+
+    @classmethod
+    def _pad_for_pin(cls, comp: Component, pin_name: str) -> Any:
+        fp = cls._component_footprint(comp)
+        if fp is None:
+            return None
+        aliases = cls._pin_aliases(pin_name)
+        for pad in fp.pads:
+            if str(pad.id).strip().lower() in aliases:
+                return pad
+        return None
+
+    @classmethod
+    def _route_point_for_node(
+        cls,
+        comp: Component,
+        pin_name: str,
+        comp_pos: tuple[float, float],
+    ) -> tuple[float, float]:
+        pad = cls._pad_for_pin(comp, pin_name)
+        fp = cls._component_footprint(comp)
+        if pad is None or fp is None:
+            return comp_pos
+        cx, cy = comp_pos
+        dx, dy = pad.position
+        half_w = max(float(fp.courtyard[0]) / 2.0, abs(float(dx)), 0.0)
+        half_h = max(float(fp.courtyard[1]) / 2.0, abs(float(dy)), 0.0)
+        if half_w <= 0.0 or half_h <= 0.0:
+            return (cx + float(dx), cy + float(dy))
+        if abs(dx) < 1e-9 and abs(dy) < 1e-9:
+            dx = half_w
+            dy = 0.0
+        scale_x = half_w / abs(float(dx)) if abs(float(dx)) > 1e-9 else float("inf")
+        scale_y = half_h / abs(float(dy)) if abs(float(dy)) > 1e-9 else float("inf")
+        scale = max(1.0, min(scale_x, scale_y))
+        edge_x = cx + float(dx) * scale
+        edge_y = cy + float(dy) * scale
+        length = math.hypot(edge_x - cx, edge_y - cy) or 1.0
+        nudge = 0.25
+        return (edge_x + (edge_x - cx) / length * nudge, edge_y + (edge_y - cy) / length * nudge)
+
+    @staticmethod
+    def _unblock_endpoint(obs: ObstacleMap, pos: GridPos, radius: int) -> None:
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
+                obs.unblock(GridPos(pos.x + dx, pos.y + dy, pos.layer))
 
     # -- MST decomposition ------------------------------------------------
 

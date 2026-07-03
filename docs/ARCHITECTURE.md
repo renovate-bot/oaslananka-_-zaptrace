@@ -13,7 +13,7 @@ ZapTrace is designed as a layered EDA kernel with a deterministic core, AI-assis
 ├───────┴──────────────┴────────────┴────────────────┴───────┤
 │                      Agent Layer                            │
 │  ┌──────────────────────────────────────────────────────┐  │
-│  │  Tool Registry (63 tools + 3 session tools)           │  │
+│  │  Tool Registry (87 agent-facing tools)           │  │
 │  │  Pipeline Autopilot                                   │  │
 │  └──────────────────────────────────────────────────────┘  │
 ├────────────────────────────────────────────────────────────┤
@@ -104,7 +104,7 @@ zaptrace/              # Main Python package
 ├── pipeline/          # Design flow autopilot
 │   └── autopilot.py   # Multi-stage pipeline runner
 ├── mcp/               # MCP protocol server
-│   └── server.py      # FastMCP server (66 exposed tools)
+│   └── server.py      # FastMCP server (87 agent-facing tools)
 ├── api/               # REST API
 │   ├── server.py      # FastAPI server
 │   ├── models.py      # API request/response models
@@ -120,7 +120,7 @@ zaptrace/              # Main Python package
 ├── proof/             # Proof pack system
 │   ├── __init__.py
 │   ├── manifest.py
-│   └── generator.py
+│   └── pack.py
 └── plugins/           # Plugin system
     ├── __init__.py
     ├── manifest.py

@@ -13,7 +13,9 @@ Exit code:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -28,6 +30,27 @@ from zaptrace.export.kicad import export_kicad_pcb, export_kicad_schematic
 KICAD_CLI = shutil.which("kicad-cli") or shutil.which("kicad-cli.exe")
 _CHECKS: list[dict[str, object]] = []
 _SKIP_REASONS: list[str] = []
+
+
+def _sha256_file(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _sha256_path(path: Path) -> str:
+    if path.is_file():
+        return _sha256_file(path)
+    h = hashlib.sha256()
+    for child in sorted(p for p in path.rglob("*") if p.is_file()):
+        h.update(str(child.relative_to(path)).encode("utf-8"))
+        h.update(b"\0")
+        with child.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                h.update(chunk)
+    return h.hexdigest()
 
 
 def _record_check(name: str, status: str, message: str, **metadata: object) -> None:
@@ -61,14 +84,30 @@ def _kicad_major(version: str) -> int:
 def _write_summary(path: str | None, *, status: str, version: str = "", cli_path: str = "") -> None:
     if not path:
         return
+    artifact_hashes = {
+        str(check["report_path"]): check.get("report_sha256", "")
+        for check in _CHECKS
+        if isinstance(check.get("report_path"), str)
+    }
     summary = {
+        "schema_version": "1.0",
         "kicad_oracle": status,
         "skip_reason": "; ".join(dict.fromkeys(_SKIP_REASONS)),
         "version": version,
         "cli_path": cli_path,
         "checks": _CHECKS,
+        "artifact_hashes": artifact_hashes,
+        "commands": [check.get("command") for check in _CHECKS if check.get("command")],
+        "skip_policy": "skips are explicit evidence; release validation should use --strict-skips",
     }
     Path(path).write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+
+def _subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    if not env.get("HOME"):
+        env["HOME"] = str(Path.home() or "/tmp")
+    return env
 
 
 def _check_kicad_cli() -> bool:
@@ -79,7 +118,13 @@ def _check_kicad_cli() -> bool:
         return False
     # Verify it actually runs
     try:
-        result = subprocess.run([KICAD_CLI, "--version"], capture_output=True, text=True, timeout=15)
+        result = subprocess.run(
+            [KICAD_CLI, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            env=_subprocess_env(),
+        )
         if result.returncode == 0:
             version = result.stdout.strip()
             print(f"OK: kicad-cli found ({version})")
@@ -127,6 +172,7 @@ def _run_kicad_cli(args: list[str], timeout: int = 30) -> subprocess.CompletedPr
         capture_output=True,
         text=True,
         timeout=timeout,
+        env=_subprocess_env(),
     )
 
 
@@ -136,7 +182,8 @@ def _validate_schematic(sch_path: Path) -> int:
     svg_out = sch_path.with_name(f"{sch_path.stem}.sch.svg")
     if svg_out.exists():
         svg_out.unlink()
-    result = _run_kicad_cli(["sch", "export", "svg", str(sch_path), "--output", str(svg_out)])
+    command = ["sch", "export", "svg", str(sch_path), "--output", str(svg_out)]
+    result = _run_kicad_cli(command)
     if result.returncode != 0:
         msg = f"kicad-cli sch export failed: {result.stderr.strip()}"
         _record_check("schematic_export_svg", "failed", msg, exit_code=result.returncode)
@@ -152,7 +199,9 @@ def _validate_schematic(sch_path: Path) -> int:
         "passed",
         f"Schematic SVG generated ({svg_out.stat().st_size} bytes)",
         exit_code=result.returncode,
+        command=[str(KICAD_CLI), *command],
         report_path=str(svg_out),
+        report_sha256=_sha256_path(svg_out),
     )
     print(f"OK: Schematic SVG generated ({svg_out.stat().st_size} bytes)")
     return 0
@@ -166,19 +215,18 @@ def _validate_pcb(pcb_path: Path) -> int:
     svg_out = pcb_path.with_name(f"{pcb_path.stem}.pcb.svg")
     if svg_out.exists():
         svg_out.unlink()
-    result = _run_kicad_cli(
-        [
-            "pcb",
-            "export",
-            "svg",
-            str(pcb_path),
-            "--layers",
-            "F.Cu,B.Cu",
-            "--mode-single",
-            "--output",
-            str(svg_out),
-        ]
-    )
+    export_command = [
+        "pcb",
+        "export",
+        "svg",
+        str(pcb_path),
+        "--layers",
+        "F.Cu,B.Cu",
+        "--mode-single",
+        "--output",
+        str(svg_out),
+    ]
+    result = _run_kicad_cli(export_command)
     if result.returncode != 0:
         detail = result.stderr.strip()
         if "created with a more recent version" in detail or "Expecting ')'" in detail:
@@ -202,16 +250,16 @@ def _validate_pcb(pcb_path: Path) -> int:
         "passed",
         f"PCB SVG generated ({svg_out.stat().st_size} bytes)",
         exit_code=result.returncode,
+        command=[str(KICAD_CLI), *export_command],
         report_path=str(svg_out),
+        report_sha256=_sha256_path(svg_out),
     )
     print(f"OK: PCB SVG generated ({svg_out.stat().st_size} bytes)")
 
     # Step 2: run kicad-cli DRC (requires a .kicad_pro project file)
     pro_path = pcb_path.with_suffix(".kicad_pro")
     if not pro_path.exists():
-        # Create a minimal project file if it doesn't exist
-        import json
-
+        # Create a minimal project file if it does not exist
         pro_data = {
             "meta": {"version": 1},
             "board": {"design_settings": {"defaults": {"copper_line_width": 0.25}}},
@@ -220,35 +268,72 @@ def _validate_pcb(pcb_path: Path) -> int:
         pro_path.write_text(json.dumps(pro_data, indent=2), encoding="utf-8")
         print(f"OK: Created minimal project file: {pro_path.name}")
 
-    drc_result = _run_kicad_cli(["pcb", "drc", str(pcb_path), "--output", str(pcb_path.with_suffix(".drc"))])
-    drc_out = pcb_path.with_suffix(".drc")
+    drc_json_out = pcb_path.with_suffix(".drc.json")
+    drc_text_out = pcb_path.with_suffix(".drc")
+    drc_command = ["pcb", "drc", "--format", "json", "--output", str(drc_json_out), str(pcb_path)]
+    drc_result = _run_kicad_cli(drc_command)
+    drc_out = drc_json_out if drc_json_out.exists() else drc_text_out
+    if not drc_json_out.exists():
+        # Older KiCad builds may not support JSON DRC output. Fall back to text
+        # evidence, but still record the exact fallback command and hash.
+        drc_command = ["pcb", "drc", str(pcb_path), "--output", str(drc_text_out)]
+        drc_result = _run_kicad_cli(drc_command)
+        drc_out = drc_text_out
+
     if drc_out.exists():
         drc_text = drc_out.read_text(encoding="utf-8")
         print(f"DRC report ({drc_out.stat().st_size} bytes):")
         for line in drc_text.splitlines()[:20]:
             print(f"  {line}")
-        # KiCad text DRC reports can include the word "Errors" in the header
-        # even when all findings are warnings. Treat warnings as review evidence,
-        # but fail the oracle only on explicit error-severity findings.
-        has_error_finding = "local override; error" in drc_text.lower() or "severity: error" in drc_text.lower()
+        has_error_finding = False
+        if drc_out.suffix == ".json":
+            try:
+                drc_json = json.loads(drc_text)
+            except json.JSONDecodeError:
+                drc_json = {}
+            serialized = json.dumps(drc_json).lower()
+            has_error_finding = '"severity": "error"' in serialized or '"severity":"error"' in serialized
+        else:
+            # KiCad text DRC reports can include the word "Errors" in the header
+            # even when all findings are warnings. Treat warnings as review evidence,
+            # but fail the oracle only on explicit error-severity findings.
+            has_error_finding = "local override; error" in drc_text.lower() or "severity: error" in drc_text.lower()
+        report_meta = {
+            "report_path": str(drc_out),
+            "report_sha256": _sha256_path(drc_out),
+            "command": [str(KICAD_CLI), *drc_command],
+            "exit_code": drc_result.returncode,
+        }
         if has_error_finding:
-            _record_check("pcb_drc", "failed", "DRC reported error-severity violations", report_path=str(drc_out))
+            _record_check("pcb_drc", "failed", "DRC reported error-severity violations", **report_meta)
             print("FAIL: DRC reported error-severity violations")
         else:
             message = "DRC report generated"
-            if "** Found 0 DRC violations **" not in drc_text:
+            if drc_out.suffix != ".json" and "** Found 0 DRC violations **" not in drc_text:
                 message = "DRC report generated with warnings only"
                 print("WARN: DRC reported warnings (review recommended)")
-            _record_check("pcb_drc", "passed", message, report_path=str(drc_out))
+            _record_check("pcb_drc", "passed", message, **report_meta)
     else:
         detail = drc_result.stderr.strip()
         if detail:
             msg = f"No DRC report generated: {detail}"
-            _record_check("pcb_drc", "skipped", msg, exit_code=drc_result.returncode)
+            _record_check(
+                "pcb_drc",
+                "skipped",
+                msg,
+                exit_code=drc_result.returncode,
+                command=[str(KICAD_CLI), *drc_command],
+            )
             print(f"NOTE: {msg}")
         else:
             msg = "No DRC report generated (kicad-cli version may not support 'pcb drc')"
-            _record_check("pcb_drc", "skipped", msg, exit_code=drc_result.returncode)
+            _record_check(
+                "pcb_drc",
+                "skipped",
+                msg,
+                exit_code=drc_result.returncode,
+                command=[str(KICAD_CLI), *drc_command],
+            )
             print(f"NOTE: {msg}")
 
     print("OK: PCB file parses and exports correctly in KiCad")
@@ -259,6 +344,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="KiCad CLI Oracle")
     parser.add_argument("--check", action="store_true", help="Only check if kicad-cli is available")
     parser.add_argument("--output", help="Write structured oracle summary JSON")
+    parser.add_argument("--strict-skips", action="store_true", help="Return non-zero when any oracle check is skipped")
     args = parser.parse_args()
 
     if not _check_kicad_cli():
@@ -266,9 +352,15 @@ def main() -> int:
         if args.check:
             return 0  # --check only: report availability silently
         print("SKIP: kicad-cli not available; install KiCad to run the oracle")
-        return 0
+        return 1 if args.strict_skips else 0
 
-    version = subprocess.run([str(KICAD_CLI), "--version"], capture_output=True, text=True, timeout=15).stdout.strip()
+    version = subprocess.run(
+        [str(KICAD_CLI), "--version"],
+        capture_output=True,
+        text=True,
+        timeout=15,
+        env=_subprocess_env(),
+    ).stdout.strip()
 
     if args.check:
         _write_summary(args.output, status="passed", version=version, cli_path=str(KICAD_CLI))
@@ -279,7 +371,7 @@ def main() -> int:
         _record_check("version", "skipped", msg)
         _write_summary(args.output, status="skipped", version=version, cli_path=str(KICAD_CLI))
         print(f"SKIP-APPROVED: {msg}")
-        return 0
+        return 1 if args.strict_skips else 0
 
     with tempfile.TemporaryDirectory(prefix="zaptrace-kicad-oracle-") as tmpdir:
         output_dir = Path(tmpdir)
@@ -308,7 +400,7 @@ def main() -> int:
             return 1
         if status == "skipped":
             print("\n⚠️ KiCad CLI oracle: SKIPPED checks require approved release-gate skip evidence")
-            return 0
+            return 1 if args.strict_skips else 0
         print("\n✅ KiCad CLI oracle: ALL CHECKS PASSED")
         return 0
 

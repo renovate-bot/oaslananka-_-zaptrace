@@ -16,6 +16,7 @@ import zaptrace.erc.rules as _erc_rules  # noqa: N812
 from zaptrace.core.diff import DiffType, diff_designs
 from zaptrace.core.models import Component
 from zaptrace.core.parser import parse_file, parse_str
+from zaptrace.core.session_store import make_design_mapping
 from zaptrace.core.state import design_state_hash
 from zaptrace.erc.models import ERCResult
 from zaptrace.erc.patches import suggest_patches
@@ -101,8 +102,15 @@ def _get_library() -> LibraryLoader:
 
 def _get_session(session_id: str) -> dict[str, Any]:
     if session_id not in _sessions:
-        _sessions[session_id] = {"designs": {}}
+        _sessions[session_id] = {"designs": make_design_mapping(session_id)}
     return _sessions[session_id]
+
+
+def _persist_design(session: dict[str, Any], design_name: str) -> None:
+    designs = session.get("designs", {})
+    persist = getattr(designs, "persist", None)
+    if callable(persist):
+        persist(design_name)
 
 
 def _record_validation_status(session: dict[str, Any], design_name: str) -> dict[str, Any]:

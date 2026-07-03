@@ -13,7 +13,9 @@ and a drop in any number is a real regression.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any
 
 _DIMENSIONS = ("functional_core", "composition", "electrical", "manufacturability")
@@ -104,9 +106,8 @@ def _score_case(case: BenchmarkCase) -> CaseResult:
     )
 
 
-def run_benchmark(corpus: tuple[BenchmarkCase, ...] | None = None) -> BenchmarkReport:
-    """Synthesize every corpus case and aggregate completeness across the engine."""
-    cases = corpus if corpus is not None else _DEFAULT_CORPUS
+@lru_cache(maxsize=16)
+def _run_benchmark_cached(cases: tuple[BenchmarkCase, ...]) -> BenchmarkReport:
     results = [_score_case(case) for case in cases]
     if not results:
         return BenchmarkReport()
@@ -125,3 +126,14 @@ def run_benchmark(corpus: tuple[BenchmarkCase, ...] | None = None) -> BenchmarkR
         weakest_dimension=weakest,
         worst_case=worst.name,
     )
+
+
+def run_benchmark(corpus: tuple[BenchmarkCase, ...] | None = None) -> BenchmarkReport:
+    """Synthesize every corpus case and aggregate completeness across the engine.
+
+    Results are cached per immutable corpus because the default benchmark is
+    intentionally deterministic and expensive. A deep copy is returned so callers
+    cannot mutate cached evidence shared by later tests or CI checks.
+    """
+    cases = corpus if corpus is not None else _DEFAULT_CORPUS
+    return copy.deepcopy(_run_benchmark_cached(cases))

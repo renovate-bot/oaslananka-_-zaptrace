@@ -9,9 +9,9 @@
 
 ## 1. Current State
 
-ZapTrace ships a FastMCP server with **66 exposed tools**: 63 design tools auto-registered from
-`zaptrace.agent._tool_impls.TOOL_REGISTRY` plus 3 MCP session-management tools. The generated source
-of truth is `docs/mcp/tools-reference.md`. Current categories include:
+ZapTrace ships a FastMCP server with **87 agent-facing tools** generated from
+`zaptrace.agent._tool_impls.TOOL_REGISTRY`. The generated source of truth is
+`docs/mcp/tools-reference.md`. Current categories include:
 
 - **Board:** board updates, net classification, net summaries, board JSON export
 - **Component Operations:** patch suggestions and component mutation tools

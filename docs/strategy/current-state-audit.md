@@ -1,7 +1,9 @@
 # ZapTrace Current State Audit
 
 *Generated: 2026-06-09*
-*Refreshed: 2026-06-19*
+*Refreshed: 2026-07-03*
+
+> This audit is a current-state snapshot. Historical pre-0.3.0 gaps are kept only where they remain accurate after the 0.3.0 evidence-hardening baseline.
 
 ## Repository Summary
 
@@ -13,11 +15,11 @@
 | **Language** | Python 3.12+ (with optional Rust extension) |
 | **Package manager** | uv (with uv.lock) |
 | **Build system** | hatchling |
-| **Tests** | 629 passing, 7 skipped locally; coverage 81.04% |
+| **Tests** | Deterministic pytest/coverage gate; exact counts are CI-generated and must not be hard-coded |
 | **Coverage target** | 75% |
 | **CI** | GitHub Actions quality, security, and release workflows |
 | **CLI** | 20+ commands via Click |
-| **MCP** | 66 exposed tools: 63 design tools plus 3 session tools |
+| **MCP** | 87 agent-facing tools generated from `TOOL_REGISTRY` |
 | **API** | FastAPI-based REST server |
 
 ## Current Architecture
@@ -25,7 +27,7 @@
 ZapTrace has a layered architecture:
 
 1. **Interface layer**: CLI (Click), MCP server (FastMCP), REST API (FastAPI), Python SDK
-2. **Agent layer**: Tool registry with 63 design tools, MCP session tools, pipeline autopilot
+2. **Agent layer**: Tool registry with 87 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
 3. **Core layer**: Pydantic models, YAML parser, diff engine
 4. **Domain layer**: EE knowledge base, net classifier, footprint generator, constraints
 5. **Verification layer**: ERC (29 rules), DRC (16 rules), auto-patch suggestions
@@ -55,14 +57,14 @@ ZapTrace has a layered architecture:
 - SVG schematic rendering
 - Markdown design report generation
 - Manufacturing ZIP bundle with manifest
-- 63 agent tools registered, plus MCP session management tools
+- 87 agent-facing tools registered from `TOOL_REGISTRY`
 - FastAPI-based REST API server
 - Design diff between two designs
 - Full pipeline autopilot (parse→ERC→place→route→export)
 - Component library with YAML data files
 - Session-based design store
 - Proof pack runner, manifest model, CLI/API/MCP entry points, and smoke checks
-- 629 tests across the Python package and CI smoke scripts
+- CI-backed pytest suites, hardware/golden smoke scripts, benchmark gates, and generated-board release gates
 - CI with lint, typecheck, test matrix, Rust build, package build, security scan, and release automation
 
 ## Experimental Capabilities
@@ -72,21 +74,21 @@ ZapTrace has a layered architecture:
 - **DFM/fab-profile foundation**: Fab profiles and profile-based DFM checks exist; external manufacturer evidence adapters and release-blocking manufacturing evidence are not implemented.
 - **Manufacturing readiness scoring**: Concept documented
 
-## Planned But Missing Capabilities
+## Planned / Foundation-Only Capabilities
 
-- **Proof Pack v1 hardening**: signed manifests, deterministic bundle layout, external-tool evidence, and release-blocking proof-pack policy
-- **Plugin system implementation**: Not yet functional (`zaptrace/plugins/`)
-- **SPICE netlist export**
-- **Advanced manufacturing evidence**: external DFM adapters, ODB++/IPC-2581 evidence, fab-house upload/acceptance records, and release-blocking manufacturing gates
+- **Proof Pack v1 hardening**: signed manifests, deterministic bundle layout, external-tool evidence, and release-blocking proof-pack policy need continued hardening.
+- **Plugin runtime hardening**: manifest/admission policy exists; runtime discovery/loading, sandbox execution, and registry governance remain incomplete.
+- **SPICE evidence**: netlist export and simulation-gate scaffolding exist; device-model coverage and release-blocking no-skip simulation evidence remain incomplete.
+- **Advanced manufacturing evidence**: external DFM adapters, ODB++/IPC-2581 evidence depth, fab-house upload/acceptance records, and release-blocking manufacturing gates remain incomplete.
 - **Multi-board/hierarchical design**
-- **Web-based PCB viewer**
-- **IPC-2581 export**
-- **KiCad import** (bidirectional)
-- **Push-and-shove interactive routing**
+- **Web-based PCB viewer**: static review viewer exists; interactive 2D PCB/proof evidence workflows remain incomplete.
+- **IPC-2581 export**: foundation exists; external validation and release-blocking fixture coverage remain incomplete.
+- **KiCad import** (bidirectional): importer foundation exists; parity/round-trip coverage remains incomplete.
+- **Push-and-shove interactive routing**: pad-aware escape routing foundation exists; rip-up/reroute, shove behavior, and quality scoring remain incomplete.
 - **BOM supply-chain enrichment** (Octopart, distributor APIs)
-- **Thermal simulation**
-- **Signal integrity analysis**
-- **RF/microwave awareness**
+- **Thermal simulation**: risk/foundation checks exist; solver-backed thermal simulation remains incomplete.
+- **Signal integrity analysis**: risk/foundation checks exist; solver-backed SI/PI evidence remains incomplete.
+- **RF/microwave awareness**: RF synthesis/foundation checks exist; RF/microwave-grade constraints remain incomplete.
 - **ML-assisted placement**
 
 ## Documentation Gaps (Before This Agent)
@@ -116,10 +118,10 @@ ZapTrace has a layered architecture:
 
 ## Developer Experience Gaps
 
-- No `zaptrace doctor` command
+- `zaptrace doctor` command added for validation-environment parity evidence
 - No `zaptrace init` command
 - No `zaptrace examples` command
-- No `zaptrace export proof-pack` command
+- Proof-pack CLI group exists; dedicated `zaptrace export proof-pack` alias remains optional/future
 - No comprehensive CLI help text beyond Click autogeneration
 - No type stubs for the Python SDK
 - No pre-built wheels (requires maturin build)
@@ -151,25 +153,25 @@ ZapTrace has a layered architecture:
 
 - Limited external-tool E2E coverage: the KiCad oracle exists but is optional when `kicad-cli` is unavailable
 - Integration tests exist for many components but not every API/MCP/export path
-- No performance/benchmark tests
+- Performance/benchmark tests exist; release-blocking performance budgets and sharded runtime policy still need hardening
 - Export regression corpus exists; it still needs release-blocking scorecards and round-trip fidelity coverage
 - No property-based testing (Hypothesis)
 
 ## CI/CD Gaps
 
 - Quality workflow is Ubuntu-only; no Windows/macOS quality matrix yet
-- `kicad-cli` oracle is not enforced as a required CI gate
+- `kicad-cli` oracle supports strict-skip evidence; repository policy still needs protected required-check enforcement on GitHub
 - Codecov upload exists, but minimum coverage enforcement is local pytest config rather than a protected GitHub check
-- No branch protection evidence captured in the repo
+- Branch protection evidence is documented in maturity reports; machine-verifiable periodic capture is still future work
 - No nightly builds
 - No mandatory hardware CI with real EDA binaries installed
 - Basic issue/PR templates exist; standardized governance templates and triage policy are documented but automation is still future work
 
 ## Security Gaps
 
-- Plugin security model not implemented
-- MCP server has no auth if exposed
-- REST API has no auth
+- Plugin manifest/admission policy exists; runtime sandbox enforcement remains incomplete
+- MCP capability policy exists; deployment-level auth/transport hardening remains required if exposed beyond stdio/local IPC
+- REST capability authorization helpers exist; deployment-specific token/session configuration remains required
 - REST request limits and security headers exist; MCP/REST threat-model tests and permission evidence are still thin
 - Security workflow exists (`uv audit`, Semgrep, CodeQL), but MCP/REST threat-model tests are still thin
 
@@ -205,19 +207,19 @@ This audit now separates implemented foundation, experimental evidence, and miss
 
 ## Top 20 Technical Risks
 
-1. **Session state is in-memory dict** — lost on restart, not scalable
-2. **No persistent storage** — designs are lost when server restarts
+1. **Session state defaults to in-memory dict** — opt-in filesystem persistence exists, but scalable multi-user storage is still future work
+2. **Persistent storage is opt-in** — design state can persist with `ZAPTRACE_SESSION_STORE_ROOT`, but DB-backed concurrency is not implemented
 3. **Router doesn't handle high-density boards well** — A* grid router is slow for complex designs
 4. **Rust extension is optional** — no guarantee of performance-critical path optimization
 5. **No multi-threading** — all operations are single-threaded
-6. **No caching of computation results** — repeated calculations
+6. **Limited caching of computation results** — deterministic synthesis benchmark is cached, broader compute caches remain future work
 7. **Schematic synthesis is template-based** — doesn't use LLM for creative design
 8. **Limited footprint library** — ~50 packages supported
 9. **No 3D model generation** — no STEP/IGES export
 10. **ERC rules are hardcoded** — not configurable by users
 11. **DRC rules are hardcoded** — not configurable by users
 12. **No design rule constraints from YAML** — limits user control
-13. **Gerber output not validated against external tools** — no cross-check
+13. **External validation is uneven** — KiCad oracle is strict-capable, but Gerber/fab-specific cross-check depth remains incomplete
 14. **No unit test for each ERC rule independently** — rules tested together
 15. **No metric for routing quality** — no via count, length optimization scoring
 16. **KiCad export is unidirectional** — no import capability
@@ -285,7 +287,7 @@ This audit now separates implemented foundation, experimental evidence, and miss
 ## Recommended 60-Day Plan
 
 1. **BOM enrichment** — distributor API integration for pricing, stock, lifecycle, alternates, and lead-time risk
-2. **SPICE netlist export**
+2. **SPICE model coverage and no-skip simulation evidence**
 3. **DFM checks** — annular ring, solder mask, copper balance, courtyard, silkscreen, board-edge, assembly orientation
 4. **Web-based viewer** — interactive 2D PCB and proof-pack evidence preview
 5. **Multi-board support** — hierarchical designs and board-to-board connector checks

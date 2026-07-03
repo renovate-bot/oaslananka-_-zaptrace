@@ -19,9 +19,11 @@ from zaptrace.core.models import (
     Component,
     Design,
     DesignMeta,
+    FootprintDef,
     Net,
     NetClass,
     NetNode,
+    Pad,
     RouteResult,
 )
 from zaptrace.ee.knowledge import KnowledgeBase
@@ -263,6 +265,34 @@ class TestGridRouterBasic:
         positions = {"c1": (10.0, 10.0), "c2": (50.0, 30.0)}
         result = router.route(simple_design, positions)
         assert result.total_trace_length_mm > 0
+
+    def test_pad_aware_routing_uses_escape_points_not_component_centres(self) -> None:
+        """Matched pads should move route endpoints to footprint escape points."""
+        d = Design(meta=DesignMeta(name="pad_escape"), board=BoardConfig(width_mm=60, height_mm=30))
+        fp = FootprintDef(
+            courtyard=(4.0, 2.0),
+            pads=[
+                Pad(id="p1", position=(-1.5, 0.0), size=(1.0, 1.0)),
+                Pad(id="p2", position=(1.5, 0.0), size=(1.0, 1.0)),
+            ],
+        )
+        d.components["r1"] = Component(id="r1", ref="R1", type="resistor", footprint_def=fp)
+        d.components["r2"] = Component(id="r2", ref="R2", type="resistor", footprint_def=fp)
+        d.nets["n1"] = Net(
+            id="n1",
+            name="SIG",
+            nodes=[
+                NetNode(component_ref="R1", pin_name="p2"),
+                NetNode(component_ref="R2", pin_name="p1"),
+            ],
+        )
+        result = GridRouter(resolution_mm=0.25).route(d, {"r1": (10.0, 15.0), "r2": (40.0, 15.0)})
+        assert result.routed_net_count == 1
+        endpoints = {point for trace in result.traces for point in (trace.start, trace.end)}
+        assert (10.0, 15.0) not in endpoints
+        assert (40.0, 15.0) not in endpoints
+        assert any(x > 11.5 and y == 15.0 for x, y in endpoints)
+        assert any(x < 38.5 and y == 15.0 for x, y in endpoints)
 
     def test_multi_net_routing(
         self,
