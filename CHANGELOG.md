@@ -6,6 +6,11 @@
 
 - Added professional open-source maturity documentation covering governance, support, maintainers, OpenSSF evidence, development policies, release integrity, and security assurance.
 - Added advisory workflows for repository hygiene, OpenSSF Scorecard, secret scanning, and dependency review.
+- Added a CI docs status-sync gate (`scripts/ci_docs_status_sync.py`) to fail when README/docs/changelog claims drift from live ERC/DRC/tool counts.
+- Added a CI validation-environment parity gate (`scripts/ci_validation_environment.py --strict`) and report artifact upload to keep release-triage prerequisites reproducible.
+- Added KiCad oracle skip semantics with approval evidence (`skip-approved` / `skip-unapproved`) via `scripts/ci_kicad_oracle.py --skip-approval-id` for stricter release-gate policy enforcement.
+- Added KiCad oracle report SHA-256 propagation into proof-pack evidence (`KiCadOracleEvidence.report_sha256`) so ERC/DRC records carry machine-checkable report identity.
+- Added CI-workflow regression tests to keep `validation-environment` parity and release-summary gate wiring from drifting.
 
 ## [0.3.0] - 2026-07-01 — Evidence Hardening and Benchmark Readiness
 
@@ -128,6 +133,7 @@
 ### Non-Claims
 
 This release does not claim:
+
 - Fabrication-ready output
 - Production-ready hardware generation
 - Manufacturer approval
