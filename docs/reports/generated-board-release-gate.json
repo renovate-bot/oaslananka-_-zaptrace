@@ -54,6 +54,15 @@
   "required_artifact_count": 9,
   "requirement_trace_count": 2,
   "review_handoff_present": true,
+  "risky_package_policy": {
+    "approval_id": "",
+    "blocked_component_count": 0,
+    "blocked_components": [],
+    "checked_component_count": 0,
+    "reviewed": false,
+    "risky_component_count": 0,
+    "risky_components": []
+  },
   "schema_version": "1.0",
   "schematic_passed": true
 }
