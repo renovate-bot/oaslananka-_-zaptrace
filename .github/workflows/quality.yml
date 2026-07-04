@@ -19,6 +19,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validation-environment:
+    name: Validation environment parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
+
+      - name: Run validation environment gate
+        run: |
+          python3 scripts/ci_validation_environment.py \
+            --strict \
+            --output validation-environment.json
+
+      - name: Upload validation environment report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: validation-environment
+          path: validation-environment.json
+
   lint:
     name: Lint & Typecheck
     runs-on: ubuntu-latest
@@ -221,7 +239,7 @@ jobs:
           sudo apt-get install --no-install-recommends -y kicad
 
       - name: Run KiCad oracle
-        run: uv run python scripts/ci_kicad_oracle.py --output kicad-oracle-summary.json
+        run: uv run python scripts/ci_kicad_oracle.py --strict-skips --output kicad-oracle-summary.json
 
       - name: Upload KiCad oracle summary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -269,6 +287,17 @@ jobs:
       - name: Check MCP tools reference is up to date
         run: uv run python scripts/generate_mcp_docs.py --check
 
+      - name: Check docs status-sync guard
+        run: |
+          uv run python scripts/ci_docs_status_sync.py \
+            --output docs-status-sync.json
+
+      - name: Upload docs status-sync report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: docs-status-sync
+          path: docs-status-sync.json
+
       - name: Check JSON Schema matches generated
         run: |
           uv run python -c "
@@ -287,7 +316,7 @@ jobs:
   release-gate-summary:
     name: Release gate summary
     runs-on: ubuntu-latest
-    needs: [lint, test, rust, build, docs-stale, benchmark-001, generated-board-release-gate, kicad-oracle, docker-image-smoke]
+    needs: [validation-environment, lint, test, rust, build, docs-stale, benchmark-001, generated-board-release-gate, kicad-oracle, docker-image-smoke]
     if: always()
     steps:
       - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
@@ -306,6 +335,7 @@ jobs:
       - name: Generate v0.3.0 gate summary
         run: |
           uv run python scripts/ci_release_gate.py \
+            --gate "validation-environment=${{ needs.validation-environment.result }}" \
             --gate "lint=${{ needs.lint.result }}" \
             --gate "tests=${{ needs.test.result }}" \
             --gate "rust=${{ needs.rust.result }}" \

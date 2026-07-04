@@ -20,3 +20,20 @@ def test_release_summary_depends_on_generated_board_gate() -> None:
     assert "generated-board-release-gate" in workflow
     assert "needs.generated-board-release-gate.result" in workflow
     assert '--gate "generated-board-release-gate=${{ needs.generated-board-release-gate.result }}"' in workflow
+
+
+def test_quality_workflow_runs_validation_environment_gate() -> None:
+    workflow = Path(".github/workflows/quality.yml").read_text(encoding="utf-8")
+
+    assert "validation-environment:" in workflow
+    assert "name: Validation environment parity" in workflow
+    assert "scripts/ci_validation_environment.py" in workflow
+    assert "--strict" in workflow
+    assert "validation-environment.json" in workflow
+
+
+def test_release_summary_depends_on_validation_environment_gate() -> None:
+    workflow = Path(".github/workflows/quality.yml").read_text(encoding="utf-8")
+
+    assert "needs.validation-environment.result" in workflow
+    assert '--gate "validation-environment=${{ needs.validation-environment.result }}"' in workflow

@@ -42,6 +42,19 @@ uv run python scripts/ci_kicad_roundtrip_scorecard.py --strict --output kicad-ro
 
 Release validation must not treat missing external tools as a pass. The KiCad oracle may emit explicit skip evidence for development environments, but release validation should use `--strict-skips` so unapproved missing-tool evidence fails the gate.
 
+KiCad oracle summaries now use explicit skip semantics:
+
+- `skip-unapproved`: skip has no approval id and blocks strict release validation.
+- `skip-approved`: skip includes `--skip-approval-id <ID>` evidence and may be allowed by policy.
+
+Example approved skip run (for controlled exceptions only):
+
+```bash
+uv run python scripts/ci_kicad_oracle.py --strict-skips --skip-approval-id APPROVAL-123 --output kicad-oracle-summary.json
+```
+
+In CI, the quality workflow runs the KiCad oracle with `--strict-skips` so any skip remains release-blocking unless explicitly handled outside the default workflow.
+
 ## Non-claims
 
 Passing this environment gate only proves that a machine can run ZapTrace validation. It does not prove that generated boards are electrically correct, fabrication-ready, manufacturer-approved, production-ready, or compliance-certified.
