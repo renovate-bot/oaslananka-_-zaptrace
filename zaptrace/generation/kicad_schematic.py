@@ -126,7 +126,7 @@ def generate_kicad_schematic_project(
         claim_violations=claim_violations,
     )
     report_path = out / f"{compiled.design.meta.name}.kicad_schematic_generation.json"
-    report_path.write_text(generated_kicad_schematic_report_json(report), encoding="utf-8")
+    report_path.write_text(generated_kicad_schematic_report_json(report), encoding="utf-8", newline="\n")
     return GeneratedKiCadSchematicProject(
         project_path=project_path,
         schematic_path=schematic_path,

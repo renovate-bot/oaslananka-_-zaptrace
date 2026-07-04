@@ -71,11 +71,11 @@ def export_kicad_schematic(design: Design, output_dir: Path) -> dict[str, Path]:
     files: dict[str, Path] = {}
 
     sch_path = _artifact_path(output_dir, design, ".kicad_sch")
-    sch_path.write_text(_build_schematic(design), encoding="utf-8")
+    sch_path.write_text(_build_schematic(design), encoding="utf-8", newline="\n")
     files["schematic"] = sch_path
 
     pro_path = _artifact_path(output_dir, design, ".kicad_pro")
-    pro_path.write_text(_build_project(design), encoding="utf-8")
+    pro_path.write_text(_build_project(design), encoding="utf-8", newline="\n")
     files["project"] = pro_path
 
     return files
@@ -90,7 +90,7 @@ def export_kicad_pcb(design: Design, output_dir: Path) -> dict[str, Path]:
     files: dict[str, Path] = {}
 
     pcb_path = _artifact_path(output_dir, design, ".kicad_pcb")
-    pcb_path.write_text(_build_pcb(design), encoding="utf-8")
+    pcb_path.write_text(_build_pcb(design), encoding="utf-8", newline="\n")
     files["pcb"] = pcb_path
 
     return files
@@ -108,6 +108,7 @@ def export_kicad_netlist_evidence(design: Design, output_dir: Path) -> dict[str,
     evidence_path.write_text(
         json.dumps(_build_netlist_evidence(design), indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
+        newline="\n",
     )
     return {"netlist_evidence": evidence_path}
 

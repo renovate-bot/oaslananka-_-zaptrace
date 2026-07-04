@@ -108,7 +108,7 @@ def generated_project_evidence_bundle_json(bundle: GeneratedProjectEvidenceBundl
 
 def _write_json(path: Path, payload: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(payload, encoding="utf-8")
+    path.write_text(payload, encoding="utf-8", newline="\n")
     return path
 
 
@@ -236,7 +236,7 @@ def generate_project_evidence_bundle(
         blocking_reasons=reasons,
     )
     bundle_path = out / f"{compiled.design.meta.name}.generated_project_evidence.json"
-    bundle_path.write_text(generated_project_evidence_bundle_json(bundle), encoding="utf-8")
+    bundle_path.write_text(generated_project_evidence_bundle_json(bundle), encoding="utf-8", newline="\n")
     return GeneratedProjectEvidenceResult(
         schematic=schematic,
         pcb=pcb,

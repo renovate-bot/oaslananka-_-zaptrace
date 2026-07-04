@@ -88,7 +88,7 @@ def _stabilize_kicad_uuids(path: Path, *, seed: str) -> None:
         stable = uuid.uuid5(uuid.NAMESPACE_URL, f"zaptrace:{seed}:kicad-pcb:{counter}")
         return f'(uuid "{stable}")'
 
-    path.write_text(re.sub(r'\(uuid "[^"]+"\)', replacement, text), encoding="utf-8")
+    path.write_text(re.sub(r'\(uuid "[^"]+"\)', replacement, text), encoding="utf-8", newline="\n")
 
 
 def _artifact(path: Path, root: Path) -> GeneratedPcbArtifact:
@@ -143,7 +143,7 @@ def generate_kicad_pcb_project(
         claim_violations=claim_violations,
     )
     report_path = out / f"{compiled.design.meta.name}.kicad_pcb_generation.json"
-    report_path.write_text(generated_kicad_pcb_report_json(report), encoding="utf-8")
+    report_path.write_text(generated_kicad_pcb_report_json(report), encoding="utf-8", newline="\n")
     return GeneratedKiCadPcbProject(
         pcb_path=pcb_path,
         report_path=report_path,
