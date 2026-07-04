@@ -81,9 +81,19 @@ def _kicad_major(version: str) -> int:
         return 0
 
 
-def _write_summary(path: str | None, *, status: str, version: str = "", cli_path: str = "") -> None:
+def _write_summary(
+    path: str | None,
+    *,
+    status: str,
+    version: str = "",
+    cli_path: str = "",
+    skip_approval_id: str = "",
+) -> None:
     if not path:
         return
+    semantic_status = status
+    if status == "skipped":
+        semantic_status = "skip-approved" if skip_approval_id else "skip-unapproved"
     artifact_hashes = {
         str(check["report_path"]): check.get("report_sha256", "")
         for check in _CHECKS
@@ -91,8 +101,10 @@ def _write_summary(path: str | None, *, status: str, version: str = "", cli_path
     }
     summary = {
         "schema_version": "1.0",
-        "kicad_oracle": status,
+        "kicad_oracle": semantic_status,
+        "raw_status": status,
         "skip_reason": "; ".join(dict.fromkeys(_SKIP_REASONS)),
+        "skip_approval_id": skip_approval_id,
         "version": version,
         "cli_path": cli_path,
         "checks": _CHECKS,
@@ -100,7 +112,7 @@ def _write_summary(path: str | None, *, status: str, version: str = "", cli_path
         "commands": [check.get("command") for check in _CHECKS if check.get("command")],
         "skip_policy": "skips are explicit evidence; release validation should use --strict-skips",
     }
-    Path(path).write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    Path(path).write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
 
 
 def _subprocess_env() -> dict[str, str]:
@@ -345,14 +357,22 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="Only check if kicad-cli is available")
     parser.add_argument("--output", help="Write structured oracle summary JSON")
     parser.add_argument("--strict-skips", action="store_true", help="Return non-zero when any oracle check is skipped")
+    parser.add_argument(
+        "--skip-approval-id",
+        default="",
+        help="Approved skip identifier for release evidence when a skip is expected",
+    )
     args = parser.parse_args()
 
     if not _check_kicad_cli():
-        _write_summary(args.output, status="skipped")
+        _write_summary(args.output, status="skipped", skip_approval_id=args.skip_approval_id)
         if args.check:
             return 0  # --check only: report availability silently
-        print("SKIP: kicad-cli not available; install KiCad to run the oracle")
-        return 1 if args.strict_skips else 0
+        if args.skip_approval_id:
+            print("SKIP-APPROVED: kicad-cli not available; approval id recorded")
+        else:
+            print("SKIP-UNAPPROVED: kicad-cli not available; install KiCad to run the oracle")
+        return 1 if args.strict_skips and not args.skip_approval_id else 0
 
     version = subprocess.run(
         [str(KICAD_CLI), "--version"],
@@ -369,9 +389,18 @@ def main() -> int:
     if _kicad_major(version) < 9:
         msg = f"kicad-cli {version} is too old for the modern KiCad PCB format emitted by ZapTrace"
         _record_check("version", "skipped", msg)
-        _write_summary(args.output, status="skipped", version=version, cli_path=str(KICAD_CLI))
-        print(f"SKIP-APPROVED: {msg}")
-        return 1 if args.strict_skips else 0
+        _write_summary(
+            args.output,
+            status="skipped",
+            version=version,
+            cli_path=str(KICAD_CLI),
+            skip_approval_id=args.skip_approval_id,
+        )
+        if args.skip_approval_id:
+            print(f"SKIP-APPROVED: {msg}")
+        else:
+            print(f"SKIP-UNAPPROVED: {msg}")
+        return 1 if args.strict_skips and not args.skip_approval_id else 0
 
     with tempfile.TemporaryDirectory(prefix="zaptrace-kicad-oracle-") as tmpdir:
         output_dir = Path(tmpdir)
@@ -394,13 +423,22 @@ def main() -> int:
             exit_code |= _validate_pcb(Path(pcb_files["pcb"]))
 
         status = _overall_status()
-        _write_summary(args.output, status=status, version=version, cli_path=str(KICAD_CLI))
+        _write_summary(
+            args.output,
+            status=status,
+            version=version,
+            cli_path=str(KICAD_CLI),
+            skip_approval_id=args.skip_approval_id,
+        )
         if status == "failed":
             print(f"\n❌ KiCad CLI oracle: FAILED (exit={exit_code})")
             return 1
         if status == "skipped":
-            print("\n⚠️ KiCad CLI oracle: SKIPPED checks require approved release-gate skip evidence")
-            return 1 if args.strict_skips else 0
+            if args.skip_approval_id:
+                print("\n⚠️ KiCad CLI oracle: SKIP-APPROVED (approval id recorded)")
+            else:
+                print("\n⚠️ KiCad CLI oracle: SKIP-UNAPPROVED (approval id required for strict release gates)")
+            return 1 if args.strict_skips and not args.skip_approval_id else 0
         print("\n✅ KiCad CLI oracle: ALL CHECKS PASSED")
         return 0
 

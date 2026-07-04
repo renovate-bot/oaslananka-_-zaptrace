@@ -482,6 +482,7 @@ class TestKiCadErcEvidence:
         assert evidence.cli_path == "/usr/bin/kicad-cli"
         assert evidence.exit_code == 1
         assert evidence.report_path == "/tmp/erc.json"
+        assert evidence.report_sha256 == ""
         assert evidence.errors == 1
         assert evidence.warnings == 1
         assert evidence.command[:3] == ["/usr/bin/kicad-cli", "sch", "erc"]
@@ -549,6 +550,7 @@ class TestKiCadDrcEvidence:
         assert evidence.cli_path == "/usr/bin/kicad-cli"
         assert evidence.exit_code == 1
         assert evidence.report_path == "/tmp/drc.json"
+        assert evidence.report_sha256 == ""
         assert evidence.errors == 1
         assert evidence.warnings == 1
         assert evidence.command[:3] == ["/usr/bin/kicad-cli", "pcb", "drc"]
@@ -601,3 +603,18 @@ def test_drc_incomplete_waiver_evidence_stays_failed() -> None:
     assert evidence.approval_id == "WAIVER-DRC-1"
     assert evidence.waiver_reason == ""
     assert evidence.errors == 1
+
+
+def test_oracle_evidence_carries_report_sha256() -> None:
+    result = KiCadErcResult(
+        available=True,
+        success=True,
+        message="0 ERC errors, 0 warnings",
+        report_path="reports/erc.json",
+        report_sha256="a" * 64,
+    )
+
+    evidence = result.to_oracle_evidence()
+
+    assert evidence.report_path == "reports/erc.json"
+    assert evidence.report_sha256 == "a" * 64

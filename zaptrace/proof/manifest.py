@@ -147,6 +147,7 @@ class KiCadOracleEvidence(BaseModel):
     command: list[str] = Field(default_factory=list, description="Executed command, if any")
     exit_code: int | None = Field(default=None, description="Process exit code, if a command ran")
     report_path: str | None = Field(default=None, description="Path to detailed oracle report artifact, if any")
+    report_sha256: str = Field(default="", description="SHA-256 of the oracle report artifact, if available")
     errors: int = Field(default=0, ge=0, description="Parsed error count")
     warnings: int = Field(default=0, ge=0, description="Parsed warning count")
     message: str = Field(default="", description="Human-readable outcome summary")

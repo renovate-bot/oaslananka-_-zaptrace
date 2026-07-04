@@ -17,9 +17,25 @@ def test_oracle_summary_writes_explicit_skipped_status(tmp_path: Path) -> None:
     ci_kicad_oracle._write_summary(str(output), status="skipped")
 
     data = json.loads(output.read_text(encoding="utf-8"))
-    assert data["kicad_oracle"] == "skipped"
+    assert data["kicad_oracle"] == "skip-unapproved"
+    assert data["raw_status"] == "skipped"
+    assert data["skip_approval_id"] == ""
     assert data["skip_reason"] == "kicad-cli not found on PATH"
     assert data["checks"][0]["status"] == "skipped"
+
+
+def test_oracle_summary_marks_skip_approved_when_approval_id_present(tmp_path: Path) -> None:
+    output = tmp_path / "summary.json"
+    ci_kicad_oracle._CHECKS.clear()
+    ci_kicad_oracle._SKIP_REASONS.clear()
+    ci_kicad_oracle._record_check("detect", "skipped", "kicad-cli not found on PATH")
+
+    ci_kicad_oracle._write_summary(str(output), status="skipped", skip_approval_id="APPROVAL-42")
+
+    data = json.loads(output.read_text(encoding="utf-8"))
+    assert data["kicad_oracle"] == "skip-approved"
+    assert data["raw_status"] == "skipped"
+    assert data["skip_approval_id"] == "APPROVAL-42"
 
 
 def test_oracle_summary_writes_failed_status(tmp_path: Path) -> None:
