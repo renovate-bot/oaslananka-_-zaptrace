@@ -19,7 +19,11 @@
 | **Coverage target** | 75% |
 | **CI** | GitHub Actions quality, security, and release workflows |
 | **CLI** | 20+ commands via Click |
-| **MCP** | 89 agent-facing tools generated from `TOOL_REGISTRY` |
+<<<<<<< HEAD
+| **MCP** | 90 agent-facing tools generated from `TOOL_REGISTRY` |
+=======
+| **MCP** | 90 agent-facing tools generated from `TOOL_REGISTRY` |
+>>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
 | **API** | FastAPI-based REST server |
 
 ## Current Architecture
@@ -27,7 +31,11 @@
 ZapTrace has a layered architecture:
 
 1. **Interface layer**: CLI (Click), MCP server (FastMCP), REST API (FastAPI), Python SDK
-2. **Agent layer**: Tool registry with 89 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
+<<<<<<< HEAD
+2. **Agent layer**: Tool registry with 90 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
+=======
+2. **Agent layer**: Tool registry with 90 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
+>>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
 3. **Core layer**: Pydantic models, YAML parser, diff engine
 4. **Domain layer**: EE knowledge base, net classifier, footprint generator, constraints
 5. **Verification layer**: ERC (29 rules), DRC (16 rules), auto-patch suggestions
@@ -54,6 +62,7 @@ ZapTrace has a layered architecture:
 - BOM CSV and JSON generation
 - Pick-and-place (centroid) CSV generation
 - KiCad schematic export
+<<<<<<< HEAD
 - KiCad hierarchical project import (multi-sheet, symbol libraries)
 - EasyEDA Standard format import/export with round-trip fidelity evidence (single flat JSON; distinct from EasyEDA Pro)
 - EasyEDA Pro format writer (ZIP+JSONL; import-only from KiCad via MCP tool)
@@ -61,7 +70,14 @@ ZapTrace has a layered architecture:
 - SVG schematic rendering
 - Markdown design report generation
 - Manufacturing ZIP bundle with manifest
-- 89 agent-facing tools registered from `TOOL_REGISTRY`
+- 90 agent-facing tools registered from `TOOL_REGISTRY`
+=======
+- Altium Designer ASCII schematic import with unsupported-record evidence (OLE binary format not supported; ASCII export from Altium required; import-only, KiCad-mediated export)
+- SVG schematic rendering
+- Markdown design report generation
+- Manufacturing ZIP bundle with manifest
+- 90 agent-facing tools registered from `TOOL_REGISTRY`
+>>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
 - FastAPI-based REST API server
 - Design diff between two designs
 - Full pipeline autopilot (parse→ERC→place→route→export)
@@ -244,7 +260,7 @@ This audit now separates implemented foundation, experimental evidence, and miss
 8. **No GUI** — limits adoption among visual designers
 9. **Hardware engineers prefer GUIs** — CLI-first is a hard sell
 10. **AI-assisted EDA market is crowded** — many new entrants
-11. **No integration with popular design tools** — no Altium/Eagle/OrCAD import
+11. **Limited integration with popular design tools** — Altium ASCII import supported; Eagle/OrCAD import not yet implemented
 12. **Documentation in English only** — limits global reach
 13. **No case studies** — no public success stories
 14. **Plugin ecosystem is empty** — no plugins to attract users

@@ -18,6 +18,7 @@ from zaptrace.core.models import Component
 from zaptrace.core.parser import parse_file, parse_str
 from zaptrace.core.session_store import make_design_mapping
 from zaptrace.core.state import design_state_hash
+from zaptrace.eda.altium import read_altium_ascii_sch
 from zaptrace.erc.models import ERCResult
 from zaptrace.erc.patches import suggest_patches
 from zaptrace.erc.runner import ERCRunner
@@ -2177,6 +2178,39 @@ def tool_calc_buck_lc(
     )
 
 
+def tool_altium_import_fidelity(altium_ascii_text: str) -> dict[str, Any]:
+    """Import an Altium Designer ASCII schematic and return fidelity evidence.
+
+    This tool targets the **ASCII export** format only — binary ``.SchDoc``
+    files (OLE Compound Document format) are not supported and will raise an
+    error. Export the schematic as ASCII from within Altium Designer first.
+
+    Returns a parity summary including component count, net count, net_score
+    (fraction of pins connected to at least one net), supported and unsupported
+    record types, and any error/warning messages. No native Altium writer is
+    invoked — this is **import-only**; use the KiCad export tools to produce
+    handoff artifacts.
+    """
+    result = read_altium_ascii_sch(altium_ascii_text)
+    d = result.to_dict()
+    unsupported_types = sorted({r.record_type for r in result.unsupported_records})
+    return {
+        "component_count": d["component_count"],
+        "net_count": d["net_count"],
+        "total_record_count": d["total_record_count"],
+        "supported_record_types": d["supported_record_types"],
+        "unsupported_record_types": unsupported_types,
+        "unsupported_record_count": d["unsupported_record_count"],
+        "net_score": d["net_score"],
+        "error_count": d["error_count"],
+        "warning_count": d["warning_count"],
+        "import_only_notice": (
+            "Altium import is read-only. No native Altium writer is available. "
+            "Use kicad_export_schematic for KiCad-mediated handoff artifacts."
+        ),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Tool registry
 # ---------------------------------------------------------------------------
@@ -3072,6 +3106,22 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
             "json_content": {
                 "type": "string",
                 "description": "EasyEDA Standard JSON document as a string",
+            },
+        },
+    },
+    "altium_import_fidelity": {
+        "name": "altium_import_fidelity",
+        "description": (
+            "Import an Altium Designer ASCII schematic and return fidelity evidence "
+            "(component count, net count, net_score, unsupported record types). "
+            "IMPORT-ONLY — no native Altium writer is available. Binary .SchDoc files "
+            "(OLE format) are not supported; export to ASCII from Altium Designer first."
+        ),
+        "fn": tool_altium_import_fidelity,
+        "params": {
+            "altium_ascii_text": {
+                "type": "string",
+                "description": "Full text of an Altium ASCII schematic (.SchDoc ASCII export)",
             },
         },
     },

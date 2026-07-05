@@ -9,7 +9,11 @@
 
 ## 1. Current State
 
-ZapTrace ships a FastMCP server with **89 agent-facing tools** generated from
+<<<<<<< HEAD
+ZapTrace ships a FastMCP server with **90 agent-facing tools** generated from
+=======
+ZapTrace ships a FastMCP server with **90 agent-facing tools** generated from
+>>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
 `zaptrace.agent._tool_impls.TOOL_REGISTRY`. The generated source of truth is
 `docs/mcp/tools-reference.md`. Current categories include:
 

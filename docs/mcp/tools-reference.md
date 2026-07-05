@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 89
+> Total tools: 90
 
 ---
 
@@ -837,6 +837,16 @@ Read an EasyEDA Standard JSON document, perform a full round-trip (read→Design
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `json_content` | `string` | EasyEDA Standard JSON document as a string |
+
+### `altium_import_fidelity`
+
+Import an Altium Designer ASCII schematic and return fidelity evidence (component count, net count, net_score, unsupported record types). IMPORT-ONLY — no native Altium writer is available. Binary .SchDoc files (OLE format) are not supported; export to ASCII from Altium Designer first.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `altium_ascii_text` | `string` | Full text of an Altium ASCII schematic (.SchDoc ASCII export) |
 
 ---
 
