@@ -446,3 +446,327 @@ def run_transient_gate(
         model_source=reference.model_source,
         checks=checks,
     )
+
+
+# ---------------------------------------------------------------------------
+# AC simulation gate
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class AcCheck:
+    """One pass/fail assertion against an AC sweep result.
+
+    Attributes
+    ----------
+    name:
+        Human-readable check label (e.g. ``"gain_at_1khz_db"``, ``"phase_margin"``).
+    passed:
+        ``True`` = pass, ``False`` = fail, ``None`` = not evaluated.
+    actual:
+        Measured value, or ``None`` if unavailable.
+    reference:
+        Configured threshold used for the comparison.
+    unit:
+        Unit string for display (e.g. ``"dB"``, ``"deg"``, ``"Hz"``).
+    """
+
+    name: str
+    passed: bool | None
+    actual: float | None
+    reference: float | None
+    unit: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "passed": self.passed,
+            "actual": self.actual,
+            "reference": self.reference,
+            "unit": self.unit,
+        }
+
+
+@dataclass
+class AcReference:
+    """Reference thresholds for one AC-analysis gate.
+
+    Attributes
+    ----------
+    node:
+        Net name to probe (e.g. ``"vout"``).
+    min_gain_db:
+        Minimum gain in dB at ``gain_check_hz``, or ``None`` to skip.
+    gain_check_hz:
+        Frequency for the gain check (default: 1 kHz).
+    max_gain_db:
+        Maximum gain in dB at ``gain_check_hz``, or ``None`` to skip.
+    min_phase_margin_deg:
+        Minimum phase margin in degrees, or ``None`` to skip.
+    min_crossover_hz:
+        Minimum crossover frequency in Hz, or ``None`` to skip.
+    max_crossover_hz:
+        Maximum crossover frequency in Hz, or ``None`` to skip.
+    model_source:
+        Provenance string for the model.
+    model_degraded:
+        Whether the reference uses an approximate model.
+    """
+
+    node: str
+    min_gain_db: float | None = None
+    gain_check_hz: float = 1e3
+    max_gain_db: float | None = None
+    min_phase_margin_deg: float | None = None
+    min_crossover_hz: float | None = None
+    max_crossover_hz: float | None = None
+    model_source: str = ""
+    model_degraded: bool = False
+
+
+@dataclass
+class AcGateResult:
+    """Blocking verdict for an AC simulation gate.
+
+    ``model_degraded`` is always included in :meth:`to_dict` — a degraded model
+    can never yield a silent PASS.
+
+    Attributes
+    ----------
+    status:
+        One of ``"pass"``, ``"fail"``, ``"skipped"``, or ``"no_reference"``.
+    blocking:
+        ``True`` when this result prevents the pipeline from proceeding.
+    strict:
+        Whether strict mode was enabled (skip → blocking).
+    design_name:
+        Name of the design that was simulated.
+    reason:
+        One-line human explanation of the outcome.
+    node:
+        Net name that was probed.
+    checks:
+        Per-assertion results.
+    model_degraded:
+        Always visible in serialisation; ``True`` when model is approximate.
+    model_source:
+        Provenance string for the model (version + hash).
+    """
+
+    status: str
+    blocking: bool
+    strict: bool
+    design_name: str
+    reason: str
+    node: str = ""
+    checks: list[AcCheck] = field(default_factory=list)
+    model_degraded: bool = False
+    model_source: str = ""
+
+    @property
+    def satisfied(self) -> bool:
+        return not self.blocking
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "blocking": self.blocking,
+            "satisfied": self.satisfied,
+            "strict": self.strict,
+            "design_name": self.design_name,
+            "reason": self.reason,
+            "node": self.node,
+            "model_degraded": self.model_degraded,
+            "model_source": self.model_source,
+            "checks": [c.to_dict() for c in self.checks],
+        }
+
+
+def run_ac_gate(
+    netlist: str,
+    reference: AcReference,
+    *,
+    design_name: str = "",
+    variation: str = "dec",
+    points_per_decade: int = 20,
+    start_hz: float = 1.0,
+    stop_hz: float = 10e6,
+    timeout_s: float = 30.0,
+    strict: bool = False,
+) -> AcGateResult:
+    """Run an AC simulation gate for a given netlist and reference.
+
+    Parameters
+    ----------
+    netlist:
+        SPICE netlist (without ``.ac`` or ``.control`` block).
+    reference:
+        Threshold configuration with provenance metadata.
+    design_name:
+        Label for the gate result.
+    variation:
+        ngspice sweep type (``"dec"``, ``"oct"``, or ``"lin"``).
+    points_per_decade:
+        Points per decade for the frequency sweep.
+    start_hz:
+        Start frequency in hertz.
+    stop_hz:
+        Stop frequency in hertz.
+    timeout_s:
+        Wall-clock timeout for ngspice.
+    strict:
+        If ``True``, a ``SKIPPED`` result is blocking.
+
+    Returns
+    -------
+    AcGateResult
+        ``status="skipped"`` when ngspice is absent;
+        ``status="no_reference"`` when all checks are disabled;
+        ``status="pass"`` / ``"fail"`` based on check outcomes.
+    """
+    from zaptrace.analysis.spice_sim import run_ac
+
+    ac = run_ac(
+        netlist,
+        reference.node,
+        variation=variation,
+        points_per_decade=points_per_decade,
+        start_hz=start_hz,
+        stop_hz=stop_hz,
+        timeout_s=timeout_s,
+    )
+
+    if ac.status == "skipped":
+        reason = "ngspice not available; recorded as explicit skip"
+        if strict:
+            reason += " (blocking in strict mode)"
+        return AcGateResult(
+            status="skipped",
+            blocking=strict,
+            strict=strict,
+            design_name=design_name,
+            reason=reason,
+            node=reference.node,
+            model_degraded=reference.model_degraded,
+            model_source=reference.model_source,
+        )
+
+    if ac.status == "error":
+        return AcGateResult(
+            status="fail",
+            blocking=True,
+            strict=strict,
+            design_name=design_name,
+            reason=f"ngspice error: {ac.reason}",
+            node=reference.node,
+            model_degraded=reference.model_degraded,
+            model_source=reference.model_source,
+        )
+
+    # ngspice ran successfully — evaluate checks
+    checks: list[AcCheck] = []
+
+    # Gain check at configured frequency
+    if reference.min_gain_db is not None or reference.max_gain_db is not None:
+        actual_gain = ac.gain_at_hz(reference.gain_check_hz)
+        if reference.min_gain_db is not None:
+            passed = (actual_gain is not None) and (actual_gain >= reference.min_gain_db)
+            checks.append(
+                AcCheck(
+                    name="min_gain",
+                    passed=passed,
+                    actual=actual_gain,
+                    reference=reference.min_gain_db,
+                    unit="dB",
+                )
+            )
+        if reference.max_gain_db is not None:
+            passed = (actual_gain is not None) and (actual_gain <= reference.max_gain_db)
+            checks.append(
+                AcCheck(
+                    name="max_gain",
+                    passed=passed,
+                    actual=actual_gain,
+                    reference=reference.max_gain_db,
+                    unit="dB",
+                )
+            )
+
+    # Phase margin check
+    if reference.min_phase_margin_deg is not None:
+        pm = ac.phase_margin_deg()
+        passed = (pm is not None) and (pm >= reference.min_phase_margin_deg)
+        checks.append(
+            AcCheck(
+                name="phase_margin",
+                passed=passed,
+                actual=pm,
+                reference=reference.min_phase_margin_deg,
+                unit="deg",
+            )
+        )
+
+    # Crossover frequency checks
+    if reference.min_crossover_hz is not None or reference.max_crossover_hz is not None:
+        fc = ac.crossover_hz()
+        if reference.min_crossover_hz is not None:
+            passed = (fc is not None) and (fc >= reference.min_crossover_hz)
+            checks.append(
+                AcCheck(
+                    name="min_crossover",
+                    passed=passed,
+                    actual=fc,
+                    reference=reference.min_crossover_hz,
+                    unit="Hz",
+                )
+            )
+        if reference.max_crossover_hz is not None:
+            passed = (fc is not None) and (fc <= reference.max_crossover_hz)
+            checks.append(
+                AcCheck(
+                    name="max_crossover",
+                    passed=passed,
+                    actual=fc,
+                    reference=reference.max_crossover_hz,
+                    unit="Hz",
+                )
+            )
+
+    if not checks:
+        return AcGateResult(
+            status="no_reference",
+            blocking=strict,
+            strict=strict,
+            design_name=design_name,
+            reason="simulation ran but no reference thresholds provided",
+            node=reference.node,
+            model_degraded=reference.model_degraded,
+            model_source=reference.model_source,
+        )
+
+    all_passed = all(c.passed is True for c in checks)
+    if all_passed:
+        return AcGateResult(
+            status="pass",
+            blocking=False,
+            strict=strict,
+            design_name=design_name,
+            reason="all AC checks passed",
+            node=reference.node,
+            model_degraded=reference.model_degraded,
+            model_source=reference.model_source,
+            checks=checks,
+        )
+
+    failed = [c.name for c in checks if c.passed is False]
+    return AcGateResult(
+        status="fail",
+        blocking=True,
+        strict=strict,
+        design_name=design_name,
+        reason=f"AC check(s) failed: {failed}",
+        node=reference.node,
+        model_degraded=reference.model_degraded,
+        model_source=reference.model_source,
+        checks=checks,
+    )
