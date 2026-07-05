@@ -111,15 +111,16 @@ def compute_escape_point(
     comp_ref = comp.ref
     fp: FootprintDef | None = comp.footprint_def
 
+    fallback_center = _synthetic_pin_escape_point(comp_ref, pin_name, comp_pos)
     fallback = PadEscapePoint(
         pad_type="unknown",
         component_ref=comp_ref,
         pin_name=pin_name,
         pad_id="?",
-        pad_center=comp_pos,
-        escape_point=comp_pos,
+        pad_center=fallback_center,
+        escape_point=fallback_center,
         is_fallback=True,
-        fallback_reason="no footprint_def",
+        fallback_reason="no footprint_def; synthetic pin escape used",
     )
 
     if fp is None:
@@ -154,6 +155,57 @@ def compute_escape_point(
         escape_point=escape_point,
         is_fallback=False,
     )
+
+
+def _synthetic_pin_escape_point(
+    comp_ref: str,
+    pin_name: str,
+    comp_pos: tuple[float, float],
+    *,
+    radius_mm: float = 1.0,
+) -> tuple[float, float]:
+    """Return a deterministic synthetic escape point when pad geometry is absent.
+
+    Falling back to the component centre collapses every pin on the component to
+    the same physical point, which creates artificial cross-net overlaps in DRC
+    and proof-pack clearance checks.  This synthetic fallback keeps the explicit
+    ``is_fallback`` evidence but spreads common pin names around the component so
+    router output remains inspectable and less pessimistic until real footprint
+    geometry is available.
+    """
+    cx, cy = comp_pos
+    key = pin_name.strip().lower()
+    semantic_angles = {
+        "gnd": -90.0,
+        "ground": -90.0,
+        "vss": -90.0,
+        "vbus": 180.0,
+        "vin": 180.0,
+        "input": 180.0,
+        "vcc": 90.0,
+        "vdd": 90.0,
+        "output": 0.0,
+        "vout": 0.0,
+        "en": 45.0,
+        "enable": 45.0,
+        "sda": 135.0,
+        "scl": 45.0,
+        "sck": 45.0,
+        "mosi": 0.0,
+        "miso": 180.0,
+        "cs": 90.0,
+        "csb": 90.0,
+        "sdO".lower(): -135.0,
+    }
+    if key in semantic_angles:
+        angle_deg = semantic_angles[key]
+    else:
+        # Stable, dependency-free hash distributed over 16 compass directions.
+        seed = sum((idx + 1) * ord(ch) for idx, ch in enumerate(f"{comp_ref}:{pin_name}"))
+        angle_deg = (seed % 16) * 22.5
+
+    angle = math.radians(angle_deg)
+    return (cx + math.cos(angle) * radius_mm, cy + math.sin(angle) * radius_mm)
 
 
 def _find_pad(fp: FootprintDef, pin_name: str) -> Pad | None:

@@ -81,8 +81,10 @@ class TestComputeEscapePointFallback:
         comp = _make_comp(ref="R1", footprint_def=None)
         ep = compute_escape_point(comp, "1", (10.0, 20.0))
         assert ep.is_fallback is True
-        assert ep.escape_point == (10.0, 20.0)
+        assert ep.escape_point != (10.0, 20.0)
+        assert ep.pad_center == ep.escape_point
         assert "no footprint_def" in ep.fallback_reason
+        assert "synthetic pin escape" in ep.fallback_reason
 
     def test_pin_not_in_footprint_returns_fallback(self) -> None:
         comp = _make_comp(ref="R1", pads=[_smd_pad("1"), _smd_pad("2")])
@@ -94,6 +96,17 @@ class TestComputeEscapePointFallback:
         comp = _make_comp(ref="R1", pads=[])
         ep = compute_escape_point(comp, "1", (3.0, 3.0))
         assert ep.is_fallback is True
+
+    def test_no_footprint_def_uses_pin_specific_synthetic_escape(self) -> None:
+        comp = _make_comp(ref="J1", footprint_def=None)
+        vbus = compute_escape_point(comp, "VBUS", (10.0, 20.0))
+        gnd = compute_escape_point(comp, "GND", (10.0, 20.0))
+
+        assert vbus.is_fallback is True
+        assert gnd.is_fallback is True
+        assert vbus.escape_point != gnd.escape_point
+        assert vbus.escape_point != (10.0, 20.0)
+        assert gnd.escape_point != (10.0, 20.0)
 
 
 # ---------------------------------------------------------------------------

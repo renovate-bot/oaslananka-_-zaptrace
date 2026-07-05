@@ -11,6 +11,8 @@ from zaptrace.ee.knowledge import KnowledgeBase
 
 logger = logging.getLogger(__name__)
 
+_ZERO_LENGTH_TOLERANCE_MM = 1e-9
+
 
 @dataclass
 class RouteSegment:
@@ -96,6 +98,52 @@ def route_nets(design: Design, positions: dict[str, tuple[float, float]]) -> Rou
     )
 
 
+def _is_zero_length(x1: float, y1: float, x2: float, y2: float) -> bool:
+    return math.hypot(x2 - x1, y2 - y1) <= _ZERO_LENGTH_TOLERANCE_MM
+
+
+def _append_segment_if_nonzero(
+    segments: list[RouteSegment],
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    net_name: str,
+) -> None:
+    """Append a segment unless it has zero physical length.
+
+    The Manhattan router may encounter aligned endpoints or duplicate synthetic
+    escape points. Emitting zero-length copper creates artificial DRC/clearance
+    hits downstream without representing real routed copper.
+    """
+    if _is_zero_length(x1, y1, x2, y2):
+        return
+    segments.append(RouteSegment(x1, y1, x2, y2, net_name))
+
+
+def _route_manhattan_edge(
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    net_name: str,
+) -> list[RouteSegment]:
+    """Route one MST edge as non-zero Manhattan segments."""
+    segments: list[RouteSegment] = []
+    if _is_zero_length(x1, y1, x2, y2):
+        return segments
+    if math.isclose(x1, x2, abs_tol=_ZERO_LENGTH_TOLERANCE_MM) or math.isclose(
+        y1, y2, abs_tol=_ZERO_LENGTH_TOLERANCE_MM
+    ):
+        _append_segment_if_nonzero(segments, x1, y1, x2, y2, net_name)
+        return segments
+
+    mid_x = x2
+    _append_segment_if_nonzero(segments, x1, y1, mid_x, y1, net_name)
+    _append_segment_if_nonzero(segments, mid_x, y1, x2, y2, net_name)
+    return segments
+
+
 def _route_net_mst(
     positions: list[tuple[float, float]],
     net_name: str,
@@ -130,9 +178,7 @@ def _route_net_mst(
     for i, j in mst_edges:
         x1, y1 = positions[i]
         x2, y2 = positions[j]
-        mid_x = x2
-        segments.append(RouteSegment(x1, y1, mid_x, y1, net_name))
-        segments.append(RouteSegment(mid_x, y1, x2, y2, net_name))
+        segments.extend(_route_manhattan_edge(x1, y1, x2, y2, net_name))
 
     return segments
 

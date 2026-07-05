@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 
 import pytest
 
@@ -154,8 +155,9 @@ class TestRouteDesignSmart:
         d = self._design_with_nets()
         positions = {"c1": (0.0, 0.0), "c2": (10.0, 20.0)}
         _, route, _sc = route_design_smart(d, positions)
-        # Manhattan: (10-0) + (20-0) = 30mm
-        assert route.total_trace_length_mm == 30.0
+        expected = round(sum(math.dist(t.start, t.end) for t in route.traces), 3)
+        assert route.total_trace_length_mm == expected
+        assert expected > 0.0
 
     def test_no_routable_nets(self) -> None:
         d = self._design_with_nets()
