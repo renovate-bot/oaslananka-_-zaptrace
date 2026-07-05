@@ -108,7 +108,7 @@ def validate_example(name: str, entry: Path) -> None:
     try:
         from zaptrace.algo.router import route_design_smart
 
-        _, design.routing = route_design_smart(design, positions)
+        _, design.routing, _sc = route_design_smart(design, positions)
         routed_count = len(getattr(design.routing, "routes", None) or getattr(design.routing, "traces", []))
         print(f"  Route:  {routed_count} route item(s)")
     except ImportError as exc:

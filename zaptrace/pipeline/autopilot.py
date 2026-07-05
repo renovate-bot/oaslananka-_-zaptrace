@@ -291,7 +291,7 @@ class Autopilot:
             )
             design.routing = route_result
         else:
-            ctx.routing, design.routing = route_design_smart(design, positions)
+            ctx.routing, design.routing, _ = route_design_smart(design, positions)
         if ctx.routing.routed_nets > 0 and not design.routing.traces:
             raise PipelineHaltError("Routing reported routed nets but produced no design.routing traces")
 

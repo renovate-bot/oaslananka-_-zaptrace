@@ -1427,7 +1427,7 @@ def tool_design_route_smart(design_name: str, layer: str = "F.Cu", session_id: s
     if not positions:
         raise ValueError(f"No placement positions found for '{design_name}'. Run place_components first.")
     kb = KnowledgeBase()
-    routing_result, route_result = route_design_smart(design, positions, kb=kb, layer=layer)
+    routing_result, route_result, _sc = route_design_smart(design, positions, kb=kb, layer=layer)
     session.setdefault("routing_results", {})[design_name] = route_result
     return {
         "design": design_name,

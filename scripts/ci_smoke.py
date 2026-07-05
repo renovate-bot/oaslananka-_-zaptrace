@@ -32,7 +32,7 @@ def gerber_smoke() -> None:
     )
     classify_design(design)
     positions = place_components(design)
-    _, design.routing = route_design_smart(design, positions)
+    _, design.routing, _sc = route_design_smart(design, positions)
 
     with tempfile.TemporaryDirectory() as directory:
         output_dir = Path(directory)

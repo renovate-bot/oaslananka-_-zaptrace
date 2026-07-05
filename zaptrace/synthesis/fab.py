@@ -117,7 +117,7 @@ def route_synthesized_design(intent: str, *, name: str = "SynthesizedBoard") -> 
     if grid_result.routed_net_count > 0:
         design.routing = grid_result
     else:
-        _, design.routing = route_design_smart(design, placement)
+        _, design.routing, _sc = route_design_smart(design, placement)
 
     # Flood the ground net as a copper pour (the router leaves GND for the plane),
     # so every ground pin is connected through the fill. Identify it by net class

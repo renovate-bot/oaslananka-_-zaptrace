@@ -33,7 +33,7 @@ def test_canonical_net_id_accepts_id_and_unique_legacy_name() -> None:
 
 def test_routing_outputs_machine_net_ids_not_human_names() -> None:
     design = _design()
-    _, route = route_design_smart(design, {"u1": (10.0, 10.0), "r1": (30.0, 10.0)})
+    _, route, _sc = route_design_smart(design, {"u1": (10.0, 10.0), "r1": (30.0, 10.0)})
     assert route.traces
     assert {trace.net_id for trace in route.traces} == {"net-001"}
     assert "VCC_3V3" not in {trace.net_id for trace in route.traces}

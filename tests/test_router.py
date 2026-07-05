@@ -108,14 +108,14 @@ class TestRouteDesignSmart:
     def test_returns_route_result(self) -> None:
         d = self._design_with_nets()
         positions = {"c1": (10.0, 10.0), "c2": (50.0, 30.0)}
-        routing, route = route_design_smart(d, positions)
+        routing, route, _ = route_design_smart(d, positions)
         assert isinstance(route, RouteResult)
         assert route.routed_net_count >= 1
 
     def test_net_class_aware_trace_width(self) -> None:
         d = self._design_with_nets()
         positions = {"c1": (10.0, 10.0), "c2": (50.0, 30.0)}
-        _, route = route_design_smart(d, positions)
+        _, route, _sc = route_design_smart(d, positions)
         # VCC classified as POWER_MED → trace_width = 0.5
         assert len(route.traces) > 0
         expected = KnowledgeBase().get_rule(NetClass.POWER_MED).trace_width
@@ -123,7 +123,7 @@ class TestRouteDesignSmart:
 
     def test_empty_design(self) -> None:
         d = Design(meta=DesignMeta(name="empty"))
-        routing, route = route_design_smart(d, {})
+        routing, route, _ = route_design_smart(d, {})
         assert route.net_count == 0
         assert route.routed_net_count == 0
         assert route.total_trace_length_mm == 0.0
@@ -140,20 +140,20 @@ class TestRouteDesignSmart:
             NetClass.POWER_MED,
             NetClassRule(trace_width=0.35, clearance=0.2, max_vias=4, priority=2, description="custom"),
         )
-        _, route = route_design_smart(d, positions, kb=kb)
+        _, route, _sc = route_design_smart(d, positions, kb=kb)
         assert all(t.width == 0.35 for t in route.traces)
 
     def test_custom_layer(self) -> None:
         d = self._design_with_nets()
         positions = {"c1": (10.0, 10.0), "c2": (50.0, 30.0)}
-        _, route = route_design_smart(d, positions, layer="B.Cu")
+        _, route, _sc = route_design_smart(d, positions, layer="B.Cu")
         assert route.layers_used == ["B.Cu"]
         assert all(t.layer == "B.Cu" for t in route.traces)
 
     def test_total_length(self) -> None:
         d = self._design_with_nets()
         positions = {"c1": (0.0, 0.0), "c2": (10.0, 20.0)}
-        _, route = route_design_smart(d, positions)
+        _, route, _sc = route_design_smart(d, positions)
         # Manhattan: (10-0) + (20-0) = 30mm
         assert route.total_trace_length_mm == 30.0
 
@@ -161,7 +161,7 @@ class TestRouteDesignSmart:
         d = self._design_with_nets()
         # Only 1 component has position — no net can route
         positions = {"c1": (10.0, 10.0)}
-        routing, route = route_design_smart(d, positions)
+        routing, route, _ = route_design_smart(d, positions)
         assert route.routed_net_count == 0
         assert route.net_count == 0
 
@@ -205,6 +205,6 @@ class TestRoutingFailureSurfaces:
         monkeypatch.setattr(router_mod, "_route_net_mst", boom)
         positions = {"c1": (10.0, 10.0), "c2": (50.0, 30.0)}
         with caplog.at_level(logging.WARNING, logger="zaptrace.algo.router"):
-            _, route = route_design_smart(self._design(), positions)
+            _, route, _sc = route_design_smart(self._design(), positions)
         assert route.routed_net_count == 0
         assert any("Failed to route net" in r.message for r in caplog.records)

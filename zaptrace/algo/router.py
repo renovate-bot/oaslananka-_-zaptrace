@@ -4,7 +4,8 @@ import logging
 import math
 from dataclasses import dataclass
 
-from zaptrace.core.models import Design, RouteResult, TraceSegment
+from zaptrace.algo.pad_escape import RouteEvidenceScorecard, compute_escape_point
+from zaptrace.core.models import Component, Design, RouteResult, TraceSegment
 from zaptrace.ee.classifier import classify_design, get_net_class
 from zaptrace.ee.knowledge import KnowledgeBase
 
@@ -37,13 +38,13 @@ class RoutingResult:
 
 
 def route_nets(design: Design, positions: dict[str, tuple[float, float]]) -> RoutingResult:
-    """
-    Route all nets using Manhattan L-shaped routing.
+    """Route all nets using pad-aware Manhattan L-shaped routing.
 
     For each net with 2+ connected components:
-    - Find the (x,y) positions of all connected components
-    - Build an MST (minimum spanning tree) of component positions
-    - Route each MST edge as a Manhattan L-shaped path
+    - Resolve pad escape points from ``component.footprint_def`` when available.
+    - Fall back to component centres when no footprint/pad data is present.
+    - Build an MST of the resulting positions and route each edge as a
+      Manhattan L-shaped path.
 
     Returns RoutingResult with all route segments.
     """
@@ -52,25 +53,35 @@ def route_nets(design: Design, positions: dict[str, tuple[float, float]]) -> Rou
     unrouted: list[str] = []
     total = 0
 
-    # Build a mapping from component ref to position (positions dict uses component ID)
+    # Build component-ID → component and component-ref → position lookups.
+    component_by_ref: dict[str, Component] = {}
     ref_positions: dict[str, tuple[float, float]] = {}
     for c in design.components.values():
+        component_by_ref[c.ref] = c
         if c.id in positions:
             ref_positions[c.ref] = positions[c.id]
-        # Also check if the ref itself is a key in positions
         if c.ref in positions:
             ref_positions[c.ref] = positions[c.ref]
 
     for net in design.nets.values():
-        nodes_with_pos = [
-            ref_positions[node.component_ref] for node in net.nodes if node.component_ref in ref_positions
-        ]
-        if len(nodes_with_pos) < 2:
+        node_positions: list[tuple[float, float]] = []
+        for node in net.nodes:
+            comp_pos = ref_positions.get(node.component_ref)
+            if comp_pos is None:
+                continue
+            comp = component_by_ref.get(node.component_ref)
+            if comp is not None:
+                ep = compute_escape_point(comp, node.pin_name, comp_pos)
+                node_positions.append(ep.escape_point)
+            else:
+                node_positions.append(comp_pos)
+
+        if len(node_positions) < 2:
             continue
 
         total += 1
         try:
-            net_segments = _route_net_mst(nodes_with_pos, net.name)
+            net_segments = _route_net_mst(node_positions, net.name)
             segments.extend(net_segments)
             routed += 1
         except Exception:
@@ -126,6 +137,39 @@ def _route_net_mst(
     return segments
 
 
+def _has_clearance_debt(
+    new_segs: list[RouteSegment],
+    existing_segs: list[RouteSegment],
+    clearance_mm: float,
+) -> bool:
+    """Return True if any new segment is estimated to be within *clearance_mm*
+    of an existing segment (using axis-aligned bounding-box overlap check).
+
+    This is a conservative approximation — it only detects obvious cases and
+    does not replace a full DRC check.
+    """
+    if not existing_segs or clearance_mm <= 0.0:
+        return False
+
+    # Build bounding boxes for existing segments (inflated by clearance)
+    def bbox(seg: RouteSegment, margin: float) -> tuple[float, float, float, float]:
+        x_min = min(seg.x1, seg.x2) - margin
+        x_max = max(seg.x1, seg.x2) + margin
+        y_min = min(seg.y1, seg.y2) - margin
+        y_max = max(seg.y1, seg.y2) + margin
+        return (x_min, x_max, y_min, y_max)
+
+    existing_boxes = [bbox(s, clearance_mm) for s in existing_segs]
+
+    for ns in new_segs:
+        nx1, nx2 = min(ns.x1, ns.x2), max(ns.x1, ns.x2)
+        ny1, ny2 = min(ns.y1, ns.y2), max(ns.y1, ns.y2)
+        for ex_min, ex_max, ey_min, ey_max in existing_boxes:
+            if nx1 <= ex_max and nx2 >= ex_min and ny1 <= ey_max and ny2 >= ey_min:
+                return True
+    return False
+
+
 # ---------------------------------------------------------------------------
 # Net-class-aware routing — extends route_nets with EE knowledge
 # ---------------------------------------------------------------------------
@@ -136,15 +180,19 @@ def route_design_smart(
     positions: dict[str, tuple[float, float]],
     kb: KnowledgeBase | None = None,
     layer: str = "F.Cu",
-) -> tuple[RoutingResult, RouteResult]:
-    """Route all nets with net-class-aware trace widths.
+) -> tuple[RoutingResult, RouteResult, RouteEvidenceScorecard]:
+    """Route all nets with net-class-aware trace widths and pad escape points.
 
-    Classifies nets first (via :func:`classify_design`), then looks up
-    appropriate trace widths from the EE knowledge base and applies them
-    to each net's MST routing.
+    Classifies nets first (via :func:`classify_design`), resolves pad escape
+    points from ``Component.footprint_def`` when available, then looks up
+    appropriate trace widths from the EE knowledge base and applies them to
+    each net's MST routing.
 
-    Produces both the legacy :class:`RoutingResult` and the new
-    :class:`RouteResult` (Pydantic model with :class:`TraceSegment` items).
+    Produces the legacy :class:`RoutingResult`, the new :class:`RouteResult`
+    (Pydantic model with :class:`TraceSegment` items), and a
+    :class:`~zaptrace.algo.pad_escape.RouteEvidenceScorecard` with DRC debt
+    evidence distinguishing route failures, escape failures, and clearance
+    debt.
 
     Args:
         design: Design to route (will be classified in-place).
@@ -154,7 +202,7 @@ def route_design_smart(
         layer: Output layer name for ``RouteResult`` traces.
 
     Returns:
-        Tuple of ``(RoutingResult, RouteResult)``.
+        Tuple of ``(RoutingResult, RouteResult, RouteEvidenceScorecard)``.
     """
     if kb is None:
         kb = KnowledgeBase()
@@ -162,13 +210,23 @@ def route_design_smart(
     # Classify nets so we know the class per net
     classify_design(design)
 
-    # Build ref-to-position lookup
+    # Build ref-to-position and ref-to-component lookups
+    component_by_ref: dict[str, Component] = {}
     ref_positions: dict[str, tuple[float, float]] = {}
     for c in design.components.values():
+        component_by_ref[c.ref] = c
         if c.id in positions:
             ref_positions[c.ref] = positions[c.id]
         if c.ref in positions:
             ref_positions[c.ref] = positions[c.ref]
+
+    scorecard = RouteEvidenceScorecard(
+        non_claims=[
+            "route evidence is for engineering review only",
+            "not fabrication-ready",
+            "DRC debt counts are estimates pending KiCad oracle validation",
+        ]
+    )
 
     segments: list[RouteSegment] = []
     traces: list[TraceSegment] = []
@@ -178,21 +236,44 @@ def route_design_smart(
     total_length = 0.0
 
     for net in design.nets.values():
-        nodes_with_pos = [
-            ref_positions[node.component_ref] for node in net.nodes if node.component_ref in ref_positions
-        ]
-        if len(nodes_with_pos) < 2:
+        # Resolve pad escape points, falling back to component centres.
+        node_positions: list[tuple[float, float]] = []
+        fallback_refs: list[str] = []
+        fallback_reasons: list[str] = []
+
+        for node in net.nodes:
+            comp_pos = ref_positions.get(node.component_ref)
+            if comp_pos is None:
+                continue
+            comp = component_by_ref.get(node.component_ref)
+            if comp is not None:
+                ep = compute_escape_point(comp, node.pin_name, comp_pos)
+                node_positions.append(ep.escape_point)
+                scorecard.increment_pad_type(ep.pad_type)
+                if ep.is_fallback:
+                    fallback_refs.append(node.component_ref)
+                    fallback_reasons.append(ep.fallback_reason)
+            else:
+                node_positions.append(comp_pos)
+                fallback_refs.append(node.component_ref)
+                fallback_reasons.append("component not found in design")
+
+        if len(node_positions) < 2:
             continue
 
         total += 1
+
+        if fallback_refs:
+            scorecard.record_escape_fallback(net.id, net.name, fallback_refs, fallback_reasons)
 
         # Determine trace width from net class
         net_class = get_net_class(design, net.id)
         rule = kb.get_rule(net_class)
         width_mm = rule.trace_width
+        clearance_mm = rule.clearance
 
         try:
-            net_segments = _route_net_mst(nodes_with_pos, net.name)
+            net_segments = _route_net_mst(node_positions, net.name)
             for seg in net_segments:
                 seg.width_mm = width_mm
             segments.extend(net_segments)
@@ -211,10 +292,24 @@ def route_design_smart(
                 dy = seg.y2 - seg.y1
                 total_length += math.sqrt(dx * dx + dy * dy)
 
+            # Estimate clearance debt: check if any segment is too close to
+            # another net's segments (simple bounding-box check).
+            if _has_clearance_debt(net_segments, segments[: -len(net_segments)], clearance_mm):
+                scorecard.record_clearance_debt(
+                    net.id,
+                    net.name,
+                    f"estimated clearance < {clearance_mm}mm on one or more segments",
+                )
+
             routed += 1
         except Exception:
             logger.warning("Failed to route net %s; marking unrouted", net.name, exc_info=True)
             unrouted.append(net.name)
+            scorecard.record_route_failure(net.id, net.name, "MST routing exception")
+
+    scorecard.total_nets = total
+    scorecard.routed_nets = routed
+    scorecard.total_length_mm = round(total_length, 3)
 
     routing_result = RoutingResult(
         segments=segments,
@@ -232,4 +327,4 @@ def route_design_smart(
         routed_net_count=routed,
     )
 
-    return routing_result, route_result
+    return routing_result, route_result, scorecard

@@ -122,7 +122,7 @@ class TestE2EPipeline:
         """Placement + smart routing produces trace segments."""
         positions = place_components(simple_design)
         assert len(positions) >= 2
-        routing, route = route_design_smart(simple_design, positions)
+        routing, route, _ = route_design_smart(simple_design, positions)
         assert route.routed_net_count >= 1
         assert len(route.traces) > 0
         # Traces should have net-class-aware widths
@@ -134,7 +134,7 @@ class TestE2EPipeline:
         """DRC runs cleanly after classification and routing."""
         classify_design(simple_design)
         positions = place_components(simple_design)
-        routing, route = route_design_smart(simple_design, positions)
+        routing, route, _ = route_design_smart(simple_design, positions)
         simple_design.routing = route
         engine = DRCEngine()
         result = engine.run(simple_design)
@@ -145,7 +145,7 @@ class TestE2EPipeline:
         """Gerber RS-274X output is generated for all required layers."""
         classify_design(simple_design)
         positions = place_components(simple_design)
-        routing, route = route_design_smart(simple_design, positions)
+        routing, route, _ = route_design_smart(simple_design, positions)
         simple_design.routing = route
         gerber = generate_gerber(simple_design)
         # Should have at least the basic layers
@@ -158,7 +158,7 @@ class TestE2EPipeline:
         """Gerber files are created at the specified output directory."""
         classify_design(simple_design)
         positions = place_components(simple_design)
-        routing, route = route_design_smart(simple_design, positions)
+        routing, route, _ = route_design_smart(simple_design, positions)
         simple_design.routing = route
         files = generate_gerber(simple_design, output_dir=tmp_path)
         for path in files.values():
@@ -170,7 +170,7 @@ class TestE2EPipeline:
         """Excellon drill output is generated (may be empty if no PTH holes)."""
         classify_design(simple_design)
         positions = place_components(simple_design)
-        routing, route = route_design_smart(simple_design, positions)
+        routing, route, _ = route_design_smart(simple_design, positions)
         simple_design.routing = route
         files = generate_excellon(simple_design, output_dir=None)
         # No crash; files may be empty if no through-hole components
@@ -185,7 +185,7 @@ class TestE2EPipeline:
         positions = place_components(simple_design)
         assert len(positions) >= 2
         # Step 3: Route with smart routing
-        routing, route = route_design_smart(simple_design, positions)
+        routing, route, _ = route_design_smart(simple_design, positions)
         assert route.routed_net_count >= 1
         simple_design.routing = route
         # Step 4: DRC
