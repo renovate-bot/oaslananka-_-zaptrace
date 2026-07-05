@@ -2,45 +2,19 @@ from __future__ import annotations
 
 import math
 import re
-from collections import deque
 from pathlib import Path
-from typing import Any
 
 from zaptrace.core.models import Design, RouteResult, TraceSegment
+from zaptrace.io.sexp import SexpNode, SexpParseError
+from zaptrace.io.sexp import parse as _parse_sexp
 
 
-def _tokenize(s: str) -> list[str]:
-    """Tokenize a LISP-like S-expression string."""
-    s = s.replace("(", " ( ").replace(")", " ) ")
-    return s.split()
-
-
-def _parse_sexp(tokens: list[str] | deque[str]) -> list[Any] | str:
-    """Parse a list of tokens into nested lists representing the S-expression."""
-    if not isinstance(tokens, deque):
-        tokens = deque(tokens)
-    if not tokens:
-        return []
-
-    token = tokens.popleft()
-    if token == "(":
-        exp = []
-        while tokens and tokens[0] != ")":
-            exp.append(_parse_sexp(tokens))
-        if tokens:
-            tokens.popleft()  # pop ")"
-        return exp
-    if token == ")":
-        raise ValueError("Unexpected ')'")
-    return token
-
-
-def _find_node(node: list[Any] | str, name: str) -> list[Any] | None:
-    """Find the first node with the given name in the S-expression."""
+def _find_node(node: SexpNode, name: str) -> list[SexpNode] | None:
+    """Find the first list node whose first element equals *name*."""
     if not isinstance(node, list) or not node:
         return None
     if node[0] == name:
-        return node
+        return node  # type: ignore[return-value]
     for child in node[1:]:
         if isinstance(child, list):
             res = _find_node(child, name)
@@ -49,17 +23,24 @@ def _find_node(node: list[Any] | str, name: str) -> list[Any] | None:
     return None
 
 
-def _find_nodes(node: list[Any] | str, name: str) -> list[list[Any]]:
-    """Find all nodes with the given name in the S-expression."""
-    results: list[list[Any]] = []
+def _find_nodes(node: SexpNode, name: str) -> list[list[SexpNode]]:
+    """Find all list nodes whose first element equals *name*."""
+    results: list[list[SexpNode]] = []
     if not isinstance(node, list) or not node:
         return results
     if node[0] == name:
-        results.append(node)
+        results.append(node)  # type: ignore[arg-type]
     for child in node[1:]:
         if isinstance(child, list):
             results.extend(_find_nodes(child, name))
     return results
+
+
+def _to_float(node: SexpNode) -> float:
+    """Convert a leaf *node* to float; raises ``ValueError`` if not possible."""
+    if isinstance(node, str):
+        return float(node)
+    raise ValueError(f"Expected atom, got list: {node!r}")
 
 
 def parse_ses(filepath: str | Path) -> RouteResult:
@@ -79,9 +60,10 @@ def parse_ses(filepath: str | Path) -> RouteResult:
     except OSError as e:
         raise ValueError(f"Failed to read SES file: {e}") from e
 
-    tokens = _tokenize(content)
     try:
-        sexp = _parse_sexp(tokens)
+        sexp = _parse_sexp(content)
+    except SexpParseError as e:
+        raise ValueError(f"Malformed SES file (S-expression error): {e}") from e
     except ValueError as e:
         raise ValueError(f"Malformed SES file (S-expression error): {e}") from e
 
@@ -90,7 +72,7 @@ def parse_ses(filepath: str | Path) -> RouteResult:
     if res_node and len(res_node) >= 3:
         unit = str(res_node[1]).lower()
         try:
-            val = float(res_node[2])
+            val = _to_float(res_node[2])
             if val != 0:
                 if unit == "um":
                     scale_factor = 1.0 / (val * 1000.0)
@@ -145,8 +127,8 @@ def parse_ses(filepath: str | Path) -> RouteResult:
                 if path and len(path) >= 4:
                     layer = str(path[1])
                     try:
-                        width = float(path[2]) * scale_factor
-                        pts = [float(x) * scale_factor for x in path[3:]]
+                        width = _to_float(path[2]) * scale_factor
+                        pts = [_to_float(x) * scale_factor for x in path[3:]]
                     except ValueError:
                         continue
 
@@ -172,8 +154,8 @@ def parse_ses(filepath: str | Path) -> RouteResult:
                 if len(item) >= 4:
                     via_name = str(item[1])
                     try:
-                        x = float(item[2]) * scale_factor
-                        y = float(item[3]) * scale_factor
+                        x = _to_float(item[2]) * scale_factor
+                        y = _to_float(item[3]) * scale_factor
                     except ValueError:
                         continue
 
