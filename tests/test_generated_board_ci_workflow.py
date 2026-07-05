@@ -37,3 +37,9 @@ def test_release_summary_depends_on_validation_environment_gate() -> None:
 
     assert "needs.validation-environment.result" in workflow
     assert '--gate "validation-environment=${{ needs.validation-environment.result }}"' in workflow
+
+
+def test_hardware_smoke_uses_current_router_result_shape() -> None:
+    workflow = Path(".github/workflows/hardware.yml").read_text(encoding="utf-8")
+
+    assert "_, d.routing, _ = route_design_smart(d, positions)" in workflow

@@ -8,6 +8,12 @@ def test_version_parser_reads_major_minor() -> None:
     assert ci_validation_environment._first_version_number("KiCad CLI 9.0.1") == (9, 0)
 
 
+def test_kicad_requirement_rejects_legacy_cli() -> None:
+    requirement = next(req for req in ci_validation_environment.TOOL_REQUIREMENTS if req.name == "KiCad CLI")
+
+    assert (requirement.min_major, requirement.min_minor) == (9, 0)
+
+
 def test_report_contains_release_commands_and_non_claims() -> None:
     report = ci_validation_environment.build_report()
     assert report["schema_version"] == "1.0"

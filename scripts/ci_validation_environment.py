@@ -85,6 +85,8 @@ TOOL_REQUIREMENTS: tuple[ToolRequirement, ...] = (
     ToolRequirement(
         name="KiCad CLI",
         executable="kicad-cli",
+        min_major=9,
+        min_minor=0,
         gate="external-oracle",
         install_hint="Install KiCad 9+ for release validation and KiCad oracle evidence.",
     ),
