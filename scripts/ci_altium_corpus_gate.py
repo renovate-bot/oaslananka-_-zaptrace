@@ -37,9 +37,7 @@ def _score_fixture(path: Path) -> dict[str, object]:
     source = path.read_text(encoding="utf-8", errors="replace")
     result = read_altium_ascii_sch(source)
     d = result.to_dict()
-    unsupported_types = sorted(
-        {r.record_type for r in result.unsupported_records}
-    )
+    unsupported_types = sorted({r.record_type for r in result.unsupported_records})
     return {
         "fixture": path.name,
         "component_count": d["component_count"],
@@ -95,9 +93,7 @@ def main(argv: list[str] | None = None) -> int:
         summary = _score_fixture(fixture)
         summaries.append(summary)
         if not summary["passed"]:
-            failures.append(
-                f"{summary['fixture']}: {summary['error_count']} error(s)"
-            )
+            failures.append(f"{summary['fixture']}: {summary['error_count']} error(s)")
         print(
             f"  {summary['fixture']}: "
             f"comps={summary['component_count']} "
@@ -108,11 +104,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     # Compute mean score over non-adversarial fixtures only
-    scored = [
-        s
-        for s in summaries
-        if not str(s["fixture"]).startswith(args.adversarial_prefix)
-    ]
+    scored = [s for s in summaries if not str(s["fixture"]).startswith(args.adversarial_prefix)]
     mean_score = sum(float(str(s["net_score"])) for s in scored) / len(scored) if scored else 0.0
 
     report = {
@@ -126,14 +118,9 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     if args.output:
-        Path(args.output).write_text(
-            json.dumps(report, indent=2), encoding="utf-8"
-        )
+        Path(args.output).write_text(json.dumps(report, indent=2), encoding="utf-8")
 
-    print(
-        f"\nSummary: {len(summaries)} fixtures, "
-        f"mean net_score={mean_score:.3f} (threshold={args.min_score})"
-    )
+    print(f"\nSummary: {len(summaries)} fixtures, mean net_score={mean_score:.3f} (threshold={args.min_score})")
 
     if failures:
         print(f"FAILED ({len(failures)} fixture(s) with errors):", file=sys.stderr)

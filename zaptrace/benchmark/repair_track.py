@@ -201,9 +201,7 @@ def _detect_fault_in_schematic(fault: RepairFaultSpec, project_dir: Path) -> Fau
         has_power_net = any(k in combined_text for k in ("VCC", "VDD", "3V3", "5V"))
         has_pwr_flag = "PWR_FLAG" in combined_text
         detected = has_power_net and not has_pwr_flag
-        detail = (
-            "Power nets found but no PWR_FLAG symbol" if detected else "Power flags present or no power nets"
-        )
+        detail = "Power nets found but no PWR_FLAG symbol" if detected else "Power flags present or no power nets"
 
     elif fault.fault_class == "erc_duplicate_net":
         # Heuristic: count net label occurrences
@@ -264,9 +262,7 @@ def run_repair_task(
     if spec.faults:
         detect_rate = detected_count / len(spec.faults)
         if detect_rate < min_detect_rate:
-            violations.append(
-                f"Detection rate {detect_rate:.2f} < required {min_detect_rate:.2f}"
-            )
+            violations.append(f"Detection rate {detect_rate:.2f} < required {min_detect_rate:.2f}")
 
     # Any release-blocking fault that was not detected is a violation
     for fault, outcome in zip(spec.faults, outcomes, strict=True):

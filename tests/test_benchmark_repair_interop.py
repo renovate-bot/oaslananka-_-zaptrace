@@ -56,9 +56,7 @@ def _make_schematic_power_no_flag(tmp_path: Path) -> Path:
     proj = tmp_path / "power_no_flag"
     proj.mkdir()
     (proj / "test.kicad_pro").write_text("{}")
-    (proj / "test.kicad_sch").write_text(
-        '(kicad_sch (version 20231120)\n  (net 1 "VCC")\n  (net 2 "GND")\n)'
-    )
+    (proj / "test.kicad_sch").write_text('(kicad_sch (version 20231120)\n  (net 1 "VCC")\n  (net 2 "GND")\n)')
     return proj
 
 
@@ -66,9 +64,7 @@ def _make_minimal_project(tmp_path: Path, name: str = "minimal") -> Path:
     proj = tmp_path / name
     proj.mkdir()
     (proj / f"{name}.kicad_pro").write_text("{}")
-    (proj / f"{name}.kicad_sch").write_text(
-        '(kicad_sch (version 20231120)\n  (net 1 "VCC")\n  (net 2 "GND")\n)'
-    )
+    (proj / f"{name}.kicad_sch").write_text('(kicad_sch (version 20231120)\n  (net 1 "VCC")\n  (net 2 "GND")\n)')
     return proj
 
 
@@ -103,10 +99,7 @@ def _make_repair_task_spec(fault_classes: list[str]) -> RepairTaskSpec:
 def _make_interop_task_spec(categories: dict[str, float] | None = None) -> InteropTaskSpec:
     if categories is None:
         categories = {"connectivity": 0.75, "components": 0.75}
-    cat_specs = [
-        InteropCategorySpec(category=cat, min_score=thresh)
-        for cat, thresh in categories.items()
-    ]
+    cat_specs = [InteropCategorySpec(category=cat, min_score=thresh) for cat, thresh in categories.items()]
     return InteropTaskSpec(
         task_schema_version="1.0",
         task_id="unit-interop-001",
@@ -155,9 +148,7 @@ class TestRepairTaskSpecLoading:
         assert spec.thresholds.get("min_detection_rate", -1) >= 0
 
     def test_fault_spec_from_dict_minimal(self) -> None:
-        f = RepairFaultSpec.from_dict(
-            {"fault_id": "F1", "fault_class": "generic", "expected_detector": "x"}
-        )
+        f = RepairFaultSpec.from_dict({"fault_id": "F1", "fault_class": "generic", "expected_detector": "x"})
         assert f.fault_id == "F1"
         assert f.release_blocking is True  # default
 
@@ -183,9 +174,7 @@ class TestRepairFaultDetection:
     def test_no_detect_power_flag_when_flag_present(self, tmp_path: Path) -> None:
         proj = tmp_path / "with_flag"
         proj.mkdir()
-        (proj / "test.kicad_sch").write_text(
-            '(kicad_sch\n  (net 1 "VCC")\n  (symbol (lib_id "power:PWR_FLAG"))\n)'
-        )
+        (proj / "test.kicad_sch").write_text('(kicad_sch\n  (net 1 "VCC")\n  (symbol (lib_id "power:PWR_FLAG"))\n)')
         spec = _make_repair_task_spec(["erc_power_flag_missing"])
         result = run_repair_task(spec, proj)
         assert result.fault_outcomes[0].detected is False

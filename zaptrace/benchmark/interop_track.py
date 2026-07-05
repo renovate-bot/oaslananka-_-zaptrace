@@ -244,9 +244,7 @@ def run_interop_task(
         )
         category_scores.append(cs)
         if not passed and cat_spec.required:
-            violations.append(
-                f"{cat_spec.category}: {score:.3f} < {cat_spec.min_score:.3f}"
-            )
+            violations.append(f"{cat_spec.category}: {score:.3f} < {cat_spec.min_score:.3f}")
 
     status: Literal["pass", "fail", "skip", "error"] = "fail" if violations else "pass"
 

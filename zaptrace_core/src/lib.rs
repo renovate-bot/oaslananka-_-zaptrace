@@ -173,6 +173,148 @@ fn route_mst(points: Vec<(f64, f64)>) -> PyResult<Vec<(f64, f64, f64, f64)>> {
 }
 
 // ---------------------------------------------------------------------------
+// Shove router
+// ---------------------------------------------------------------------------
+
+/// Outcome of a single shove step.
+#[derive(Clone)]
+struct ShoveOutcome {
+    /// Resolved trace segments (x1, y1, x2, y2).
+    segments: Vec<(f64, f64, f64, f64)>,
+    /// Provenance string describing the resolution strategy.
+    provenance: String,
+    /// Whether a walkaround solution was found.
+    resolved: bool,
+}
+
+/// Axis-aligned bounding box for an obstacle.
+#[allow(clippy::too_many_arguments)]
+fn aabb_overlap(
+    ax1: f64,
+    ay1: f64,
+    ax2: f64,
+    ay2: f64,
+    bx1: f64,
+    by1: f64,
+    bx2: f64,
+    by2: f64,
+) -> bool {
+    ax1.min(ax2) < bx1.max(bx2)
+        && ax1.max(ax2) > bx1.min(bx2)
+        && ay1.min(ay2) < by1.max(by2)
+        && ay1.max(ay2) > by1.min(by2)
+}
+
+/// Try a walkaround detour for a trace crossing an obstacle.
+///
+/// Generates a deterministic 3-segment L+detour path that bypasses the
+/// obstacle bounding box.  Returns the resolved segments and provenance if
+/// the detour clears the obstacle; otherwise returns the original L-path.
+#[allow(clippy::too_many_arguments)]
+fn try_shove_walkaround(
+    x1: f64,
+    y1: f64,
+    x2: f64,
+    y2: f64,
+    obstacles: &[(f64, f64, f64, f64)],
+    clearance: f64,
+) -> ShoveOutcome {
+    // Build the naive L-path (horizontal then vertical)
+    let naive: Vec<(f64, f64, f64, f64)> = vec![(x1, y1, x2, y1), (x2, y1, x2, y2)];
+
+    // Check whether naive path conflicts with any obstacle
+    let naive_blocked = obstacles.iter().any(|&(ox1, oy1, ox2, oy2)| {
+        aabb_overlap(x1, y1, x2, y1, ox1, oy1, ox2, oy2)
+            || aabb_overlap(x2, y1, x2, y2, ox1, oy1, ox2, oy2)
+    });
+
+    if !naive_blocked {
+        return ShoveOutcome {
+            segments: naive,
+            provenance: "direct-l-path".into(),
+            resolved: true,
+        };
+    }
+
+    // Attempt a walkaround: detour above all obstacle bounding boxes
+    let detour_y = obstacles
+        .iter()
+        .map(|&(_, _, _, oy2)| oy2 + clearance)
+        .fold(f64::NEG_INFINITY, f64::max)
+        .max(y1.max(y2) + clearance);
+
+    // 3-segment path: (x1,y1)→(x1,detour_y)→(x2,detour_y)→(x2,y2)
+    let walkaround: Vec<(f64, f64, f64, f64)> = vec![
+        (x1, y1, x1, detour_y),
+        (x1, detour_y, x2, detour_y),
+        (x2, detour_y, x2, y2),
+    ];
+
+    let walkaround_blocked = obstacles.iter().any(|&(ox1, oy1, ox2, oy2)| {
+        walkaround
+            .iter()
+            .any(|&(sx1, sy1, sx2, sy2)| aabb_overlap(sx1, sy1, sx2, sy2, ox1, oy1, ox2, oy2))
+    });
+
+    if !walkaround_blocked {
+        return ShoveOutcome {
+            segments: walkaround,
+            provenance: format!("walkaround-above-y{:.3}", detour_y),
+            resolved: true,
+        };
+    }
+
+    // Fallback: return naive path with a no-solution provenance
+    ShoveOutcome {
+        segments: naive,
+        provenance: "no-solution-naive-fallback".into(),
+        resolved: false,
+    }
+}
+
+/// Route a rubber-band sketch through a shove kernel.
+///
+/// Route a rubber-band sketch through a shove kernel.
+///
+/// Each connection is represented as a (x1, y1, x2, y2, net_id) tuple.
+/// Obstacles are bounding boxes (x1, y1, x2, y2).  The engine resolves
+/// crossings using a deterministic walkaround strategy and returns the
+/// routed segments with provenance.
+///
+/// Args:
+///     connections: list of (x1, y1, x2, y2, net_id) tuples
+///     obstacles:   list of (x1, y1, x2, y2) obstacle bounding boxes
+///     clearance:   minimum clearance distance (mm)
+///
+/// Returns:
+///     list of tuples: (net_id: str, provenance: str, resolved: bool, segments: list of (x1,y1,x2,y2))
+#[pyfunction]
+#[allow(clippy::type_complexity)]
+fn route_shove(
+    connections: Vec<(f64, f64, f64, f64, String)>,
+    obstacles: Vec<(f64, f64, f64, f64)>,
+    clearance: f64,
+) -> PyResult<Vec<(String, String, bool, Vec<(f64, f64, f64, f64)>)>> {
+    if clearance < 0.0 {
+        return Err(PyValueError::new_err("clearance must be non-negative"));
+    }
+
+    let mut results = Vec::with_capacity(connections.len());
+
+    for (x1, y1, x2, y2, net_id) in connections {
+        let outcome = try_shove_walkaround(x1, y1, x2, y2, &obstacles, clearance);
+        results.push((
+            net_id,
+            outcome.provenance,
+            outcome.resolved,
+            outcome.segments,
+        ));
+    }
+
+    Ok(results)
+}
+
+// ---------------------------------------------------------------------------
 // Module registration
 // ---------------------------------------------------------------------------
 
@@ -180,5 +322,6 @@ fn route_mst(points: Vec<(f64, f64)>) -> PyResult<Vec<(f64, f64, f64, f64)>> {
 fn _core(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(place_components, m)?)?;
     m.add_function(wrap_pyfunction!(route_mst, m)?)?;
+    m.add_function(wrap_pyfunction!(route_shove, m)?)?;
     Ok(())
 }

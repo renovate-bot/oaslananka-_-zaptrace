@@ -81,9 +81,7 @@ def test_all_fixtures_parse_without_errors() -> None:
     for fixture in sorted(CORPUS_DIR.glob("*.asc")):
         src = fixture.read_text()
         result = read_altium_ascii_sch(src)
-        assert result.error_count == 0, (
-            f"{fixture.name}: {result.error_count} import error(s)"
-        )
+        assert result.error_count == 0, f"{fixture.name}: {result.error_count} import error(s)"
 
 
 def test_non_adversarial_fixtures_mean_score_above_threshold() -> None:
@@ -210,11 +208,7 @@ def test_altium_import_fidelity_no_native_writer() -> None:
     """Confirm no Altium writer function exists in the codebase."""
     import zaptrace.eda.altium as altium_module
 
-    writer_names = [
-        name
-        for name in dir(altium_module)
-        if "write" in name.lower() and "altium" in name.lower()
-    ]
+    writer_names = [name for name in dir(altium_module) if "write" in name.lower() and "altium" in name.lower()]
     assert not writer_names, f"Unexpected Altium writer(s): {writer_names}"
 
 
