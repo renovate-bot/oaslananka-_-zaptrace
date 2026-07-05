@@ -242,6 +242,23 @@ class TestRules:
         violations = rules.rule_ERC007(d)
         assert any(v.rule_id == "ERC007" for v in violations)
 
+    def test_erc007_usb_c_input_counts_as_power_source(self) -> None:
+        d = _design_with(
+            comps=[
+                Component(
+                    id="j1",
+                    ref="J1",
+                    type="USB-C-16P",
+                    pins={"VBUS": Pin(name="VBUS", type="power", net="VBUS")},
+                )
+            ],
+            nets=[
+                Net(id="vbus", name="VBUS", type=NetType.POWER, nodes=[NetNode(component_ref="J1", pin_name="VBUS")])
+            ],
+        )
+
+        assert rules.rule_ERC007(d) == []
+
     def test_erc009_tx_tx_connection(self) -> None:
         """ERC009: UART TX connected to TX (should be TX-RX)."""
         d = _design_with(
@@ -936,6 +953,23 @@ class TestERC027:
         )
         vs = rules.rule_ERC027(d)
         assert len(vs) == 0
+
+    def test_usb_c_input_counts_as_power_tree_source(self) -> None:
+        d = _design_with(
+            comps=[
+                Component(
+                    id="j1",
+                    ref="J1",
+                    type="USB-C-16P",
+                    pins={"VBUS": Pin(name="VBUS", type="power", net="VBUS")},
+                )
+            ],
+            nets=[
+                Net(id="vbus", name="VBUS", type=NetType.POWER, nodes=[NetNode(component_ref="J1", pin_name="VBUS")])
+            ],
+        )
+
+        assert rules.rule_ERC027(d) == []
 
     def test_orphan_power_net_detected(self) -> None:
         d = _design_with(

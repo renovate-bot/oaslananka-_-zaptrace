@@ -110,6 +110,7 @@ typecheck = [
     "pyright>=1.1.390",
 ]
 test = [
+    "hypothesis>=6.156.1",
     "pytest-asyncio>=1.4.0",
     "pytest-cov>=6.0",
 ]

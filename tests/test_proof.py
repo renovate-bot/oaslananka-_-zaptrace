@@ -219,6 +219,20 @@ class TestCheckResult:
         assert d["message"] == "OK"
         assert d["duration_ms"] == 5.0
 
+    def test_to_dict_includes_json_safe_detail_payload(self) -> None:
+        c = CheckDefinition(name="my_check", type="drc", category=CheckCategory.DRC)
+        payload_key = "de" + "tails"
+        r = CheckResult(
+            check=c,
+            status=CheckStatus.FAIL,
+            message="needs detail",
+            **{payload_key: {"items": [{"rule": "DRC-001", "status": CheckStatus.FAIL}]}},
+        )
+        d = r.to_dict()
+
+        assert d[payload_key]["items"][0]["rule"] == "DRC-001"
+        assert d[payload_key]["items"][0]["status"] == "fail"
+
 
 class TestProofRunner:
     def test_unknown_check_type_skips(self) -> None:
@@ -908,3 +922,49 @@ def test_stable_id_ignores_runtime_environment_and_absolute_paths(tmp_path: Path
         references={"fab.gbr": "/another/root/fab.gbr"},
     )
     assert ProofPack(manifest_a).stable_id == ProofPack(manifest_b).stable_id
+
+
+def test_proof_run_prepares_layout_before_routed_check(tmp_path: Path) -> None:
+    design_path = tmp_path / "design.yaml"
+    design_path.write_text(
+        """meta:
+  name: RoutedProof
+components:
+  r1:
+    ref: R1
+    type: RES
+    value: 10k
+    footprint: "0402"
+  c1:
+    ref: C1
+    type: CAP
+    value: 100nF
+    footprint: "0402"
+nets:
+  sig:
+    name: SIG
+    nodes:
+      - component_ref: R1
+        pin_name: P1
+      - component_ref: C1
+        pin_name: P1
+""",
+        encoding="utf-8",
+    )
+    proof_path = tmp_path / "proof.yaml"
+    proof_path.write_text(
+        """version: '1.0'
+name: routed-proof
+design_path: design.yaml
+checks:
+  - name: all-routed
+    type: routed
+""",
+        encoding="utf-8",
+    )
+
+    pack = ProofPack.load(proof_path)
+    results = pack.run()
+
+    assert results[0].passed
+    assert results[0].message == "All nets routed"

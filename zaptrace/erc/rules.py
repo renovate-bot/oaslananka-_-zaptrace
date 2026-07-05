@@ -915,7 +915,7 @@ def _is_power_source_component(comp: Component, pin_name: str) -> bool:
     type_lower = comp.type.lower()
     if any(kw in type_lower for kw in _REGULATOR_TYPE_KEYWORDS):
         return True
-    return "connector" in type_lower or "header" in type_lower or "jack" in type_lower
+    return any(kw in type_lower for kw in _CONNECTOR_TYPE_KEYWORDS)
 
 
 def _power_net_has_source(design: Design, net_id: str) -> bool:

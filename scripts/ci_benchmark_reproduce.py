@@ -78,13 +78,13 @@ def _collect_hashes() -> dict[str, str]:
                 import tempfile
 
                 with tempfile.TemporaryDirectory() as td:
-                    result = run_task(spec, Path(td))
+                    result = run_task(spec, Path(td), external_tool_mode="canonical_skip")
                 key = f"{track}/{spec.task_id}/__synthetic__"
                 hashes[key] = result.run_hash
             else:
                 for proj in project_dirs:
                     if proj.is_dir():
-                        result = run_task(spec, proj)
+                        result = run_task(spec, proj, external_tool_mode="canonical_skip")
                         key = f"{track}/{spec.task_id}/{proj.name}"
                         hashes[key] = result.run_hash
 

@@ -40,6 +40,7 @@ _SENTINEL_RUN_ID = "RUN-CANONICAL"  # used instead of timestamps in deterministi
 # ---------------------------------------------------------------------------
 
 GraderPolicy = Literal["never", "tool_unavailable", "always_skip"]
+ExternalToolMode = Literal["auto", "canonical_skip"]
 
 
 @dataclass
@@ -336,6 +337,7 @@ def run_task(
     project_dir: Path,
     *,
     run_id: str = _SENTINEL_RUN_ID,
+    external_tool_mode: ExternalToolMode = "auto",
 ) -> TaskRunResult:
     """Execute all graders in *spec* against *project_dir*.
 
@@ -347,6 +349,11 @@ def run_task(
 
     Returns a :class:`TaskRunResult` with a deterministic ``run_hash``
     (computed over a sentinel run_id so hash is stable across machines).
+
+    ``external_tool_mode="canonical_skip"`` intentionally records external
+    graders as unavailable even when the host has the tool installed.  CI
+    reproducibility gates use this mode for committed reference hashes so local
+    KiCad/ngspice installations do not make the benchmark hash drift.
     """
     max_rt = spec.limits.get("max_runtime_seconds", 300)
     wall_start = time.monotonic()
@@ -389,7 +396,18 @@ def run_task(
             else:
                 grader_results.append(builtin_fn(project_dir, grader_spec, spec.thresholds))
         else:
-            grader_results.append(_run_subprocess_grader(project_dir, grader_spec, spec.thresholds))
+            if external_tool_mode == "canonical_skip":
+                tool_exe = grader_spec.command[0] if grader_spec.command else grader_spec.tool
+                grader_results.append(
+                    GraderResult(
+                        grader_id=grader_spec.grader_id,
+                        status="skip",
+                        detail=f"External tool '{tool_exe}' not found; skipped per policy",
+                        skip_reason="tool_unavailable",
+                    )
+                )
+            else:
+                grader_results.append(_run_subprocess_grader(project_dir, grader_spec, spec.thresholds))
 
     # Evaluate threshold violations (only on pass/fail results)
     violations: list[str] = []

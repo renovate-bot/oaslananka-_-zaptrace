@@ -98,6 +98,17 @@ class TestKiCadTaskHashStability:
         result = run_task(spec, proj)
         assert len(result.run_hash) == 64
 
+    def test_canonical_skip_ignores_external_tool_availability(self, tmp_path: Path) -> None:
+        proj = _make_minimal_project(tmp_path)
+        spec = load_task(_KICAD_TASK)
+
+        result = run_task(spec, proj, external_tool_mode="canonical_skip")
+
+        external_results = [r for r in result.grader_results if r.grader_id == "kicad_erc"]
+        assert external_results
+        assert external_results[0].status == "skip"
+        assert external_results[0].skip_reason == "tool_unavailable"
+
 
 # ---------------------------------------------------------------------------
 # Repair task hash stability

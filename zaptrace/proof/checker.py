@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
@@ -37,13 +38,17 @@ class CheckResult:
         return self.status == CheckStatus.PASS
 
     def to_dict(self) -> dict:
-        return {
+        data = {
             "name": self.check.name,
             "category": self.check.category.value,
             "status": self.status.value,
             "message": self.message,
             "duration_ms": round(self.duration_ms, 1),
         }
+        extra = self.details
+        if extra is not None:
+            data["details"] = json.loads(json.dumps(extra, default=str))
+        return data
 
 
 CheckFunction = Callable[..., CheckResult]

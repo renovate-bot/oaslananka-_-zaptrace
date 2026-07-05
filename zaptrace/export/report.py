@@ -6,10 +6,19 @@ from zaptrace.core.board import canonical_board_definition
 from zaptrace.core.models import Design
 from zaptrace.erc.models import ERCResult
 
+_REPORT_GENERATED_AT = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+
 
 def generate_report(design: Design, erc_result: ERCResult | None = None) -> str:
-    """Generate a comprehensive Markdown design report."""
-    now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    """Generate a comprehensive Markdown design report.
+
+    The generated timestamp is fixed for the lifetime of the Python process.
+    That keeps normal CLI reports tied to the run that produced them while
+    preventing long in-process benchmark suites from producing different
+    artifact hashes when two otherwise identical reports cross a minute
+    boundary.
+    """
+    now = _REPORT_GENERATED_AT
     board = canonical_board_definition(design)
     lines = [
         f"# Design Report: {design.meta.name}",

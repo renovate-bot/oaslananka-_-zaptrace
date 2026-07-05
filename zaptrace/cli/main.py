@@ -589,11 +589,11 @@ def proof_pack(design_path: str, output: str | None, verbose: bool, output_forma
     proof_yaml = tmp_dir / "proof.yaml"
     import yaml
 
-    checks: list[dict[str, str | dict[str, str]]] = [
+    checks: list[dict[str, object]] = [
         {"name": "footprints_exist", "type": "footprint_exists", "severity": "error"},
         {"name": "all_routed", "type": "routed", "severity": "warning"},
-        {"name": "drc_clean", "type": "drc", "severity": "error"},
-        {"name": "erc_clean", "type": "erc", "severity": "error"},
+        {"name": "drc_clean", "type": "drc", "severity": "error", "expected_count": 0},
+        {"name": "erc_clean", "type": "erc", "severity": "error", "expected_count": 0},
         {"name": "clearance_check", "type": "clearance", "severity": "warning"},
     ]
     if profile:

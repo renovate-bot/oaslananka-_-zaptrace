@@ -240,10 +240,42 @@ class ProofPack:
     def run(self) -> list[CheckResult]:
         """Execute all checks in the manifest."""
         design = self.load_design()
+        self._prepare_design_for_checks(design)
         runner = ProofRunner(design)
         self.results = runner.run_checks(self.manifest.checks)
         self.update_autonomous_signoff()
         return self.results
+
+    def _prepare_design_for_checks(self, design: Design) -> None:
+        """Populate computed design state required by proof checks.
+
+        Proof manifests reference source design YAML files, but checks such as
+        routing, clearance, DRC, DFM, and KiCad oracle evidence operate on the
+        post-pipeline design state.  Rebuild that deterministic state here so a
+        proof run validates the same placed/routed design that the CLI pipeline
+        exports, instead of falsely failing on an uncomputed input model.
+        """
+        check_types = {check.type for check in self.manifest.checks}
+        needs_layout = bool(check_types & {"routed", "clearance", "drc", "dfm", "kicad_drc"})
+        needs_classification = needs_layout or bool(check_types & {"erc", "kicad_erc"})
+
+        if needs_classification:
+            from zaptrace.ee.classifier import classify_design
+
+            classify_design(design)
+
+        if not needs_layout:
+            return
+
+        if design.placement is None:
+            from zaptrace.algo.placer import place_components
+
+            design.placement = place_components(design)
+
+        if design.routing is None or not design.routing.traces:
+            from zaptrace.algo.router import route_design_smart
+
+            _, design.routing, _ = route_design_smart(design, design.placement or {})
 
     @property
     def passed(self) -> bool:
