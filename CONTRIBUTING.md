@@ -137,6 +137,15 @@ zaptrace/
 - Join our community (TBA)
 - Read the [docs](docs/)
 
+## Good First Issues
+
+New contributors should start with a small, well-scoped task. See the
+[Good First Issues catalog](docs/community/good-first-issues.md) for a curated
+list of newcomer-friendly work across documentation, examples, fixtures, and
+tests. Open issues are labelled
+[`good first issue`](https://github.com/oaslananka/zaptrace/labels/good%20first%20issue)
+and [`help wanted`](https://github.com/oaslananka/zaptrace/labels/help%20wanted).
+
 <!-- professional-oss-contribution-policy -->
 ## Professional OSS Contribution Policy
 

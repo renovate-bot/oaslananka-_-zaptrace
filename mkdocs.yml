@@ -68,6 +68,9 @@ nav:
       - Access Continuity: governance/access-continuity.md
       - Maintainer Access: governance/maintainer-access.md
 
+  - Community:
+      - Good First Issues: community/good-first-issues.md
+
   - Documentation System:
       - Tutorial - Getting Started: tutorials/getting-started.md
       - How-to Guides: how-to/index.md

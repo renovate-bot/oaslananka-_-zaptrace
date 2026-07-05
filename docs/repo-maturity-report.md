@@ -123,7 +123,7 @@ Diátaxis status:
 | PR process | Passed | PR template plus contributing guide. |
 | Time to first response | Partial | Best-effort support policy; no measured SLA. |
 | Contributor activity | Needs human confirmation | Requires live contribution analytics. |
-| Small tasks | Missing | Add `good first issue` / `help wanted` labels and seed small issues. |
+| Small tasks | Passed | `good first issue` / `help wanted` labels exist and are seeded from the [Good First Issues catalog](community/good-first-issues.md). |
 | All Contributors | Not applicable | Useful later if community grows. |
 
 ## License/legal maturity
@@ -182,7 +182,7 @@ Not added intentionally to avoid duplicate or noisy checks:
 
 1. [#80](https://github.com/oaslananka/zaptrace/issues/80) Add backup maintainer and define emergency release continuity.
 2. [#80](https://github.com/oaslananka/zaptrace/issues/80) Enable required non-author PR review once an independent reviewer exists.
-3. [#86](https://github.com/oaslananka/zaptrace/issues/86) Add `good first issue` and `help wanted` labels and seed small contributor tasks.
+3. ~~[#86](https://github.com/oaslananka/zaptrace/issues/86) Add `good first issue` and `help wanted` labels and seed small contributor tasks.~~ **Done** — labels exist and are seeded from the [Good First Issues catalog](community/good-first-issues.md).
 4. [#82](https://github.com/oaslananka/zaptrace/issues/82) Add fuzz/property-based tests for parsers, YAML ingestion, KiCad export, and MCP/API boundary inputs.
 5. [#81](https://github.com/oaslananka/zaptrace/issues/81) Add REUSE/SPDX header automation or a license-header checker.
 6. [#85](https://github.com/oaslananka/zaptrace/issues/85) Add checksum manifest generation for release assets, or document why attestations/SBOM are sufficient.
