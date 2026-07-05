@@ -13,15 +13,7 @@ ZapTrace is designed as a layered EDA kernel with a deterministic core, AI-assis
 ├───────┴──────────────┴────────────┴────────────────┴───────┤
 │                      Agent Layer                            │
 │  ┌──────────────────────────────────────────────────────┐  │
-<<<<<<< HEAD
-<<<<<<< HEAD
-│  │  Tool Registry (92 agent-facing tools)           │  │
-=======
-│  │  Tool Registry (92 agent-facing tools)           │  │
->>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
-=======
-│  │  Tool Registry (92 agent-facing tools)           │  │
->>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
+│  │  Tool Registry (93 agent-facing tools)           │  │
 │  │  Pipeline Autopilot                                   │  │
 │  └──────────────────────────────────────────────────────┘  │
 ├────────────────────────────────────────────────────────────┤
@@ -112,15 +104,7 @@ zaptrace/              # Main Python package
 ├── pipeline/          # Design flow autopilot
 │   └── autopilot.py   # Multi-stage pipeline runner
 ├── mcp/               # MCP protocol server
-<<<<<<< HEAD
-<<<<<<< HEAD
-│   └── server.py      # FastMCP server (92 agent-facing tools)
-=======
-│   └── server.py      # FastMCP server (92 agent-facing tools)
->>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
-=======
-│   └── server.py      # FastMCP server (92 agent-facing tools)
->>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
+│   └── server.py      # FastMCP server (93 agent-facing tools)
 ├── api/               # REST API
 │   ├── server.py      # FastAPI server
 │   ├── models.py      # API request/response models

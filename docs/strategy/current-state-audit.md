@@ -19,15 +19,7 @@
 | **Coverage target** | 75% |
 | **CI** | GitHub Actions quality, security, and release workflows |
 | **CLI** | 20+ commands via Click |
-<<<<<<< HEAD
-<<<<<<< HEAD
-| **MCP** | 92 agent-facing tools generated from `TOOL_REGISTRY` |
-=======
-| **MCP** | 92 agent-facing tools generated from `TOOL_REGISTRY` |
->>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
-=======
-| **MCP** | 92 agent-facing tools generated from `TOOL_REGISTRY` |
->>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
+| **MCP** | 93 agent-facing tools generated from `TOOL_REGISTRY` |
 | **API** | FastAPI-based REST server |
 
 ## Current Architecture
@@ -35,15 +27,7 @@
 ZapTrace has a layered architecture:
 
 1. **Interface layer**: CLI (Click), MCP server (FastMCP), REST API (FastAPI), Python SDK
-<<<<<<< HEAD
-<<<<<<< HEAD
-2. **Agent layer**: Tool registry with 92 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
-=======
-2. **Agent layer**: Tool registry with 92 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
->>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
-=======
-2. **Agent layer**: Tool registry with 92 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
->>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
+2. **Agent layer**: Tool registry with 93 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
 3. **Core layer**: Pydantic models, YAML parser, diff engine
 4. **Domain layer**: EE knowledge base, net classifier, footprint generator, constraints
 5. **Verification layer**: ERC (29 rules), DRC (16 rules), auto-patch suggestions
@@ -70,26 +54,14 @@ ZapTrace has a layered architecture:
 - BOM CSV and JSON generation
 - Pick-and-place (centroid) CSV generation
 - KiCad schematic export
-<<<<<<< HEAD
 - KiCad hierarchical project import (multi-sheet, symbol libraries)
 - EasyEDA Standard format import/export with round-trip fidelity evidence (single flat JSON; distinct from EasyEDA Pro)
 - EasyEDA Pro format writer (ZIP+JSONL; import-only from KiCad via MCP tool)
-- Altium Designer ASCII schematic import with unsupported-record evidence (OLE binary format not supported)
-- SVG schematic rendering
-- Markdown design report generation
-- Manufacturing ZIP bundle with manifest
-<<<<<<< HEAD
-- 92 agent-facing tools registered from `TOOL_REGISTRY`
-=======
 - Altium Designer ASCII schematic import with unsupported-record evidence (OLE binary format not supported; ASCII export from Altium required; import-only, KiCad-mediated export)
 - SVG schematic rendering
 - Markdown design report generation
 - Manufacturing ZIP bundle with manifest
-- 92 agent-facing tools registered from `TOOL_REGISTRY`
->>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
-=======
-- 92 agent-facing tools registered from `TOOL_REGISTRY`
->>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
+- 93 agent-facing tools registered from `TOOL_REGISTRY`
 - FastAPI-based REST API server
 - Design diff between two designs
 - Full pipeline autopilot (parse→ERC→place→route→export)

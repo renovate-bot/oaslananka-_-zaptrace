@@ -2346,6 +2346,53 @@ def tool_easyeda_std_roundtrip(json_content: str) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Tool 92 — kicad_step_export (issue #140)
+# ---------------------------------------------------------------------------
+
+
+def tool_kicad_step_export(
+    kicad_pcb_text: str,
+) -> dict[str, Any]:
+    """Export a KiCad PCB to STEP via delegated kicad-cli with skip-aware evidence.
+
+    Delegates the STEP conversion to the installed ``kicad-cli pcb export-step``
+    command.  When KiCad is unavailable or the installed version does not support
+    STEP export, the result carries ``status='skipped'`` instead of a false PASS.
+
+    The evidence record includes the KiCad version, the exact CLI command,
+    input and output SHA-256 hashes, runtime, and a structural smoke check of
+    the generated STEP content (ISO-10303 header + CARTESIAN_POINT entities).
+
+    Parameters
+    ----------
+    kicad_pcb_text:
+        Raw text content of a ``.kicad_pcb`` file.
+
+    Returns
+    -------
+    dict
+        ``schema`` — ``"step-export-v1"``;
+        ``status`` — ``"passed"`` | ``"failed"`` | ``"skipped"``;
+        ``skip_reason`` — explanation when skipped;
+        ``kicad_version`` — detected CLI version;
+        ``cli_path`` — resolved kicad-cli path;
+        ``command`` — exact command that was run;
+        ``input_sha256`` — SHA-256 of the input PCB;
+        ``output_sha256`` — SHA-256 of the generated STEP file;
+        ``output_size_bytes`` — byte length of the STEP file;
+        ``step_smoke_check`` — ``"pass"`` | ``"fail"`` | ``"skip"``;
+        ``step_smoke_reason`` — detail about smoke-check verdict;
+        ``exit_code`` — process exit code;
+        ``runtime_ms`` — wall-clock time in milliseconds;
+        ``delegated`` — always ``True``.
+    """
+    from zaptrace.kicad.step_export import export_step_from_text
+
+    result = export_step_from_text(kicad_pcb_text)
+    return result.to_dict()
+
+
+# ---------------------------------------------------------------------------
 # Tool 92 — kicad_3d_model_coverage (issue #141)
 # ---------------------------------------------------------------------------
 
@@ -3349,6 +3396,22 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
                     "JSON array of governed model entries with keys: source, license, sha256, units. "
                     "Optional — omit or pass '[]' when no registry is available."
                 ),
+            },
+        },
+    },
+    "kicad_step_export": {
+        "name": "kicad_step_export",
+        "description": (
+            "Export a KiCad PCB (.kicad_pcb text) to STEP via delegated kicad-cli pcb export-step. "
+            "Returns skip-aware evidence including KiCad version, exact CLI command, input/output SHA-256 "
+            "hashes, runtime, and ISO-10303 structural smoke check. Missing KiCad or unsupported version "
+            "yields status='skipped' — never a false PASS. Delegated: true."
+        ),
+        "fn": tool_kicad_step_export,
+        "params": {
+            "kicad_pcb_text": {
+                "type": "string",
+                "description": "Raw text content of a .kicad_pcb file",
             },
         },
     },

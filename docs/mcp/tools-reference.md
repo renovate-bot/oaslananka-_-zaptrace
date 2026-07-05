@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 92
+> Total tools: 93
 
 ---
 
@@ -870,6 +870,16 @@ Extract governed 3D model references from a KiCad PCB text and resolve them to p
 |-----------|------|-------------|
 | `kicad_pcb_text` | `string` | Raw text content of a .kicad_pcb file |
 | `model_registry_json` | `string` | JSON array of governed model entries with keys: source, license, sha256, units. Optional — omit or pass '[]' when no registry is available. |
+
+### `kicad_step_export`
+
+Export a KiCad PCB (.kicad_pcb text) to STEP via delegated kicad-cli pcb export-step. Returns skip-aware evidence including KiCad version, exact CLI command, input/output SHA-256 hashes, runtime, and ISO-10303 structural smoke check. Missing KiCad or unsupported version yields status='skipped' — never a false PASS. Delegated: true.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `kicad_pcb_text` | `string` | Raw text content of a .kicad_pcb file |
 
 ---
 
