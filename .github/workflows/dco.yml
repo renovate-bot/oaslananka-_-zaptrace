@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0  # v6.0.3
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Fetch base branch
         run: git fetch origin "${{ github.base_ref }}" --depth=1
       - name: Check DCO sign-offs for code-sensitive changes
