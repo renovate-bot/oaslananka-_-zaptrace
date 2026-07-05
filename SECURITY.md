@@ -4,8 +4,11 @@
 
 **Do not open public GitHub issues for security vulnerabilities.**
 
-Instead, please report them privately via email to the maintainers or by using
-GitHub's private vulnerability reporting feature.
+Instead, please report them privately by using GitHub Private Vulnerability Reporting:
+https://github.com/oaslananka/zaptrace/security/advisories/new
+
+If that channel is unavailable, contact the maintainer using the public profile
+contact information and include enough detail to reproduce the issue privately.
 
 We will acknowledge receipt within 48 hours and provide a timeline for a fix
 and disclosure. See [Vulnerability Response Process](docs/security/vulnerability-response.md) for triage targets, reporter credit, and disclosure workflow.
@@ -55,7 +58,10 @@ The following are in scope:
 <!-- professional-oss-security-process -->
 ## Coordinated Vulnerability Disclosure Process
 
-Preferred reporting channel: GitHub private vulnerability reporting for this repository. If private reporting is unavailable to the reporter, contact the maintainer using the public profile contact information and include enough detail to reproduce the issue privately.
+Preferred reporting channel: GitHub Private Vulnerability Reporting for this repository:
+https://github.com/oaslananka/zaptrace/security/advisories/new
+
+If private reporting is unavailable to the reporter, contact the maintainer using the public profile contact information and include enough detail to reproduce the issue privately.
 
 Expected response targets:
 
