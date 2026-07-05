@@ -804,6 +804,84 @@ def viewer(design_path: str, output: str, proof_path: str | None) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 23. lcsc — LCSC component ingestion commands
+# ---------------------------------------------------------------------------
+
+
+@cli.group()
+def lcsc() -> None:
+    """LCSC component ingestion commands."""
+
+
+@lcsc.command("ingest")
+@click.argument("lcsc_id")
+@click.option("--store", "store_path", type=click.Path(), default=None, help="Persistent store path (JSON)")
+def lcsc_ingest(lcsc_id: str, store_path: str | None) -> None:
+    """Ingest one LCSC part by identifier.
+
+    Fetches from the LCSC/EasyEDA API (or cache) and records a governed
+    provenance entry.  Use --store to persist results across runs.
+    """
+    from pathlib import Path
+
+    from zaptrace.ee.imports.lcsc_ingest import LcscIngestStore, ingest_lcsc_part
+
+    store = LcscIngestStore(path=Path(store_path) if store_path else None)
+    try:
+        rec = ingest_lcsc_part(lcsc_id, store=store)
+        print_summary(not rec.governance_findings, f"Ingested {lcsc_id} ({rec.package_name})")
+        print_json(rec.to_dict())
+    except Exception as e:
+        print_summary(False, str(e))
+        raise click.Abort() from e
+
+
+@lcsc.command("ingest-manifest")
+@click.option("--store", "store_path", type=click.Path(), default=None, help="Persistent store path (JSON)")
+@click.option(
+    "--report", "report_path", type=click.Path(), default=None, help="Write integrity report JSON to this path"
+)
+@click.option("--offline", is_flag=True, default=True, help="Use offline fixture data only (default: true)")
+def lcsc_ingest_manifest(store_path: str | None, report_path: str | None, offline: bool) -> None:
+    """Replay the 100-part curated LCSC manifest (network-disabled by default).
+
+    Ingests every part in the built-in fixture manifest, then produces a
+    deterministic integrity report proving that all 100 entries have
+    provenance, footprint proof, and pin mapping.
+    """
+    from pathlib import Path
+
+    from zaptrace.ee.imports.lcsc_ingest import LcscIngestStore
+    from zaptrace.ee.imports.lcsc_manifest import ingest_manifest
+
+    store = LcscIngestStore(path=Path(store_path) if store_path else None)
+    try:
+        records, report = ingest_manifest(store=store)
+        ok = report.passed
+        print_summary(
+            ok,
+            f"Manifest v{report.manifest_version}: "
+            f"{report.total_parts} parts, {report.clean_parts} clean, "
+            f"{report.violation_count} violation(s)",
+        )
+        if report.violations:
+            for v in report.violations[:10]:
+                console.print(f"  [red]✗[/] [{v.kind}] {v.lcsc_id}: {v.detail}")
+            if len(report.violations) > 10:
+                console.print(f"  ... and {len(report.violations) - 10} more")
+        if report_path:
+            Path(report_path).write_text(report.to_json(), encoding="utf-8")
+            console.print(f"  Report written to {report_path}")
+        if not ok:
+            raise click.Abort()
+    except click.Abort:
+        raise
+    except Exception as e:
+        print_summary(False, str(e))
+        raise click.Abort() from e
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
