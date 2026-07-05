@@ -1,0 +1,37 @@
+id: usbpd-fusb302bmpx
+name: FUSB302B
+category: power
+manufacturer: ON Semi
+mpn: FUSB302BMPX
+description: USB Type-C PD controller
+datasheet: internal://zaptrace/component-family/usbpd-fusb302bmpx
+package: QFN-24
+footprint: QFN-24
+lifecycle: active
+voltage_supply: ''
+pins:
+  A:
+    type: bidirectional
+    description: Anode / Gate / Base
+  K:
+    type: bidirectional
+    description: Cathode / Source / Emitter
+  G:
+    type: input
+    description: Gate (MOSFET) / Collector (BJT)
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: FUSB302BMPX
+  manufacturer: ON Semi
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

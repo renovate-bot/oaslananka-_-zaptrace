@@ -1,0 +1,34 @@
+id: ptc-rgef050
+name: RGEF050 PTC Fuse
+category: protection
+manufacturer: TE/Raychem
+mpn: RGEF050
+description: PTC resettable fuse 500mA 33V
+datasheet: internal://zaptrace/component-family/ptc-rgef050
+package: '1812'
+footprint: '1812'
+lifecycle: active
+voltage_supply: ''
+pins:
+  A:
+    type: bidirectional
+    description: Anode / Line 1
+  K:
+    type: bidirectional
+    description: Cathode / Line 2
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: RGEF050
+  manufacturer: TE/Raychem
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

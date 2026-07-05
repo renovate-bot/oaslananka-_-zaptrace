@@ -1,0 +1,37 @@
+id: usb-a-2.0-thd
+name: USB-A 2.0 THD
+category: connector
+manufacturer: Molex
+mpn: USB-A-THD
+description: USB Type-A 2.0 through-hole
+datasheet: internal://zaptrace/component-family/usb-a-2.0-thd
+package: USB-A-THD
+footprint: USB-A-THD
+lifecycle: active
+voltage_supply: ''
+pins:
+  P1:
+    type: passive
+    description: Pin 1
+  P2:
+    type: passive
+    description: Pin 2
+  GND:
+    type: power
+    description: Ground / Shield
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: USB-A-THD
+  manufacturer: Molex
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

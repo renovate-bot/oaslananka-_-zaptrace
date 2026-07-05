@@ -1,0 +1,52 @@
+id: avx-sma-pcb-868
+name: SMA PCB Antenna 868MHz
+category: rf
+manufacturer: AVX/Kyocera
+mpn: SMA-ANT-868
+description: PCB mount SMA antenna 3dBi
+datasheet: internal://zaptrace/component-family/avx-sma-pcb-868
+package: SMA-THT
+footprint: SMA-THT
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  VCC:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+  ANT:
+    type: bidirectional
+    description: RF antenna
+  MOSI:
+    type: input
+    description: SPI MOSI
+  MISO:
+    type: output
+    description: SPI MISO
+  SCK:
+    type: input
+    description: SPI SCK
+  CS:
+    type: input
+    description: SPI CS
+  IRQ:
+    type: output
+    description: Interrupt
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: SMA-ANT-868
+  manufacturer: AVX/Kyocera
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

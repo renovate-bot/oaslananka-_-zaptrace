@@ -1,0 +1,34 @@
+id: tvs-smaj12a
+name: SMAJ12A TVS
+category: protection
+manufacturer: Vishay
+mpn: SMAJ12A
+description: TVS diode 12V 400W unidirectional
+datasheet: internal://zaptrace/component-family/tvs-smaj12a
+package: SMA
+footprint: SMA
+lifecycle: active
+voltage_supply: ''
+pins:
+  A:
+    type: bidirectional
+    description: Anode / Line 1
+  K:
+    type: bidirectional
+    description: Cathode / Line 2
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: SMAJ12A
+  manufacturer: Vishay
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

@@ -1,0 +1,40 @@
+id: veml7700-tt
+name: VEML7700
+category: optoelectronic
+manufacturer: Vishay
+mpn: VEML7700-TT
+description: Ambient light sensor 16-bit 0.0036 lux
+datasheet: internal://zaptrace/component-family/veml7700-tt
+package: ODFN-4
+footprint: ODFN-4
+lifecycle: active
+voltage_supply: ''
+pins:
+  A:
+    type: input
+    description: Anode / VCC
+  K:
+    type: output
+    description: Cathode / GND
+  C:
+    type: output
+    description: Collector (if transistor output)
+  E:
+    type: power
+    description: Emitter (if transistor output)
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: VEML7700-TT
+  manufacturer: Vishay
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

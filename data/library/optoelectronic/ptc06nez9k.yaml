@@ -1,0 +1,40 @@
+id: ptc06nez9k
+name: PT-C06 Phototransistor
+category: optoelectronic
+manufacturer: Everlight
+mpn: PT-C06NENZ9K
+description: NPN phototransistor 940nm
+datasheet: internal://zaptrace/component-family/ptc06nez9k
+package: DIP-2
+footprint: DIP-2
+lifecycle: active
+voltage_supply: ''
+pins:
+  A:
+    type: input
+    description: Anode / VCC
+  K:
+    type: output
+    description: Cathode / GND
+  C:
+    type: output
+    description: Collector (if transistor output)
+  E:
+    type: power
+    description: Emitter (if transistor output)
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: PT-C06NENZ9K
+  manufacturer: Everlight
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

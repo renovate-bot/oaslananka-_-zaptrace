@@ -1,0 +1,40 @@
+id: hdmi-type-a-19p
+name: HDMI Type A 19P
+category: connector
+manufacturer: Amphenol
+mpn: HDMI_A_19P
+description: HDMI Type-A 19-pin vertical
+datasheet: internal://zaptrace/component-family/hdmi-type-a-19p
+package: HDMI-A-19P
+footprint: HDMI-A-19P
+lifecycle: active
+voltage_supply: ''
+pins:
+  P1:
+    type: passive
+    description: Pin 1
+  P2:
+    type: passive
+    description: Pin 2
+  P3:
+    type: passive
+    description: Pin 3
+  P4:
+    type: passive
+    description: Pin 4
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: HDMI_A_19P
+  manufacturer: Amphenol
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

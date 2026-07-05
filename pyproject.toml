@@ -62,6 +62,7 @@ ignore = ["ANN401"]
 "zaptrace/ee/footprints.py" = ["N806"]
 "zaptrace/export/gerber.py" = ["N806"]
 "zaptrace/export/svg.py" = ["N806"]
+"scripts/generate_library_expansion.py" = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,0 +1,37 @@
+id: 2sc1815gr
+name: 2SC1815-GR
+category: protection
+manufacturer: Toshiba
+mpn: 2SC1815GR
+description: NPN BJT 150mA 50V low noise
+datasheet: internal://zaptrace/component-family/2sc1815gr
+package: TO-92
+footprint: TO-92
+lifecycle: active
+voltage_supply: ''
+pins:
+  A:
+    type: bidirectional
+    description: Anode / Gate / Base
+  K:
+    type: bidirectional
+    description: Cathode / Source / Emitter
+  G:
+    type: input
+    description: Gate (MOSFET) / Collector (BJT)
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: 2SC1815GR
+  manufacturer: Toshiba
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

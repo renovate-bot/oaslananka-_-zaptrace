@@ -1,0 +1,43 @@
+id: rt9013-33gb
+name: RT9013-33GB
+category: power
+manufacturer: Richtek
+mpn: RT9013
+description: LDO 3.3V 500mA
+datasheet: internal://zaptrace/component-family/rt9013-33gb
+package: SOT-23-5
+footprint: SOT-23-5
+lifecycle: active
+voltage_supply: '5.0'
+pins:
+  VIN:
+    type: power
+    description: Input voltage
+  VOUT:
+    type: output
+    description: Regulated output
+  GND:
+    type: power
+    description: Ground
+  EN:
+    type: input
+    description: Enable
+  BYP:
+    type: input
+    description: Bypass/NC
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: RT9013
+  manufacturer: Richtek
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

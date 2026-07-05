@@ -1,0 +1,34 @@
+id: varistor-v07e140
+name: Varistor V07E140
+category: protection
+manufacturer: TDK Epcos
+mpn: V07E140P
+description: Metal oxide varistor 140V
+datasheet: internal://zaptrace/component-family/varistor-v07e140
+package: Disc-7mm
+footprint: Disc-7mm
+lifecycle: active
+voltage_supply: ''
+pins:
+  A:
+    type: bidirectional
+    description: Anode / Line 1
+  K:
+    type: bidirectional
+    description: Cathode / Line 2
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: V07E140P
+  manufacturer: TDK Epcos
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

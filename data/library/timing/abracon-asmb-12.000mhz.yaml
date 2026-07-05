@@ -1,0 +1,40 @@
+id: abracon-asmb-12.000mhz
+name: ASMB 12.0MHz Crystal
+category: timing
+manufacturer: Abracon
+mpn: ASMB-12.000MHZ-LC-T
+description: 12MHz crystal ±20ppm 18pF
+datasheet: internal://zaptrace/component-family/abracon-asmb-12.000mhz
+package: SMD-2P
+footprint: SMD-2P
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  XOUT:
+    type: output
+    description: Crystal/clock output
+  XIN:
+    type: input
+    description: Crystal/reference input
+  VCC:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: ASMB-12.000MHZ-LC-T
+  manufacturer: Abracon
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

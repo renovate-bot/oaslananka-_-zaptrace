@@ -1,0 +1,37 @@
+id: pcie-x1-slot
+name: PCIe x1 Slot
+category: connector
+manufacturer: Molex
+mpn: PCI-E-X1
+description: PCI Express x1 slot connector
+datasheet: internal://zaptrace/component-family/pcie-x1-slot
+package: PCIe-x1
+footprint: PCIe-x1
+lifecycle: active
+voltage_supply: ''
+pins:
+  P1:
+    type: passive
+    description: Pin 1
+  P2:
+    type: passive
+    description: Pin 2
+  GND:
+    type: power
+    description: Ground / Shield
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: PCI-E-X1
+  manufacturer: Molex
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

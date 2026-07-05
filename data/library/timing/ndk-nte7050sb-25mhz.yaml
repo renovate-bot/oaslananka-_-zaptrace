@@ -1,0 +1,40 @@
+id: ndk-nte7050sb-25mhz
+name: NTD7050SB 25MHz TCXO
+category: timing
+manufacturer: NDK
+mpn: NTE7050SB-25M
+description: TCXO 25MHz ±2.5ppm
+datasheet: internal://zaptrace/component-family/ndk-nte7050sb-25mhz
+package: SMD-4P
+footprint: SMD-4P
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  XOUT:
+    type: output
+    description: Crystal/clock output
+  XIN:
+    type: input
+    description: Crystal/reference input
+  VCC:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: NTE7050SB-25M
+  manufacturer: NDK
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

@@ -1,0 +1,40 @@
+id: is31fl3731-qfls4-tr
+name: IS31FL3731
+category: optoelectronic
+manufacturer: Lumissil
+mpn: IS31FL3731-QFLS4-TR
+description: 144-LED char frame driver I2C
+datasheet: internal://zaptrace/component-family/is31fl3731-qfls4-tr
+package: QFN-32
+footprint: QFN-32
+lifecycle: active
+voltage_supply: ''
+pins:
+  A:
+    type: input
+    description: Anode / VCC
+  K:
+    type: output
+    description: Cathode / GND
+  C:
+    type: output
+    description: Collector (if transistor output)
+  E:
+    type: power
+    description: Emitter (if transistor output)
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: IS31FL3731-QFLS4-TR
+  manufacturer: Lumissil
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

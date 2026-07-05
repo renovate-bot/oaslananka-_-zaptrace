@@ -1,0 +1,37 @@
+id: stusb4500jhr
+name: STUSB4500
+category: power
+manufacturer: STMicro
+mpn: STUSB4500JHR
+description: USB-C PD sink I2C NVM
+datasheet: internal://zaptrace/component-family/stusb4500jhr
+package: QFN-20
+footprint: QFN-20
+lifecycle: active
+voltage_supply: ''
+pins:
+  A:
+    type: bidirectional
+    description: Anode / Gate / Base
+  K:
+    type: bidirectional
+    description: Cathode / Source / Emitter
+  G:
+    type: input
+    description: Gate (MOSFET) / Collector (BJT)
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: STUSB4500JHR
+  manufacturer: STMicro
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

@@ -1,0 +1,37 @@
+id: cap-mlcc-0201-100n
+name: Cap MLCC 0201 100nF
+category: passive
+manufacturer: Generic
+mpn: CC0201-100N
+description: MLCC capacitor 100nF, 0201, X7R, 50V
+datasheet: internal://zaptrace/component-family/cap-mlcc-0201-100n
+package: '0201'
+footprint: '0201'
+lifecycle: active
+voltage_supply: ''
+pins:
+  P1:
+    type: passive
+    description: Terminal 1
+  P2:
+    type: passive
+    description: Terminal 2
+properties:
+  capacitance: 100nF
+  dielectric: X7R
+  voltage_v: 50
+electrical_limits:
+  rated_voltage_v: 50
+sourcing:
+  mpn: CC0201-100N
+  manufacturer: Generic
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

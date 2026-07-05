@@ -1,0 +1,46 @@
+id: sps30
+name: SPS30
+category: sensor
+manufacturer: Sensirion
+mpn: SPS30
+description: PM2.5 particulate matter sensor UART/I2C
+datasheet: internal://zaptrace/component-family/sps30
+package: DIP-5
+footprint: DIP-5
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  VDD:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+  SDA:
+    type: bidirectional
+    description: I2C SDA / MOSI
+  SCL:
+    type: input
+    description: I2C SCL / SCK
+  INT:
+    type: output
+    description: Interrupt
+  CS:
+    type: input
+    description: Chip select (SPI)
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: SPS30
+  manufacturer: Sensirion
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

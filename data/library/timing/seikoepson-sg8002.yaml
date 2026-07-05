@@ -1,0 +1,40 @@
+id: seikoepson-sg8002
+name: SG-8002 Oscillator
+category: timing
+manufacturer: Epson
+mpn: SG8002CA 1.000000M-PTBL:ROHS
+description: 1MHz CMOS OSC ±50ppm
+datasheet: internal://zaptrace/component-family/seikoepson-sg8002
+package: DIP-4
+footprint: DIP-4
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  XOUT:
+    type: output
+    description: Crystal/clock output
+  XIN:
+    type: input
+    description: Crystal/reference input
+  VCC:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: SG8002CA 1.000000M-PTBL:ROHS
+  manufacturer: Epson
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

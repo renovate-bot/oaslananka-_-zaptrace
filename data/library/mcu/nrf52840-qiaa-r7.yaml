@@ -1,0 +1,52 @@
+id: nrf52840-qiaa-r7
+name: nRF52840-QIAA
+category: mcu
+manufacturer: Nordic
+mpn: nRF52840-QIAA-R7
+description: BT 5.0 + USB + 802.15.4 1MB
+datasheet: internal://zaptrace/component-family/nrf52840-qiaa-r7
+package: QFN-73
+footprint: QFN-73
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  VDD:
+    type: power
+    description: Supply voltage
+  GND:
+    type: power
+    description: Ground
+  RESET:
+    type: input
+    description: Reset (active low)
+  XTAL1:
+    type: input
+    description: Crystal input
+  XTAL2:
+    type: output
+    description: Crystal output
+  GPIO:
+    type: bidirectional
+    description: General purpose I/O
+  SWDIO:
+    type: bidirectional
+    description: SWD data
+  SWCLK:
+    type: input
+    description: SWD clock
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: nRF52840-QIAA-R7
+  manufacturer: Nordic
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

@@ -1,0 +1,52 @@
+id: tja1042t-3-1j
+name: TJA1042T
+category: interface
+manufacturer: NXP
+mpn: TJA1042T/3/1J
+description: CAN FD transceiver 5Mbps
+datasheet: internal://zaptrace/component-family/tja1042t-3-1j
+package: SO-8
+footprint: SO-8
+lifecycle: active
+voltage_supply: ''
+pins:
+  VCC:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+  DIN:
+    type: input
+    description: Data in
+  DOUT:
+    type: output
+    description: Data out
+  CLK:
+    type: input
+    description: Clock
+  CS:
+    type: input
+    description: Chip select
+  OE:
+    type: input
+    description: Output enable
+  DIR:
+    type: input
+    description: Direction
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: TJA1042T/3/1J
+  manufacturer: NXP
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

@@ -1,0 +1,52 @@
+id: at24c02d-sshm-t
+name: AT24C02D
+category: memory
+manufacturer: Microchip
+mpn: AT24C02D-SSHM-T
+description: I2C EEPROM 2Kb 400kHz
+datasheet: internal://zaptrace/component-family/at24c02d-sshm-t
+package: SOIC-8
+footprint: SOIC-8
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  VCC:
+    type: power
+    description: Supply voltage
+  GND:
+    type: power
+    description: Ground
+  CS:
+    type: input
+    description: Chip select
+  SCK:
+    type: input
+    description: Serial clock / CLK
+  MOSI:
+    type: input
+    description: Data input DI/DQ0
+  MISO:
+    type: output
+    description: Data output DO/DQ1
+  WP:
+    type: input
+    description: Write protect
+  HOLD:
+    type: input
+    description: Hold/Reset
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: AT24C02D-SSHM-T
+  manufacturer: Microchip
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

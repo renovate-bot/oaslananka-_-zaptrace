@@ -1,0 +1,40 @@
+id: esp32-h2-mini-1-h4
+name: ESP32-H2-MINI-1-H4
+category: mcu
+manufacturer: Espressif
+mpn: ESP32-H2-MINI-1-H4
+description: 802.15.4+BLE5 RISC-V
+datasheet: internal://zaptrace/component-family/esp32-h2-mini-1-h4
+package: LCC-34
+footprint: LCC-34
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  VDD:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+  RESET:
+    type: input
+    description: Reset
+  GPIO:
+    type: bidirectional
+    description: I/O
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: ESP32-H2-MINI-1-H4
+  manufacturer: Espressif
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

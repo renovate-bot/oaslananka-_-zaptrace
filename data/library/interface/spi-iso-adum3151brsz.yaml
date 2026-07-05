@@ -1,0 +1,52 @@
+id: spi-iso-adum3151brsz
+name: ADuM3151B
+category: interface
+manufacturer: ADI
+mpn: ADUM3151BRSZ
+description: 6-channel SPI digital isolator
+datasheet: internal://zaptrace/component-family/spi-iso-adum3151brsz
+package: QSOP-20
+footprint: QSOP-20
+lifecycle: active
+voltage_supply: ''
+pins:
+  VCC:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+  DIN:
+    type: input
+    description: Data in
+  DOUT:
+    type: output
+    description: Data out
+  CLK:
+    type: input
+    description: Clock
+  CS:
+    type: input
+    description: Chip select
+  OE:
+    type: input
+    description: Output enable
+  DIR:
+    type: input
+    description: Direction
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: ADUM3151BRSZ
+  manufacturer: ADI
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

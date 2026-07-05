@@ -1,0 +1,43 @@
+id: mcp9808-e-ms
+name: MCP9808
+category: sensor
+manufacturer: Microchip
+mpn: MCP9808-E/MS
+description: I2C digital temperature ±0.25°C
+datasheet: internal://zaptrace/component-family/mcp9808-e-ms
+package: MSOP-8
+footprint: MSOP-8
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  VDD:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+  SDA:
+    type: bidirectional
+    description: I2C SDA
+  SCL:
+    type: input
+    description: I2C SCL
+  INT:
+    type: output
+    description: Interrupt
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: MCP9808-E/MS
+  manufacturer: Microchip
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

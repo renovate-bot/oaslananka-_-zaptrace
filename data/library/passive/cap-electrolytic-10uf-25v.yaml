@@ -1,0 +1,35 @@
+id: cap-electrolytic-10uf-25v
+name: Cap Electrolytic 10uF 25V
+category: passive
+manufacturer: Panasonic
+mpn: EEUFC1E100
+description: Electrolytic capacitor 10uF 25V, radial
+datasheet: internal://zaptrace/component-family/cap-electrolytic-10uf-25v
+package: Radial-D5.0
+footprint: CP_Radial_D5.0mm_P2.00mm
+lifecycle: active
+voltage_supply: ''
+pins:
+  P1:
+    type: passive
+    description: Terminal 1
+  P2:
+    type: passive
+    description: Terminal 2
+properties: {}
+electrical_limits:
+  rated_voltage_v: 25
+  capacitance_uf: 10
+sourcing:
+  mpn: EEUFC1E100
+  manufacturer: Panasonic
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

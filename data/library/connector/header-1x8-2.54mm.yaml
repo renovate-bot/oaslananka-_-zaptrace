@@ -1,0 +1,40 @@
+id: header-1x8-2.54mm
+name: Header 1x8 2.54mm
+category: connector
+manufacturer: Generic
+mpn: PINHD-1X8
+description: Pin header 8-pin single row 2.54mm
+datasheet: internal://zaptrace/component-family/header-1x8-2.54mm
+package: PinHeader-1x8-2.54mm
+footprint: PinHeader-1x8-2.54mm
+lifecycle: active
+voltage_supply: ''
+pins:
+  P1:
+    type: passive
+    description: Pin 1
+  P2:
+    type: passive
+    description: Pin 2
+  P3:
+    type: passive
+    description: Pin 3
+  P4:
+    type: passive
+    description: Pin 4
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: PINHD-1X8
+  manufacturer: Generic
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

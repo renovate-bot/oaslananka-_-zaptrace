@@ -1,0 +1,40 @@
+id: MAX78000FTHR
+name: MAX78000
+category: mcu
+manufacturer: Maxim
+mpn: MAX78000FTHR
+description: AI microcontroller Cortex-M4+RISC-V CNN
+datasheet: internal://zaptrace/component-family/MAX78000FTHR
+package: WLP-94
+footprint: WLP-94
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  VDD:
+    type: power
+    description: Supply
+  GND:
+    type: power
+    description: Ground
+  RESET:
+    type: input
+    description: Reset
+  GPIO:
+    type: bidirectional
+    description: I/O
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: MAX78000FTHR
+  manufacturer: Maxim
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

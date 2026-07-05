@@ -1,0 +1,43 @@
+id: ap2112k-3.3trg1
+name: AP2112K-3.3TRG1
+category: power
+manufacturer: Diodes Inc
+mpn: AP2112
+description: LDO 3.3V 600mA
+datasheet: internal://zaptrace/component-family/ap2112k-3.3trg1
+package: SOT-23-5
+footprint: SOT-23-5
+lifecycle: active
+voltage_supply: '5.0'
+pins:
+  VIN:
+    type: power
+    description: Input voltage
+  VOUT:
+    type: output
+    description: Regulated output
+  GND:
+    type: power
+    description: Ground
+  EN:
+    type: input
+    description: Enable
+  BYP:
+    type: input
+    description: Bypass/NC
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: AP2112
+  manufacturer: Diodes Inc
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

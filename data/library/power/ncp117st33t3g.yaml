@@ -1,0 +1,43 @@
+id: ncp117st33t3g
+name: NCP117ST33T3G
+category: power
+manufacturer: ON Semi
+mpn: NCP117
+description: LDO 3.3V 1A
+datasheet: internal://zaptrace/component-family/ncp117st33t3g
+package: SOT-223
+footprint: SOT-223
+lifecycle: active
+voltage_supply: '5.0'
+pins:
+  VIN:
+    type: power
+    description: Input voltage
+  VOUT:
+    type: output
+    description: Regulated output
+  GND:
+    type: power
+    description: Ground
+  EN:
+    type: input
+    description: Enable
+  BYP:
+    type: input
+    description: Bypass/NC
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: NCP117
+  manufacturer: ON Semi
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

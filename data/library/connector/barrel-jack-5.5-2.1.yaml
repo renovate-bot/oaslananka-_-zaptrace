@@ -1,0 +1,37 @@
+id: barrel-jack-5.5-2.1
+name: Barrel Jack 5.5/2.1mm
+category: connector
+manufacturer: CUI
+mpn: PRT-00119
+description: DC power jack 5.5/2.1mm SMD
+datasheet: internal://zaptrace/component-family/barrel-jack-5.5-2.1
+package: BARREL-5.5-2.1
+footprint: BARREL-5.5-2.1
+lifecycle: active
+voltage_supply: ''
+pins:
+  P1:
+    type: passive
+    description: Pin 1
+  P2:
+    type: passive
+    description: Pin 2
+  GND:
+    type: power
+    description: Ground / Shield
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: PRT-00119
+  manufacturer: CUI
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

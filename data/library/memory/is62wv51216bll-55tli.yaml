@@ -1,0 +1,52 @@
+id: is62wv51216bll-55tli
+name: IS62WV51216B
+category: memory
+manufacturer: ISSI
+mpn: IS62WV51216BLL-55TLI
+description: SRAM 8Mb 55ns parallel
+datasheet: internal://zaptrace/component-family/is62wv51216bll-55tli
+package: TSOP-44
+footprint: TSOP-44
+lifecycle: active
+voltage_supply: '3.3'
+pins:
+  VCC:
+    type: power
+    description: Supply voltage
+  GND:
+    type: power
+    description: Ground
+  CS:
+    type: input
+    description: Chip select
+  SCK:
+    type: input
+    description: Serial clock / CLK
+  MOSI:
+    type: input
+    description: Data input DI/DQ0
+  MISO:
+    type: output
+    description: Data output DO/DQ1
+  WP:
+    type: input
+    description: Write protect
+  HOLD:
+    type: input
+    description: Hold/Reset
+properties: {}
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: IS62WV51216BLL-55TLI
+  manufacturer: ISSI
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

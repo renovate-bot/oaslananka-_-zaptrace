@@ -1,0 +1,37 @@
+id: cap-0603-100pf
+name: Cap MLCC 0603 100pF
+category: passive
+manufacturer: Generic
+mpn: CAP-0603-100P
+description: MLCC capacitor 100pF 0603 X7R 50V
+datasheet: internal://zaptrace/component-family/cap-0603-100pf
+package: '0603'
+footprint: '0603'
+lifecycle: active
+voltage_supply: ''
+pins:
+  P1:
+    type: passive
+    description: Terminal 1
+  P2:
+    type: passive
+    description: Terminal 2
+properties:
+  capacitance: 100pF
+  dielectric: X7R
+  voltage_v: 50
+electrical_limits:
+  rated_voltage_v: 50
+sourcing:
+  mpn: CAP-0603-100P
+  manufacturer: Generic
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py

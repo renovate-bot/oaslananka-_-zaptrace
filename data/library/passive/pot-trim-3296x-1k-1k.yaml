@@ -1,0 +1,39 @@
+id: pot-trim-3296x-1k-1k
+name: Trim Pot 1k 3296
+category: passive
+manufacturer: Bourns
+mpn: 3296W-1-103LF
+description: Trimmer potentiometer 1k 3/8 in multi-turn
+datasheet: internal://zaptrace/component-family/pot-trim-3296x-1k-1k
+package: Through-hole
+footprint: Potentiometer_Trimmer_3296W-1
+lifecycle: active
+voltage_supply: ''
+pins:
+  P1:
+    type: passive
+    description: Terminal 1
+  P2:
+    type: passive
+    description: Wiper
+  P3:
+    type: passive
+    description: Terminal 2
+properties:
+  resistance: 1k
+  turns: 12
+electrical_limits:
+  review_note: numeric limits not captured; verify against datasheet before production
+sourcing:
+  mpn: 3296W-1-103LF
+  manufacturer: Bourns
+  status: starter-library-entry
+  production_note: confirm exact orderable MPN and authorized distributor before production
+compliance:
+  rohs: supplier-confirmation-required
+  reach: supplier-confirmation-required
+  production_note: do not treat starter-library metadata as regulatory certification
+provenance:
+  reviewed_by: unreviewed
+  source: offline-manifest
+  generation: scripts/generate_library_expansion.py
