@@ -704,7 +704,101 @@ def tool_design_diff(design_a_name: str, design_b_name: str, session_id: str = "
 
 
 # ---------------------------------------------------------------------------
-# Tool 22 — pipeline_run
+# Tool 22 — kicad_to_easyeda_pro
+# ---------------------------------------------------------------------------
+
+
+def tool_kicad_to_easyeda_pro(
+    project_path: str,
+    output_path: str | None = None,
+    session_id: str = "default",
+) -> dict[str, Any]:
+    """Import a KiCad project and convert it to EasyEDA Pro format.
+
+    Performs the complete KiCad → EasyEDA Pro conversion path in one call:
+
+    1. Import the KiCad project (hierarchical or flat) using the schematic
+       importer from issue #118.
+    2. Write the design to EasyEDA Pro ``.zip`` using the writer from issue #121.
+    3. Re-import the written ZIP to measure round-trip fidelity.
+    4. Return source parity, write-side degradation, artifact hash, and
+       component / net Jaccard scores.
+
+    Parameters
+    ----------
+    project_path:
+        Workspace-relative or absolute path to a KiCad project directory,
+        ``.kicad_pro`` file, or ``.kicad_sch`` file.
+    output_path:
+        Optional path to write the EasyEDA Pro ``.zip`` to.  If omitted the
+        ZIP bytes are returned only in the result dict.
+    session_id:
+        Session identifier (default: ``"default"``).
+
+    Returns
+    -------
+    dict
+        ``design_name``          — KiCad project name;
+        ``kicad_source_score``   — KiCad net-identity score (0–1);
+        ``component_jaccard``    — component-ref Jaccard similarity after round-trip;
+        ``net_jaccard``          — net-name Jaccard similarity after round-trip;
+        ``overall_score``        — mean Jaccard score (component + net);
+        ``artifact_sha256``      — SHA-256 hex digest of the written ZIP bytes;
+        ``write_degradation``    — write-side degradation report dict;
+        ``roundtrip_errors``     — count of degradation records on re-read;
+        ``kicad_findings``       — list of cross-validation findings from KiCad import;
+        ``zip_size_bytes``       — size of the produced ZIP in bytes;
+        ``output_path``          — path to the written ZIP (or None if not saved).
+    """
+    import hashlib
+
+    from zaptrace.eda.easyeda_pro import compute_easyeda_write_fidelity
+    from zaptrace.kicad.project_importer import import_kicad_project
+
+    kicad_path = _validate_path(project_path, must_exist=True)
+    kicad_result = import_kicad_project(kicad_path)
+
+    design = kicad_result.design
+    project_name = design.meta.name or kicad_path.stem
+
+    # Store the imported design in the session
+    session = _get_session(session_id)
+    session.setdefault("designs", {})[project_name] = design
+
+    # Write + read-back fidelity
+    fidelity = compute_easyeda_write_fidelity(design, project_name=project_name)
+
+    # Compute artifact hash from the ZIP bytes
+    from zaptrace.eda.easyeda_pro import write_easyeda_pro_zip
+
+    zip_bytes, _ = write_easyeda_pro_zip(design, project_name=project_name)
+    artifact_hash = hashlib.sha256(zip_bytes).hexdigest()
+
+    # Optionally persist the ZIP
+    out_str: str | None = None
+    if output_path:
+        out = _validate_path(output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.with_suffix(".zip").write_bytes(zip_bytes)
+        out_str = str(out.with_suffix(".zip"))
+
+    return {
+        "design_name": project_name,
+        "kicad_source_score": kicad_result.net_score,
+        "component_jaccard": fidelity["component_jaccard"],
+        "net_jaccard": fidelity["net_jaccard"],
+        "overall_score": fidelity["overall_score"],
+        "artifact_sha256": artifact_hash,
+        "write_degradation": fidelity["degradation_report"],
+        "roundtrip_errors": fidelity["roundtrip_degradation_count"],
+        "kicad_findings": [f.to_dict() for f in kicad_result.findings],
+        "zip_size_bytes": len(zip_bytes),
+        "output_path": out_str,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Tool 23 — pipeline_run
 # ---------------------------------------------------------------------------
 
 
@@ -738,7 +832,7 @@ def tool_pipeline_run(
 
 
 # ---------------------------------------------------------------------------
-# Tool 22 — pipeline_run_stage
+# Tool 24 — pipeline_run_stage
 # ---------------------------------------------------------------------------
 
 
@@ -779,7 +873,7 @@ def tool_pipeline_run_stage(
 
 
 # ---------------------------------------------------------------------------
-# Tool 23 — pipeline_status
+# Tool 25 — pipeline_status
 # ---------------------------------------------------------------------------
 
 
@@ -2445,6 +2539,28 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
             "session_id": {"type": "string", "description": "Session identifier"},
             "design_a_name": {"type": "string", "description": "First design name"},
             "design_b_name": {"type": "string", "description": "Second design name"},
+        },
+    },
+    "kicad_to_easyeda_pro": {
+        "name": "kicad_to_easyeda_pro",
+        "description": (
+            "Import a KiCad project and convert it to EasyEDA Pro format in one call. "
+            "Runs the complete KiCad → EasyEDA Pro pipeline: import, write, re-read, score. "
+            "Returns source parity (KiCad net score), round-trip Jaccard scores for components "
+            "and nets, write-side degradation evidence, and the SHA-256 artifact hash. "
+            "Optionally saves the EasyEDA Pro ZIP to a workspace path."
+        ),
+        "fn": tool_kicad_to_easyeda_pro,
+        "params": {
+            "session_id": {"type": "string", "description": "Session identifier"},
+            "project_path": {
+                "type": "string",
+                "description": "Path to KiCad project directory, .kicad_pro, or .kicad_sch file",
+            },
+            "output_path": {
+                "type": "string",
+                "description": "Optional path to save the EasyEDA Pro ZIP to",
+            },
         },
     },
     "pipeline_run": {

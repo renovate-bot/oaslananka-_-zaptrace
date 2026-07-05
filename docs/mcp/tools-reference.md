@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 90
+> Total tools: 91
 
 ---
 
@@ -578,6 +578,18 @@ Import a KiCad project (hierarchical or flat) from the workspace. Accepts a proj
 |-----------|------|-------------|
 | `session_id` | `string` | Session identifier |
 | `project_path` | `string` | Path to project directory, .kicad_pro, or .kicad_sch file |
+
+### `kicad_to_easyeda_pro`
+
+Import a KiCad project and convert it to EasyEDA Pro format in one call. Runs the complete KiCad → EasyEDA Pro pipeline: import, write, re-read, score. Returns source parity (KiCad net score), round-trip Jaccard scores for components and nets, write-side degradation evidence, and the SHA-256 artifact hash. Optionally saves the EasyEDA Pro ZIP to a workspace path.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `session_id` | `string` | Session identifier |
+| `project_path` | `string` | Path to KiCad project directory, .kicad_pro, or .kicad_sch file |
+| `output_path` | `string` | Optional path to save the EasyEDA Pro ZIP to |
 
 ### `mechanical_review`
 

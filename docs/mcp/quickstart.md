@@ -2,10 +2,14 @@
 
 > **ZapTrace MCP** enables LLMs (Claude, Copilot, Codex, Gemini) to design PCBs through
 <<<<<<< HEAD
-> the Model Context Protocol. 90 tools available.
+<<<<<<< HEAD
+> the Model Context Protocol. 91 tools available.
 =======
-> the Model Context Protocol. 90 tools available.
+> the Model Context Protocol. 91 tools available.
 >>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
+=======
+> the Model Context Protocol. 91 tools available.
+>>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
 
 ---
 
@@ -67,10 +71,14 @@ Opens browser UI to test individual tools.
 | `footprint_generate` | Generate parametric footprint |
 | `proof_run` | Run a Proof Pack |
 <<<<<<< HEAD
-| *90 tools total* | Full reference: `docs/mcp/tools-reference.md` |
+<<<<<<< HEAD
+| *91 tools total* | Full reference: `docs/mcp/tools-reference.md` |
 =======
-| *90 tools total* | Full reference: `docs/mcp/tools-reference.md` |
+| *91 tools total* | Full reference: `docs/mcp/tools-reference.md` |
 >>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
+=======
+| *91 tools total* | Full reference: `docs/mcp/tools-reference.md` |
+>>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
 
 Full reference: `docs/mcp/tools-reference.md`
 

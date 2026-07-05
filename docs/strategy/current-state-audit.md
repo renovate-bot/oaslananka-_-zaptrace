@@ -20,10 +20,14 @@
 | **CI** | GitHub Actions quality, security, and release workflows |
 | **CLI** | 20+ commands via Click |
 <<<<<<< HEAD
-| **MCP** | 90 agent-facing tools generated from `TOOL_REGISTRY` |
+<<<<<<< HEAD
+| **MCP** | 91 agent-facing tools generated from `TOOL_REGISTRY` |
 =======
-| **MCP** | 90 agent-facing tools generated from `TOOL_REGISTRY` |
+| **MCP** | 91 agent-facing tools generated from `TOOL_REGISTRY` |
 >>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
+=======
+| **MCP** | 91 agent-facing tools generated from `TOOL_REGISTRY` |
+>>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
 | **API** | FastAPI-based REST server |
 
 ## Current Architecture
@@ -32,10 +36,14 @@ ZapTrace has a layered architecture:
 
 1. **Interface layer**: CLI (Click), MCP server (FastMCP), REST API (FastAPI), Python SDK
 <<<<<<< HEAD
-2. **Agent layer**: Tool registry with 90 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
+<<<<<<< HEAD
+2. **Agent layer**: Tool registry with 91 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
 =======
-2. **Agent layer**: Tool registry with 90 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
+2. **Agent layer**: Tool registry with 91 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
 >>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
+=======
+2. **Agent layer**: Tool registry with 91 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
+>>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
 3. **Core layer**: Pydantic models, YAML parser, diff engine
 4. **Domain layer**: EE knowledge base, net classifier, footprint generator, constraints
 5. **Verification layer**: ERC (29 rules), DRC (16 rules), auto-patch suggestions
@@ -70,14 +78,18 @@ ZapTrace has a layered architecture:
 - SVG schematic rendering
 - Markdown design report generation
 - Manufacturing ZIP bundle with manifest
-- 90 agent-facing tools registered from `TOOL_REGISTRY`
+<<<<<<< HEAD
+- 91 agent-facing tools registered from `TOOL_REGISTRY`
 =======
 - Altium Designer ASCII schematic import with unsupported-record evidence (OLE binary format not supported; ASCII export from Altium required; import-only, KiCad-mediated export)
 - SVG schematic rendering
 - Markdown design report generation
 - Manufacturing ZIP bundle with manifest
-- 90 agent-facing tools registered from `TOOL_REGISTRY`
+- 91 agent-facing tools registered from `TOOL_REGISTRY`
 >>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
+=======
+- 91 agent-facing tools registered from `TOOL_REGISTRY`
+>>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
 - FastAPI-based REST API server
 - Design diff between two designs
 - Full pipeline autopilot (parse→ERC→place→route→export)

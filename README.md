@@ -19,10 +19,14 @@ Intent → normalized design → schematic → ERC → placement → routing →
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+" />
 <<<<<<< HEAD
-  <img src="https://img.shields.io/badge/MCP-90%20tools-7c3aed" alt="MCP: 90 tools" />
+<<<<<<< HEAD
+  <img src="https://img.shields.io/badge/MCP-91%20tools-7c3aed" alt="MCP: 91 tools" />
 =======
-  <img src="https://img.shields.io/badge/MCP-90%20tools-7c3aed" alt="MCP: 90 tools" />
+  <img src="https://img.shields.io/badge/MCP-91%20tools-7c3aed" alt="MCP: 91 tools" />
 >>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
+=======
+  <img src="https://img.shields.io/badge/MCP-91%20tools-7c3aed" alt="MCP: 91 tools" />
+>>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
   <img src="https://img.shields.io/badge/status-pre--1.0-orange.svg" alt="Status: pre-1.0" />
   <a href="https://www.bestpractices.dev/projects/13403"><img src="https://www.bestpractices.dev/projects/13403/badge" alt="OpenSSF Best Practices" /></a>
 </p>
@@ -56,10 +60,14 @@ Intent → normalized design → schematic → ERC → placement → routing →
 - **A Python SDK** for programmatic electronics design — parse, validate, place, route, export.
 - **A CLI** (`zaptrace`) for quick design iteration from the terminal.
 <<<<<<< HEAD
-- **An MCP server** (`zaptrace-mcp`) that exposes 90 agent-facing tools to AI agents.
+<<<<<<< HEAD
+- **An MCP server** (`zaptrace-mcp`) that exposes 91 agent-facing tools to AI agents.
 =======
-- **An MCP server** (`zaptrace-mcp`) that exposes 90 agent-facing tools to AI agents.
+- **An MCP server** (`zaptrace-mcp`) that exposes 91 agent-facing tools to AI agents.
 >>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
+=======
+- **An MCP server** (`zaptrace-mcp`) that exposes 91 agent-facing tools to AI agents.
+>>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
 - **A REST API** for web-based design workflows.
 - **A verification engine** — Electrical Rule Checking (ERC) + Design Rule Checking (DRC) baked in.
 - **A manufacturing export pipeline** — Gerber RS-274X, Excellon drill, BOM, pick-and-place, KiCad.
@@ -104,13 +112,17 @@ Intent → normalized design → schematic → ERC → placement → routing →
 | Altium ASCII schematic import | ✅ Implemented (ASCII export only; OLE binary not supported) |
 | SVG schematic rendering | ✅ Implemented |
 | Manufacturing ZIP bundle | ✅ Implemented |
-| MCP server (90 tools) | ✅ Implemented |
+<<<<<<< HEAD
+| MCP server (91 tools) | ✅ Implemented |
 =======
 | Altium ASCII schematic import (import-only, no native writer) | ✅ Implemented — ASCII format only; binary OLE .SchDoc not supported |
 | SVG schematic rendering | ✅ Implemented |
 | Manufacturing ZIP bundle | ✅ Implemented |
-| MCP server (90 tools) | ✅ Implemented |
+| MCP server (91 tools) | ✅ Implemented |
 >>>>>>> 34074d3 (feat: Altium import fidelity corpus gate + MCP tool (issue #137))
+=======
+| MCP server (91 tools) | ✅ Implemented |
+>>>>>>> c3aa11d (fix: update docs and tests for 89 TOOL_REGISTRY entries (89+3=92 MCP tools))
 | Power-tree architecture planner + netlist emit | ✅ Implemented |
 | REST API server | ✅ Implemented |
 | Design diff | ✅ Implemented |
