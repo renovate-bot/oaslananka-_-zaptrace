@@ -12,6 +12,7 @@ from zaptrace.ee.knowledge import KnowledgeBase
 logger = logging.getLogger(__name__)
 
 _ZERO_LENGTH_TOLERANCE_MM = 1e-9
+_CORNER_CHAMFER_MM = 0.2
 
 
 @dataclass
@@ -152,7 +153,7 @@ def _route_manhattan_edge(
     *,
     vertical_first: bool | None = None,
 ) -> list[RouteSegment]:
-    """Route one MST edge as non-zero Manhattan segments."""
+    """Route one MST edge as non-zero chamfered Manhattan segments."""
     segments: list[RouteSegment] = []
     if _is_zero_length(x1, y1, x2, y2):
         return segments
@@ -163,12 +164,23 @@ def _route_manhattan_edge(
         return segments
 
     use_vertical_first = _prefer_vertical_first(net_name) if vertical_first is None else vertical_first
+    dx = x2 - x1
+    dy = y2 - y1
+    sx = 1.0 if dx > 0 else -1.0
+    sy = 1.0 if dy > 0 else -1.0
+    chamfer = min(_CORNER_CHAMFER_MM, abs(dx) / 2.0, abs(dy) / 2.0)
+
     if use_vertical_first:
-        _append_segment_if_nonzero(segments, x1, y1, x1, y2, net_name)
-        _append_segment_if_nonzero(segments, x1, y2, x2, y2, net_name)
+        corner_entry = (x1, y2 - sy * chamfer)
+        corner_exit = (x1 + sx * chamfer, y2)
+        points = [(x1, y1), corner_entry, corner_exit, (x2, y2)]
     else:
-        _append_segment_if_nonzero(segments, x1, y1, x2, y1, net_name)
-        _append_segment_if_nonzero(segments, x2, y1, x2, y2, net_name)
+        corner_entry = (x2 - sx * chamfer, y1)
+        corner_exit = (x2, y1 + sy * chamfer)
+        points = [(x1, y1), corner_entry, corner_exit, (x2, y2)]
+
+    for start, end in zip(points, points[1:], strict=False):
+        _append_segment_if_nonzero(segments, start[0], start[1], end[0], end[1], net_name)
     return segments
 
 

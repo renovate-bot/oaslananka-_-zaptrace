@@ -28,7 +28,7 @@ class TestRouteNetMst:
 
     def test_two_points(self) -> None:
         segments = _route_net_mst([(10.0, 10.0), (50.0, 30.0)], "test")
-        assert len(segments) == 2  # L-shape: horizontal + vertical
+        assert len(segments) == 3  # chamfered L-shape: leg + 45-degree chamfer + leg
 
     def test_three_points(self) -> None:
         segments = _route_net_mst(
@@ -43,11 +43,11 @@ class TestRouteNetMst:
 
     def test_power_net_routes_vertical_first(self) -> None:
         segments = _route_net_mst([(10.0, 10.0), (50.0, 30.0)], "VCC_3V3")
-        assert (segments[0].x1, segments[0].y1, segments[0].x2, segments[0].y2) == (10.0, 10.0, 10.0, 30.0)
+        assert (segments[0].x1, segments[0].y1, segments[0].x2, segments[0].y2) == (10.0, 10.0, 10.0, 29.8)
 
     def test_clock_net_routes_horizontal_first(self) -> None:
         segments = _route_net_mst([(10.0, 10.0), (50.0, 30.0)], "I2C_SCL")
-        assert (segments[0].x1, segments[0].y1, segments[0].x2, segments[0].y2) == (10.0, 10.0, 50.0, 10.0)
+        assert (segments[0].x1, segments[0].y1, segments[0].x2, segments[0].y2) == (10.0, 10.0, 49.8, 10.0)
 
 
 class TestRouteNets:
