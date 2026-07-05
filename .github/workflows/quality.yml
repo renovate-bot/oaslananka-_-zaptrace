@@ -19,30 +19,112 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validation-environment:
-    name: Validation environment parity
+  changes:
+    name: Change classification
     runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
+      full_ci: ${{ steps.classify.outputs.full_ci }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        with:
+          fetch-depth: 0
+
+      - id: classify
+        name: Classify changed paths
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "full_ci=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Change classification"
+              echo ""
+              echo "Non-PR run; full quality CI is required."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          changed_file_list="changed-files.txt"
+          if git rev-parse HEAD^1 >/dev/null 2>&1 && git rev-parse HEAD^2 >/dev/null 2>&1; then
+            git diff --name-only HEAD^1 HEAD^2 > "$changed_file_list"
+          else
+            git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" > "$changed_file_list"
+          fi
+
+          docs_only=true
+          if [[ ! -s "$changed_file_list" ]]; then
+            docs_only=false
+          fi
+
+          while IFS= read -r path; do
+            [[ -z "$path" ]] && continue
+            case "$path" in
+              *.md|docs/*|LICENSE|NOTICE|CODEOWNERS|.github/ISSUE_TEMPLATE/*|.github/PULL_REQUEST_TEMPLATE/*)
+                ;;
+              *)
+                docs_only=false
+                ;;
+            esac
+          done < "$changed_file_list"
+
+          if [[ "$docs_only" == "true" ]]; then
+            full_ci=false
+          else
+            full_ci=true
+          fi
+
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+          echo "full_ci=$full_ci" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Change classification"
+            echo ""
+            echo "- docs_only: \`$docs_only\`"
+            echo "- full_ci: \`$full_ci\`"
+            echo ""
+            echo "Changed files:"
+            sed 's/^/- `/' "$changed_file_list" | sed 's/$/`/'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  validation-environment:
+    name: Validation environment parity
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip heavyweight validation for docs-only PR
+        if: needs.changes.outputs.full_ci != 'true'
+        run: |
+          echo "Docs-only PR; skipping validation environment parity."
+          echo "Docs-only PR; validation environment parity skipped." >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        if: needs.changes.outputs.full_ci == 'true'
 
       - name: Install uv
+        if: needs.changes.outputs.full_ci == 'true'
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
 
       - name: Install KiCad 10 CLI
+        if: needs.changes.outputs.full_ci == 'true'
         run: |
           sudo add-apt-repository --yes ppa:kicad/kicad-10.0-releases
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y kicad
 
       - name: Run validation environment gate
+        if: needs.changes.outputs.full_ci == 'true'
         run: |
           python3 scripts/ci_validation_environment.py \
             --strict \
             --output validation-environment.json
 
       - name: Upload validation environment report
+        if: needs.changes.outputs.full_ci == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: validation-environment
@@ -50,31 +132,46 @@ jobs:
 
   lint:
     name: Lint & Typecheck
+    needs: changes
     runs-on: ubuntu-latest
     steps:
+      - name: Skip heavyweight lint/typecheck for docs-only PR
+        if: needs.changes.outputs.full_ci != 'true'
+        run: |
+          echo "Docs-only PR; skipping Python lint/typecheck."
+          echo "Docs-only PR; Python lint/typecheck skipped." >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        if: needs.changes.outputs.full_ci == 'true'
 
       - name: Install uv
+        if: needs.changes.outputs.full_ci == 'true'
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv sync --all-extras --all-groups
 
       - name: Ruff lint
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv run ruff check .
 
       - name: Ruff format check
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv run ruff format --check .
 
       - name: Pyright
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv run pyright
 
       - name: Component metadata gate
+        if: needs.changes.outputs.full_ci == 'true'
         run: |
           uv run python scripts/ci_component_metadata_gate.py \
             --max-errors 0 \
@@ -85,6 +182,7 @@ jobs:
 
   test:
     name: Test (Python ${{ matrix.python-version }})
+    needs: changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -92,29 +190,43 @@ jobs:
       fail-fast: false
 
     steps:
+      - name: Skip heavyweight tests for docs-only PR
+        if: needs.changes.outputs.full_ci != 'true'
+        run: |
+          echo "Docs-only PR; skipping Python ${{ matrix.python-version }} test matrix."
+          echo "Docs-only PR; Python ${{ matrix.python-version }} tests skipped." >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        if: needs.changes.outputs.full_ci == 'true'
 
       - name: Install uv
+        if: needs.changes.outputs.full_ci == 'true'
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
 
       - name: Set up Python ${{ matrix.python-version }}
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install dependencies
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv sync --all-extras --all-groups
 
       - name: Run tests
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv run pytest --cov --cov-report=xml -q
 
       - name: Gerber smoke test
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv run python scripts/ci_smoke.py gerber
 
       - name: Proof pack smoke test
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv run python scripts/ci_smoke.py proof
 
       - name: Upload coverage
+        if: needs.changes.outputs.full_ci == 'true'
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7.0.0
         with:
           files: ./coverage.xml
@@ -122,54 +234,82 @@ jobs:
 
   rust:
     name: Build Rust extension
+    needs: changes
     runs-on: ubuntu-latest
     steps:
+      - name: Skip Rust build for docs-only PR
+        if: needs.changes.outputs.full_ci != 'true'
+        run: |
+          echo "Docs-only PR; skipping Rust extension build."
+          echo "Docs-only PR; Rust extension build skipped." >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        if: needs.changes.outputs.full_ci == 'true'
 
       - name: Install uv
+        if: needs.changes.outputs.full_ci == 'true'
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv sync --all-extras --all-groups
 
       - name: Install maturin
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv pip install maturin
 
       - name: Check Rust formatting
+        if: needs.changes.outputs.full_ci == 'true'
         run: cargo fmt --manifest-path zaptrace_core/Cargo.toml --check
 
       - name: Run Clippy
+        if: needs.changes.outputs.full_ci == 'true'
         run: cargo clippy --manifest-path zaptrace_core/Cargo.toml -- -D warnings
 
       - name: Run Rust tests
+        if: needs.changes.outputs.full_ci == 'true'
         run: cargo test --manifest-path zaptrace_core/Cargo.toml
 
       - name: Build Rust extension
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv run maturin build --manifest-path zaptrace_core/Cargo.toml
 
   benchmark-001:
     name: Benchmark 001 acceptance
+    needs: changes
     runs-on: ubuntu-latest
     steps:
+      - name: Skip benchmark for docs-only PR
+        if: needs.changes.outputs.full_ci != 'true'
+        run: |
+          echo "Docs-only PR; skipping benchmark 001 acceptance."
+          echo "Docs-only PR; benchmark 001 acceptance skipped." >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        if: needs.changes.outputs.full_ci == 'true'
 
       - name: Install uv
+        if: needs.changes.outputs.full_ci == 'true'
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv sync --all-extras --all-groups
 
       - name: Run deterministic benchmark 001 harness
+        if: needs.changes.outputs.full_ci == 'true'
         run: |
           uv run python scripts/ci_benchmark_001.py \
             --strict \
@@ -177,30 +317,42 @@ jobs:
             --markdown "$GITHUB_STEP_SUMMARY"
 
       - name: Upload benchmark 001 report
+        if: needs.changes.outputs.full_ci == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: benchmark-001-report
           path: benchmark-001-report.json
 
-
   generated-board-release-gate:
     name: Generated board release gate
+    needs: changes
     runs-on: ubuntu-latest
     steps:
+      - name: Skip generated-board gate for docs-only PR
+        if: needs.changes.outputs.full_ci != 'true'
+        run: |
+          echo "Docs-only PR; skipping generated-board release gate."
+          echo "Docs-only PR; generated-board release gate skipped." >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        if: needs.changes.outputs.full_ci == 'true'
 
       - name: Install uv
+        if: needs.changes.outputs.full_ci == 'true'
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv sync --all-extras --all-groups
 
       - name: Run generated-board release gate
+        if: needs.changes.outputs.full_ci == 'true'
         run: |
           uv run python scripts/ci_generated_board_release_gate.py \
             --output generated-board-release-gate.json \
@@ -208,52 +360,75 @@ jobs:
             --strict
 
       - name: Upload generated-board release gate report
+        if: needs.changes.outputs.full_ci == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: generated-board-release-gate
           path: generated-board-release-gate.json
 
-
-
   docker-image-smoke:
     name: Docker image smoke
+    needs: changes
     runs-on: ubuntu-latest
     steps:
+      - name: Skip Docker smoke for docs-only PR
+        if: needs.changes.outputs.full_ci != 'true'
+        run: |
+          echo "Docs-only PR; skipping Docker image smoke."
+          echo "Docs-only PR; Docker image smoke skipped." >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        if: needs.changes.outputs.full_ci == 'true'
 
       - name: Build Docker image
+        if: needs.changes.outputs.full_ci == 'true'
         run: docker build --pull -t zaptrace:ci .
 
       - name: Smoke test CLI
+        if: needs.changes.outputs.full_ci == 'true'
         run: docker run --rm zaptrace:ci --help
 
   kicad-oracle:
     name: KiCad Oracle
+    needs: changes
     runs-on: ubuntu-latest
     steps:
+      - name: Skip KiCad oracle for docs-only PR
+        if: needs.changes.outputs.full_ci != 'true'
+        run: |
+          echo "Docs-only PR; skipping KiCad oracle."
+          echo "Docs-only PR; KiCad oracle skipped." >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        if: needs.changes.outputs.full_ci == 'true'
 
       - name: Install uv
+        if: needs.changes.outputs.full_ci == 'true'
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv sync --all-extras --all-groups
 
       - name: Install KiCad 10 CLI
+        if: needs.changes.outputs.full_ci == 'true'
         run: |
           sudo add-apt-repository --yes ppa:kicad/kicad-10.0-releases
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y kicad
 
       - name: Run KiCad oracle
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv run python scripts/ci_kicad_oracle.py --strict-skips --output kicad-oracle-summary.json
 
       - name: Upload KiCad oracle summary
+        if: needs.changes.outputs.full_ci == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: kicad-oracle-summary
@@ -261,26 +436,39 @@ jobs:
 
   build:
     name: Build package
+    needs: changes
     runs-on: ubuntu-latest
     steps:
+      - name: Skip package build for docs-only PR
+        if: needs.changes.outputs.full_ci != 'true'
+        run: |
+          echo "Docs-only PR; skipping package build."
+          echo "Docs-only PR; package build skipped." >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        if: needs.changes.outputs.full_ci == 'true'
 
       - name: Install uv
+        if: needs.changes.outputs.full_ci == 'true'
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv sync --all-extras --all-groups
 
       - name: Build package
+        if: needs.changes.outputs.full_ci == 'true'
         run: uv build
 
   docs-stale:
     name: Check stale docs
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
@@ -324,11 +512,10 @@ jobs:
           print('OK: JSON Schema is up to date')
           "
 
-
   release-gate-summary:
     name: Release gate summary
     runs-on: ubuntu-latest
-    needs: [validation-environment, lint, test, rust, build, docs-stale, benchmark-001, generated-board-release-gate, kicad-oracle, docker-image-smoke]
+    needs: [changes, validation-environment, lint, test, rust, build, docs-stale, benchmark-001, generated-board-release-gate, kicad-oracle, docker-image-smoke]
     if: always()
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
