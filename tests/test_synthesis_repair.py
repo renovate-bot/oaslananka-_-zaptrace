@@ -152,5 +152,13 @@ class TestSynthesizeAndRepair:
     def test_result_to_dict_round_trips_shape(self) -> None:
         out = synthesize_and_repair("USB-C powered board, 3.3V rail, I2C sensor")
         data = out["repair"].to_dict()
-        assert set(data) == {"converged", "fully_clean", "patch_count", "iterations", "patches", "remaining"}
+        assert set(data) == {
+            "converged",
+            "fully_clean",
+            "patch_count",
+            "iterations",
+            "patches",
+            "remaining",
+            "decisions",
+        }
         assert data["patch_count"] == len(data["patches"])

@@ -15,14 +15,32 @@ Two honesty invariants, straight from the design note:
 * **Escalate what it cannot fix.** Violations with no handler (e.g. a single-pin
   net that needs a real connector) are left untouched and returned as
   ``remaining`` for a human — never silently "repaired".
+
+Public registry API
+-------------------
+Use :data:`REPAIR_REGISTRY` (the module-level singleton) to register new handlers
+or look them up by ERC rule identifier::
+
+    from zaptrace.synthesis.repair import REPAIR_REGISTRY, Patch
+
+    def my_handler(design, violations):
+        return [Patch(...)]
+
+    REPAIR_REGISTRY.register("ERC999", my_handler)
+    handler = REPAIR_REGISTRY.get_handler("ERC999")
+
+Every applied or declined repair produces a :class:`RepairDecision` with
+typed provenance (assumptions, outcome, reason).
 """
 
 from __future__ import annotations
 
+import contextlib
+import re
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from zaptrace.erc.runner import ERCRunner
 
@@ -90,6 +108,7 @@ class RepairResult:
     patches: list[Patch] = field(default_factory=list)
     converged: bool = False
     remaining: list[dict[str, Any]] = field(default_factory=list)
+    decisions: list[RepairDecision] = field(default_factory=list)
 
     @property
     def fully_clean(self) -> bool:
@@ -103,7 +122,124 @@ class RepairResult:
             "iterations": [it.to_dict() for it in self.iterations],
             "patches": [p.to_dict() for p in self.patches],
             "remaining": self.remaining,
+            "decisions": [d.to_dict() for d in self.decisions],
         }
+
+
+# ---------------------------------------------------------------------------
+# Typed provenance record for every repair decision
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class RepairDecision:
+    """Typed provenance record for one repair action — applied, declined, or escalated.
+
+    A decision is emitted for **every** violation regardless of outcome so audit
+    trails never have silent gaps.
+
+    Attributes
+    ----------
+    rule_id:
+        The ERC rule that triggered this decision (e.g. ``"ERC008"``).
+    component_refs:
+        Components affected by the violation (may be empty for net-only issues).
+    net_refs:
+        Nets affected by the violation (may be empty for component-only issues).
+    outcome:
+        * ``"applied"`` — a patch was written and the design mutated.
+        * ``"declined"`` — a handler existed but chose not to apply a fix
+          (e.g. insufficient context).
+        * ``"escalated"`` — no handler is registered for this rule;
+          requires human action.
+    reason:
+        Human-readable explanation of why the decision was made.
+    assumptions:
+        Comma-separated key=value pairs describing the assumed values used (e.g.
+        ``"Vsupply=3.3V, Vf=2.0V, I=10mA"``).  Empty string when not applicable.
+    patch:
+        The :class:`Patch` that was applied, or ``None`` when outcome is not
+        ``"applied"``.
+    """
+
+    rule_id: str
+    component_refs: list[str]
+    net_refs: list[str]
+    outcome: Literal["applied", "declined", "escalated"]
+    reason: str
+    assumptions: str = ""
+    patch: Patch | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {
+            "rule_id": self.rule_id,
+            "component_refs": list(self.component_refs),
+            "net_refs": list(self.net_refs),
+            "outcome": self.outcome,
+            "reason": self.reason,
+            "assumptions": self.assumptions,
+        }
+        if self.patch is not None:
+            d["patch"] = self.patch.to_dict()
+        return d
+
+
+# ---------------------------------------------------------------------------
+# Public extensible registry
+# ---------------------------------------------------------------------------
+
+#: Type alias for a repair handler callable.
+RepairHandler = Callable[["Design", "list[ERCViolation]"], "list[Patch]"]
+
+
+class RepairRegistry:
+    """Public, extensible registry for ERC repair handlers.
+
+    Handlers are keyed by ERC rule identifier (e.g. ``"ERC020"``).  The
+    registry is deterministic: registering the same rule ID twice replaces the
+    previous handler (last-write-wins) so ordering is predictable.
+
+    Use :data:`REPAIR_REGISTRY` — the module-level singleton — unless you need
+    an isolated registry for testing.
+
+    Example
+    -------
+    .. code-block:: python
+
+        from zaptrace.synthesis.repair import REPAIR_REGISTRY, Patch
+
+        def fix_my_rule(design, violations):
+            patches = []
+            for v in violations:
+                # ... mutate design, build Patch ...
+                patches.append(Patch(rule_id="ERC999", ...))
+            return patches
+
+        REPAIR_REGISTRY.register("ERC999", fix_my_rule)
+    """
+
+    def __init__(self) -> None:
+        self._handlers: dict[str, RepairHandler] = {}
+
+    def register(self, rule_id: str, handler: RepairHandler) -> None:
+        """Register *handler* for *rule_id*.
+
+        Replaces any existing handler for the same rule ID.
+        """
+        self._handlers[rule_id] = handler
+
+    def get_handler(self, rule_id: str) -> RepairHandler | None:
+        """Return the handler registered for *rule_id*, or ``None``."""
+        return self._handlers.get(rule_id)
+
+    @property
+    def registered_rule_ids(self) -> tuple[str, ...]:
+        """Sorted tuple of all registered rule IDs."""
+        return tuple(sorted(self._handlers))
+
+    def unregister(self, rule_id: str) -> None:
+        """Remove the handler for *rule_id* (no-op if not registered)."""
+        self._handlers.pop(rule_id, None)
 
 
 # Standard package names by component type/value, matching the bare-name
@@ -229,11 +365,138 @@ def _repair_floating_enable(design: Design, violations: list[ERCViolation]) -> l
     return patches
 
 
-# rule_id -> handler. Each handler mutates the design in place and returns the
-# patches it made. A rule with no handler is, by definition, escalated.
+# ---------------------------------------------------------------------------
+# ERC005 handler: I2C pull-up resistors
+# ---------------------------------------------------------------------------
+
+_DEFAULT_I2C_BUS_PF = 100.0
+_DEFAULT_I2C_SPEED_HZ = 100_000
+_DEFAULT_I2C_RAIL_V = 3.3
+
+
+def _infer_rail_voltage(design: Design, net_id: str) -> float | None:
+    """Best-effort rail voltage for a net: connected supplies first, then the name."""
+    import contextlib as _ctx
+
+    net = design.nets.get(net_id) or next((n for n in design.nets.values() if n.id == net_id), None)
+    if net is None:
+        return None
+    voltages: list[float] = []
+    for node in net.nodes:
+        comp = design.get_component(node.component_ref)
+        if comp and comp.voltage_supply:
+            with _ctx.suppress(ValueError):
+                voltages.append(float(comp.voltage_supply))
+    if voltages:
+        return max(voltages)
+    name = net.name
+    m = re.search(r"(\d+\.\d+)\s*V", name, re.IGNORECASE)
+    if m:
+        return float(m.group(1))
+    m = re.search(r"\b(\d+)V(\d+)\b", name, re.IGNORECASE)
+    if m:
+        return float(f"{m.group(1)}.{m.group(2)}")
+    m = re.search(r"\b(\d+)\s*V\b", name, re.IGNORECASE)
+    if m:
+        return float(m.group(1))
+    return None
+
+
+def _format_ohms(ohms: float) -> str:
+    if ohms >= 1e6:
+        return f"{ohms / 1e6:g}M"
+    if ohms >= 1e3:
+        return f"{ohms / 1e3:g}k"
+    return f"{ohms:g}"
+
+
+def _repair_i2c_pullup(design: Design, violations: list[ERCViolation]) -> list[Patch]:
+    """ERC005 handler: add calculated I2C pull-up resistors to SDA/SCL nets."""
+    from zaptrace.synthesis.calculators import i2c_pullup
+
+    patches: list[Patch] = []
+    for violation in violations:
+        for net_id in violation.net_refs:
+            supply = _infer_rail_voltage(design, net_id) or _DEFAULT_I2C_RAIL_V
+            with contextlib.suppress(ValueError):
+                pull = i2c_pullup(supply, _DEFAULT_I2C_BUS_PF, bus_speed_hz=_DEFAULT_I2C_SPEED_HZ)
+                value = _format_ohms(pull.recommended_ohms)
+                patches.append(
+                    Patch(
+                        rule_id="ERC005",
+                        component_ref="",
+                        field="pullup_value",
+                        old_value="",
+                        new_value=value,
+                        rationale=f"add {value} pull-up on {net_id} for I2C",
+                        confidence=0.85,
+                    )
+                )
+    return patches
+
+
+# ---------------------------------------------------------------------------
+# ERC008 handler: LED series resistor
+# ---------------------------------------------------------------------------
+
+_DEFAULT_LED_VF = 2.0
+_DEFAULT_LED_CURRENT_MA = 10.0
+
+
+def _led_supply_voltage(design: Design, led_ref: str) -> float | None:
+    """Rail voltage feeding an LED, inferred from its anode net."""
+    net = design.get_net_for_pin(led_ref, "ANODE")
+    if net is None:
+        return None
+    return _infer_rail_voltage(design, net.id)
+
+
+def _repair_led_series_resistor(design: Design, violations: list[ERCViolation]) -> list[Patch]:
+    """ERC008 handler: add a calculated LED series resistor."""
+    from zaptrace.synthesis.calculators import led_series_resistor
+
+    patches: list[Patch] = []
+    for violation in violations:
+        for led_ref in violation.component_refs:
+            supply = _led_supply_voltage(design, led_ref)
+            if supply is None or supply <= _DEFAULT_LED_VF:
+                continue
+            with contextlib.suppress(ValueError):
+                res = led_series_resistor(supply, _DEFAULT_LED_VF, _DEFAULT_LED_CURRENT_MA)
+                value = _format_ohms(res.chosen_ohms)
+                patches.append(
+                    Patch(
+                        rule_id="ERC008",
+                        component_ref=led_ref,
+                        field="series_resistor_value",
+                        old_value="",
+                        new_value=value,
+                        rationale=f"add {value} series resistor for LED {led_ref}",
+                        confidence=0.9,
+                    )
+                )
+    return patches
+
+
+# ---------------------------------------------------------------------------
+# Module-level public registry (singleton)
+# ---------------------------------------------------------------------------
+
+#: The default, module-level repair registry.  Register new handlers here so
+#: that :func:`repair_design` automatically discovers them.
+REPAIR_REGISTRY = RepairRegistry()
+
+# Seed the registry with the built-in handlers.
+REPAIR_REGISTRY.register("ERC020", _repair_missing_footprint)
+REPAIR_REGISTRY.register("ERC012", _repair_floating_enable)
+REPAIR_REGISTRY.register("ERC005", _repair_i2c_pullup)
+REPAIR_REGISTRY.register("ERC008", _repair_led_series_resistor)
+
+# Keep the private dict for backward-compatibility with any code that imported it.
+# New code should use REPAIR_REGISTRY instead.
 _HANDLERS: dict[str, Callable[[Design, list[ERCViolation]], list[Patch]]] = {
-    "ERC020": _repair_missing_footprint,
-    "ERC012": _repair_floating_enable,
+    rule_id: REPAIR_REGISTRY.get_handler(rule_id)  # type: ignore[misc]
+    for rule_id in REPAIR_REGISTRY.registered_rule_ids
 }
 
 
@@ -252,6 +515,10 @@ def repair_design(design: Design, *, max_iterations: int = _MAX_ITERATIONS) -> R
 
     Returns a :class:`RepairResult` recording every iteration, every patch, and
     the violations left for a human. The design is mutated as patches apply.
+
+    A :class:`RepairDecision` is emitted for **every** violation on every
+    iteration — with outcome ``"applied"``, ``"declined"``, or ``"escalated"``
+    — so the audit trail is complete.
     """
     runner = ERCRunner()
     result = RepairResult()
@@ -265,9 +532,57 @@ def repair_design(design: Design, *, max_iterations: int = _MAX_ITERATIONS) -> R
             by_rule[violation.rule_id].append(violation)
 
         patches: list[Patch] = []
-        for rule_id, handler in _HANDLERS.items():
-            if rule_id in by_rule:
-                patches.extend(handler(design, by_rule[rule_id]))
+        iteration_decisions: list[RepairDecision] = []
+
+        for rule_id, violations_for_rule in by_rule.items():
+            handler = REPAIR_REGISTRY.get_handler(rule_id)
+            if handler is None:
+                # No handler registered: escalate all violations for this rule.
+                for v in violations_for_rule:
+                    iteration_decisions.append(
+                        RepairDecision(
+                            rule_id=rule_id,
+                            component_refs=list(v.component_refs),
+                            net_refs=list(v.net_refs),
+                            outcome="escalated",
+                            reason="no handler registered for this rule",
+                        )
+                    )
+                continue
+
+            new_patches = handler(design, violations_for_rule)
+            patches.extend(new_patches)
+
+            for v in violations_for_rule:
+                refs = list(v.component_refs)
+                nets = list(v.net_refs)
+                # A violation is "applied" if any patch was produced for it.
+                matching = [p for p in new_patches if p.rule_id == rule_id]
+                if matching:
+                    for p in matching:
+                        iteration_decisions.append(
+                            RepairDecision(
+                                rule_id=rule_id,
+                                component_refs=refs,
+                                net_refs=nets,
+                                outcome="applied",
+                                reason=p.rationale,
+                                assumptions=getattr(p, "assumptions", ""),
+                                patch=p,
+                            )
+                        )
+                else:
+                    iteration_decisions.append(
+                        RepairDecision(
+                            rule_id=rule_id,
+                            component_refs=refs,
+                            net_refs=nets,
+                            outcome="declined",
+                            reason="handler ran but produced no patch (insufficient context)",
+                        )
+                    )
+
+        result.decisions.extend(iteration_decisions)
 
         if not patches:
             # Fixed point: nothing left this loop knows how to fix.
