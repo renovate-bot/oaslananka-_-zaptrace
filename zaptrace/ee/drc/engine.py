@@ -608,6 +608,9 @@ def check_acid_trap(design: Design, _kb: KnowledgeBase, _result: DRCResult) -> l
                 if shared is None:
                     continue
                 v1 = _vec(shared, a.end) if _dist(shared, a.start) < 0.001 else _vec(shared, a.start)
+                joint_count = endpoint_degree[(net_id, layer, round(shared[0], 6), round(shared[1], 6))]
+                if joint_count > 2:
+                    continue
                 v2 = _vec(shared, b.end) if _dist(shared, b.start) < 0.001 else _vec(shared, b.start)
 
                 n1 = _norm(v1)
