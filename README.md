@@ -15,7 +15,7 @@ Intent → normalized design → schematic → ERC → placement → routing →
 </p>
 
 <p>
-  <a href="https://oaslananka.github.io/zaptrace"><img src="https://img.shields.io/badge/docs-mkdocs-0A7BBB?logo=materialformkdocs&logoColor=white" alt="Documentation" /></a>
+  <a href="https://oaslananka.github.io/zaptrace"><img src="https://img.shields.io/badge/docs-mkdocs-0A7BBB?logo=materialformkdocs&amp;logoColor=white" alt="Documentation" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+" />
   <img src="https://img.shields.io/badge/MCP-93%20tools-7c3aed" alt="MCP: 93 tools" />
