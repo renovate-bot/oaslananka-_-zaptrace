@@ -121,12 +121,36 @@ def _append_segment_if_nonzero(
     segments.append(RouteSegment(x1, y1, x2, y2, net_name))
 
 
+def _prefer_vertical_first(net_name: str) -> bool:
+    """Return a stable Manhattan corner orientation for a net.
+
+    Power rails, ground, and SDA-style data nets often benefit from vertical
+    escapes in compact sensor-node layouts, while SCL/SCK-style clock nets keep
+    the legacy horizontal-first path.  Unknown nets use a deterministic fallback
+    so output is stable without hard-coding a board-specific lookup table.
+    """
+    normalized = net_name.casefold()
+    tokens = normalized.replace("-", "_").split("_")
+    if any(token in {"gnd", "ground", "vss"} for token in tokens):
+        return True
+    if normalized.startswith(("vcc", "vdd", "vbus", "vin")) or normalized.endswith(("_vcc", "_vdd")):
+        return True
+    if any(token in {"sda", "mosi", "data"} for token in tokens):
+        return True
+    if any(token in {"scl", "sck", "clk", "clock"} for token in tokens):
+        return False
+    seed = sum((idx + 1) * ord(ch) for idx, ch in enumerate(net_name))
+    return seed % 2 == 1
+
+
 def _route_manhattan_edge(
     x1: float,
     y1: float,
     x2: float,
     y2: float,
     net_name: str,
+    *,
+    vertical_first: bool | None = None,
 ) -> list[RouteSegment]:
     """Route one MST edge as non-zero Manhattan segments."""
     segments: list[RouteSegment] = []
@@ -138,9 +162,13 @@ def _route_manhattan_edge(
         _append_segment_if_nonzero(segments, x1, y1, x2, y2, net_name)
         return segments
 
-    mid_x = x2
-    _append_segment_if_nonzero(segments, x1, y1, mid_x, y1, net_name)
-    _append_segment_if_nonzero(segments, mid_x, y1, x2, y2, net_name)
+    use_vertical_first = _prefer_vertical_first(net_name) if vertical_first is None else vertical_first
+    if use_vertical_first:
+        _append_segment_if_nonzero(segments, x1, y1, x1, y2, net_name)
+        _append_segment_if_nonzero(segments, x1, y2, x2, y2, net_name)
+    else:
+        _append_segment_if_nonzero(segments, x1, y1, x2, y1, net_name)
+        _append_segment_if_nonzero(segments, x2, y1, x2, y2, net_name)
     return segments
 
 

@@ -41,6 +41,14 @@ class TestRouteNetMst:
         segments = _route_net_mst([(10.0, 10.0), (50.0, 30.0)], "VCC")
         assert all(s.net_name == "VCC" for s in segments)
 
+    def test_power_net_routes_vertical_first(self) -> None:
+        segments = _route_net_mst([(10.0, 10.0), (50.0, 30.0)], "VCC_3V3")
+        assert (segments[0].x1, segments[0].y1, segments[0].x2, segments[0].y2) == (10.0, 10.0, 10.0, 30.0)
+
+    def test_clock_net_routes_horizontal_first(self) -> None:
+        segments = _route_net_mst([(10.0, 10.0), (50.0, 30.0)], "I2C_SCL")
+        assert (segments[0].x1, segments[0].y1, segments[0].x2, segments[0].y2) == (10.0, 10.0, 50.0, 10.0)
+
 
 class TestRouteNets:
     def _make_design(self) -> Design:
