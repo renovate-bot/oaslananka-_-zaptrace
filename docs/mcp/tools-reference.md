@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 91
+> Total tools: 92
 
 ---
 
@@ -859,6 +859,17 @@ Import an Altium Designer ASCII schematic and return fidelity evidence (componen
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `altium_ascii_text` | `string` | Full text of an Altium ASCII schematic (.SchDoc ASCII export) |
+
+### `kicad_3d_model_coverage`
+
+Extract governed 3D model references from a KiCad PCB text and resolve them to physical files, returning model-coverage-v1 evidence. Records included, missing, and degraded models with source, license, SHA-256, units, and transform metadata. Missing optional models cannot be mistaken for complete mechanical coverage — complete=False whenever any model is absent or degraded. Accepts an optional JSON model registry array for license/hash enrichment.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `kicad_pcb_text` | `string` | Raw text content of a .kicad_pcb file |
+| `model_registry_json` | `string` | JSON array of governed model entries with keys: source, license, sha256, units. Optional — omit or pass '[]' when no registry is available. |
 
 ---
 

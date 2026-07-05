@@ -29,7 +29,7 @@ def test_server_version() -> None:
 async def test_server_has_all_tools() -> None:
     """Server exposes 91 registry tools + 3 session management tools = 94."""
     tools = await server.list_tools()
-    assert len(tools) == 94
+    assert len(tools) == 95
     tool_names = {t.name for t in tools}
     # Design analysis tools (mechanical / security / testability)
     assert {"mechanical_review", "security_review", "testability_report"} <= tool_names

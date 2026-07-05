@@ -2345,6 +2345,92 @@ def tool_easyeda_std_roundtrip(json_content: str) -> dict[str, Any]:
     }
 
 
+# ---------------------------------------------------------------------------
+# Tool 92 — kicad_3d_model_coverage (issue #141)
+# ---------------------------------------------------------------------------
+
+
+def tool_kicad_3d_model_coverage(
+    kicad_pcb_text: str,
+    model_registry_json: str = "[]",
+) -> dict[str, Any]:
+    """Resolve governed 3D model references from a KiCad PCB and compute coverage evidence.
+
+    Extracts all ``(model ...)`` references from the PCB text, enriches them
+    with governed metadata (source, license, SHA-256, units, transform) from an
+    optional model registry, and resolves each reference to a physical file.
+
+    Returns skip-aware evidence listing included, missing, and degraded models.
+    Missing optional models are never mistaken for complete mechanical coverage —
+    the ``complete`` flag is False whenever any model is absent or degraded.
+
+    Parameters
+    ----------
+    kicad_pcb_text:
+        Raw text content of a ``.kicad_pcb`` file.
+    model_registry_json:
+        JSON array of governed model registry entries, each with keys:
+        ``source`` (path pattern), ``license``, ``sha256``, ``units``.
+        If omitted or empty, references are resolved without hash/license data.
+
+    Returns
+    -------
+    dict
+        ``schema`` — ``"model-coverage-v1"``;
+        ``total`` — total reference count;
+        ``included_count`` — models resolved to a file;
+        ``missing_count`` — models whose file was not found;
+        ``degraded_count`` — models with hash mismatch or read errors;
+        ``coverage_fraction`` — included / total (0.0–1.0);
+        ``complete`` — True only when all models included and hashes match;
+        ``included`` — list of resolved model evidence records;
+        ``missing`` — list of unresolved model evidence records;
+        ``degraded`` — list of degraded model evidence records.
+    """
+    import json
+
+    from zaptrace.kicad.model_refs import (
+        ModelRef,
+        extract_model_refs_from_kicad_pcb,
+        resolve_model_refs,
+    )
+
+    # Parse governed registry
+    try:
+        registry_entries: list[dict[str, Any]] = json.loads(model_registry_json)
+    except (json.JSONDecodeError, ValueError):
+        registry_entries = []
+
+    registry_by_source: dict[str, dict[str, Any]] = {}
+    for entry in registry_entries:
+        src = entry.get("source", "")
+        if src:
+            registry_by_source[src] = entry
+
+    # Extract raw refs from PCB
+    raw_refs = extract_model_refs_from_kicad_pcb(kicad_pcb_text)
+
+    # Enrich with governed metadata
+    governed: list[ModelRef] = []
+    for raw in raw_refs:
+        meta = registry_by_source.get(raw.source, {})
+        governed.append(
+            ModelRef(
+                ref=raw.ref,
+                source=raw.source,
+                license=meta.get("license", ""),
+                sha256=meta.get("sha256", ""),
+                units=meta.get("units", raw.units),
+                offset=raw.offset,
+                scale=raw.scale,
+                rotation=raw.rotation,
+            )
+        )
+
+    coverage = resolve_model_refs(governed)
+    return coverage.to_dict()
+
+
 TOOL_REGISTRY: dict[str, dict[str, Any]] = {
     "design_parse_file": {
         "name": "design_parse_file",
@@ -3238,6 +3324,31 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
             "altium_ascii_text": {
                 "type": "string",
                 "description": "Full text of an Altium ASCII schematic (.SchDoc ASCII export)",
+            },
+        },
+    },
+    "kicad_3d_model_coverage": {
+        "name": "kicad_3d_model_coverage",
+        "description": (
+            "Extract governed 3D model references from a KiCad PCB text and resolve them to "
+            "physical files, returning model-coverage-v1 evidence. Records included, missing, "
+            "and degraded models with source, license, SHA-256, units, and transform metadata. "
+            "Missing optional models cannot be mistaken for complete mechanical coverage — "
+            "complete=False whenever any model is absent or degraded. Accepts an optional "
+            "JSON model registry array for license/hash enrichment."
+        ),
+        "fn": tool_kicad_3d_model_coverage,
+        "params": {
+            "kicad_pcb_text": {
+                "type": "string",
+                "description": "Raw text content of a .kicad_pcb file",
+            },
+            "model_registry_json": {
+                "type": "string",
+                "description": (
+                    "JSON array of governed model entries with keys: source, license, sha256, units. "
+                    "Optional — omit or pass '[]' when no registry is available."
+                ),
             },
         },
     },
