@@ -154,3 +154,295 @@ def _rail_net_to_volts(net_name: str) -> float | None:
         return float(token)
     except ValueError:
         return None
+
+
+# ---------------------------------------------------------------------------
+# Transient simulation gate
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class TransientCheck:
+    """One pass/fail assertion against a transient waveform.
+
+    Attributes
+    ----------
+    name:
+        Human-readable check label (e.g. ``"startup_time_us"``).
+    passed:
+        ``True`` = pass, ``False`` = fail, ``None`` = not evaluated.
+    actual:
+        Measured value (or ``None`` if not available).
+    reference:
+        Expected threshold used for the comparison.
+    unit:
+        Unit string for display (e.g. ``"us"``, ``"mV"``).
+    """
+
+    name: str
+    passed: bool | None
+    actual: float | None
+    reference: float | None
+    unit: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "passed": self.passed,
+            "actual": self.actual,
+            "reference": self.reference,
+            "unit": self.unit,
+        }
+
+
+@dataclass
+class TransientGateResult:
+    """Blocking verdict for a transient simulation gate.
+
+    Attributes
+    ----------
+    status:
+        One of ``"pass"``, ``"fail"``, ``"skipped"``, or ``"no_reference"``.
+    blocking:
+        ``True`` when this result prevents the pipeline from proceeding.
+    strict:
+        Whether strict mode was enabled (skip → blocking).
+    design_name:
+        Name of the design that was simulated.
+    reason:
+        One-line human explanation of the outcome.
+    node:
+        The net name that was simulated (e.g. ``"vout"``).
+    checks:
+        Per-assertion results.
+    model_degraded:
+        ``True`` when a placeholder/behavioural model was used.
+    model_source:
+        Provenance string for the model (``"fixture:v1.0"`` etc.).
+    """
+
+    status: str
+    blocking: bool
+    strict: bool
+    design_name: str
+    reason: str
+    node: str = ""
+    checks: list[TransientCheck] = field(default_factory=list)
+    model_degraded: bool = False
+    model_source: str = ""
+
+    @property
+    def satisfied(self) -> bool:
+        return not self.blocking
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "status": self.status,
+            "blocking": self.blocking,
+            "satisfied": self.satisfied,
+            "strict": self.strict,
+            "design_name": self.design_name,
+            "reason": self.reason,
+            "node": self.node,
+            "model_degraded": self.model_degraded,
+            "model_source": self.model_source,
+            "checks": [c.to_dict() for c in self.checks],
+        }
+
+
+@dataclass
+class TransientReference:
+    """Reference thresholds for one switching-regulator transient gate.
+
+    Attributes
+    ----------
+    node:
+        Net name to measure (e.g. ``"vout"``).
+    target_v:
+        Expected steady-state output voltage (volts).
+    max_startup_us:
+        Maximum allowed startup time in microseconds, or ``None`` to skip check.
+    max_ripple_mv:
+        Maximum allowed steady-state ripple in millivolts, or ``None`` to skip.
+    model_source:
+        Provenance string for the behavioral model (version + hash).
+    model_degraded:
+        Whether this reference uses a degraded/approximate model.
+    """
+
+    node: str
+    target_v: float
+    max_startup_us: float | None = None
+    max_ripple_mv: float | None = None
+    model_source: str = ""
+    model_degraded: bool = False
+
+
+def run_transient_gate(
+    netlist: str,
+    reference: TransientReference,
+    *,
+    design_name: str = "",
+    step_s: float = 1e-9,
+    stop_s: float = 100e-6,
+    timeout_s: float = 60.0,
+    strict: bool = False,
+) -> TransientGateResult:
+    """Run a transient simulation gate for a switching-regulator design.
+
+    Parameters
+    ----------
+    netlist:
+        SPICE netlist (without ``.tran`` or ``.control``).
+    reference:
+        Threshold configuration with provenance metadata.
+    design_name:
+        Label for the gate result.
+    step_s:
+        Timestep in seconds.
+    stop_s:
+        Stop time in seconds.
+    timeout_s:
+        Wall-clock timeout for ngspice.
+    strict:
+        If ``True``, a ``SKIPPED`` result is blocking.
+
+    Returns
+    -------
+    TransientGateResult
+        ``status="skipped"`` when ngspice is absent;
+        ``status="no_reference"`` when all checks are disabled;
+        ``status="pass"`` / ``"fail"`` based on check outcomes.
+    """
+    from zaptrace.analysis.spice_sim import run_transient
+
+    tran = run_transient(
+        netlist,
+        reference.node,
+        step_s=step_s,
+        stop_s=stop_s,
+        timeout_s=timeout_s,
+    )
+
+    if tran.status == "skipped":
+        reason = "ngspice not available; recorded as explicit skip"
+        if strict:
+            reason += " (blocking in strict mode)"
+        return TransientGateResult(
+            status="skipped",
+            blocking=strict,
+            strict=strict,
+            design_name=design_name,
+            reason=reason,
+            node=reference.node,
+            model_degraded=reference.model_degraded,
+            model_source=reference.model_source,
+        )
+
+    if tran.status == "error":
+        return TransientGateResult(
+            status="fail",
+            blocking=True,
+            strict=strict,
+            design_name=design_name,
+            reason=f"ngspice error: {tran.reason}",
+            node=reference.node,
+            model_degraded=reference.model_degraded,
+            model_source=reference.model_source,
+        )
+
+    # ngspice ran successfully
+    waveform = tran.waveforms.get(reference.node)
+    checks: list[TransientCheck] = []
+
+    # Startup time check
+    if reference.max_startup_us is not None:
+        if waveform and waveform.times_s:
+            actual_s = waveform.startup_time_s(reference.target_v)
+            actual_us = (actual_s * 1e6) if actual_s is not None else None
+            passed = (actual_us is not None) and (actual_us <= reference.max_startup_us)
+            checks.append(
+                TransientCheck(
+                    name="startup_time",
+                    passed=passed,
+                    actual=actual_us,
+                    reference=reference.max_startup_us,
+                    unit="us",
+                )
+            )
+        else:
+            checks.append(
+                TransientCheck(
+                    name="startup_time",
+                    passed=False,
+                    actual=None,
+                    reference=reference.max_startup_us,
+                    unit="us",
+                )
+            )
+
+    # Ripple check
+    if reference.max_ripple_mv is not None:
+        if waveform and len(waveform.voltages_v) >= 2:
+            ripple_mv = waveform.ripple_v() * 1000.0
+            passed = ripple_mv <= reference.max_ripple_mv
+            checks.append(
+                TransientCheck(
+                    name="steady_state_ripple",
+                    passed=passed,
+                    actual=ripple_mv,
+                    reference=reference.max_ripple_mv,
+                    unit="mV",
+                )
+            )
+        else:
+            checks.append(
+                TransientCheck(
+                    name="steady_state_ripple",
+                    passed=False,
+                    actual=None,
+                    reference=reference.max_ripple_mv,
+                    unit="mV",
+                )
+            )
+
+    has_checks = len(checks) > 0
+    if not has_checks:
+        return TransientGateResult(
+            status="no_reference",
+            blocking=strict,
+            strict=strict,
+            design_name=design_name,
+            reason="simulation ran but no reference thresholds provided",
+            node=reference.node,
+            model_degraded=reference.model_degraded,
+            model_source=reference.model_source,
+            checks=checks,
+        )
+
+    all_passed = all(c.passed is True for c in checks)
+    if all_passed:
+        return TransientGateResult(
+            status="pass",
+            blocking=False,
+            strict=strict,
+            design_name=design_name,
+            reason="all transient checks passed",
+            node=reference.node,
+            model_degraded=reference.model_degraded,
+            model_source=reference.model_source,
+            checks=checks,
+        )
+
+    failed = [c.name for c in checks if c.passed is False]
+    return TransientGateResult(
+        status="fail",
+        blocking=True,
+        strict=strict,
+        design_name=design_name,
+        reason=f"transient check(s) failed: {failed}",
+        node=reference.node,
+        model_degraded=reference.model_degraded,
+        model_source=reference.model_source,
+        checks=checks,
+    )
