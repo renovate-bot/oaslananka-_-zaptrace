@@ -5,11 +5,11 @@
     "intent": "a8ab42aff48cf91fe15396c3a1e219d7b1648d7bb46c5754005e7997df83958f",
     "kicad-pcb": "a073adc8841402f3a1a06278f22d8fb98301370d0c7133d459030b51fbdd4f57",
     "kicad-project": "e672a2fd0ef2bf3edc4b29f5f44cc49bc3af3a9f6cc9a6f42ee249209b9ae2e7",
-    "kicad-schematic": "fce1da20c62cbdce8f4407c0faf5ee5d643104c076945c72df4f90ab2c9f5cf8",
+    "kicad-schematic": "30d94e94ccd4ff8a5ef61bc397905ecd7b38873075c43d6c299386fbd13f67ab",
     "manufacturing-export-manifest": "1f49b6c584e94847734e89ac715f650a95ab19e4606df67d5532a3238e3a9576",
     "pcb-generation-report": "a30f065c9376814348706f6135917bcfdfba4dda313631c2cad2cc976b2d6967",
     "review-handoff": "df586620a33f74ae270aa193e0a4bdf4e59eb947d7b45da2e34513b6680b30ed",
-    "schematic-generation-report": "ca6865f8d32a193bdd80cfff8f7e130921ed6fcc6b8954d39e2fcd77163861da"
+    "schematic-generation-report": "b064a39a858074b7a21e431c2afd25fd3472d43a5380a37f1608dbfd933b3fdb"
   },
   "artifact_paths": {
     "design-ir-compile-report": "esp32_usb_sensor_generated_v1.design_ir_compilation.json",

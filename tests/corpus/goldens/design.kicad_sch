@@ -18,4 +18,7 @@
     (property "Reference" "J1" (at 200 45 0))
     (property "Value" "Header_2x1" (at 200 55 0))
   )
+  (label "VCC" (at 200 10 0))
+  (label "GND" (at 230 10 0))
+  (label "SIG" (at 260 10 0))
 )

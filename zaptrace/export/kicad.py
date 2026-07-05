@@ -119,7 +119,13 @@ def export_kicad_netlist_evidence(design: Design, output_dir: Path) -> dict[str,
 
 
 def _build_schematic(design: Design) -> str:
-    """Build minimal .kicad_sch S-expression content."""
+    """Build minimal .kicad_sch S-expression content.
+
+    Emits symbols with placement and basic properties, plus a floating
+    ``(label ...)`` for each named net so that a round-trip import via
+    :func:`~zaptrace.kicad.schematic_importer.import_kicad_schematic_string`
+    recovers the same net names at score 1.00.
+    """
     lines = [
         '(kicad_sch (version 20230121) (generator "zaptrace")',
         f'  (title_block (title "{design.meta.name}") (rev "{design.meta.version}")',
@@ -134,6 +140,12 @@ def _build_schematic(design: Design) -> str:
         if comp.value:
             lines.append(f'    (property "Value" "{comp.value}" (at {x} {y + 5} 0))')
         lines.append("  )")
+    # Emit a floating label for each net so round-trip import recovers net names.
+    for j, net in enumerate(design.nets.values()):
+        lx = 200 + (j % 10) * 30
+        ly = 10 + (j // 10) * 20
+        safe = net.name.replace('"', "'")
+        lines.append(f'  (label "{safe}" (at {lx} {ly} 0))')
     lines.append(")")
     return "\n".join(lines)
 
