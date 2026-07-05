@@ -1,0 +1,65 @@
+version = 1
+SPDX-PackageName = "ZapTrace"
+SPDX-PackageSupplier = "oaslananka <oaslananka@users.noreply.github.com>"
+SPDX-PackageDownloadLocation = "https://github.com/oaslananka/zaptrace"
+
+[[annotations]]
+path = "**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Osman Aslan (oaslananka)"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ".github/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Osman Aslan (oaslananka)"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "data/library/**/**.yaml"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Osman Aslan (oaslananka)"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Generated library part entries. Manufacturer names, part numbers,\n and datasheet URLs are factual data; no copyright applies to facts."
+
+[[annotations]]
+path = "tests/fixtures/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Osman Aslan (oaslananka)"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Synthetic test fixtures created for ZapTrace test suite."
+
+[[annotations]]
+path = "uv.lock"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Osman Aslan (oaslananka)"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Auto-generated dependency lock file."
+
+[[annotations]]
+path = "Cargo.lock"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Osman Aslan (oaslananka)"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Auto-generated Rust dependency lock file."
+
+[[annotations]]
+path = "**.lock"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Osman Aslan (oaslananka)"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Auto-generated lock files."
+
+[[annotations]]
+path = "rust/target/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Osman Aslan (oaslananka)"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Rust build artefacts."
+
+[[annotations]]
+path = ".venv/**"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Osman Aslan (oaslananka)"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Python virtual environment (build artefact, not tracked by VCS)."
