@@ -1,4 +1,4 @@
-"""EasyEDA Pro project reader with shared shape codec (issue #120).
+"""EasyEDA Pro project reader/writer with shared shape codec (issues #120, #121).
 
 Reads an EasyEDA Pro ZIP/JSONL project into the canonical ZapTrace model,
 preserving unknown constructs as structured degradation records.
@@ -635,3 +635,353 @@ def _parse_zip_contents(zf: zipfile.ZipFile) -> EasyEdaProProject:
             )
 
     return project
+
+
+# ---------------------------------------------------------------------------
+# Write-side data classes
+# ---------------------------------------------------------------------------
+
+_EASYEDA_FORMAT_VERSION = "2.0.0"
+
+
+@dataclass
+class EasyEdaWriteFinding:
+    """A single finding recorded during EasyEDA Pro export.
+
+    Attributes
+    ----------
+    category:
+        ``"represented"`` — mapped without loss;
+        ``"transformed"`` — mapped with noted fidelity reduction;
+        ``"unsupported"`` — could not be expressed in EasyEDA Pro format.
+    element:
+        Human-readable description of the element (e.g. ``"component R1"``).
+    detail:
+        Optional extra detail or reason.
+    """
+
+    category: str  # "represented" | "transformed" | "unsupported"
+    element: str
+    detail: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"category": self.category, "element": self.element, "detail": self.detail}
+
+
+@dataclass
+class EasyEdaWriteDegradationReport:
+    """Machine-readable write degradation report for a single export operation.
+
+    Attributes
+    ----------
+    represented_count:
+        Number of design elements fully represented in the output.
+    transformed_count:
+        Number of elements that required a lossy or approximate mapping.
+    unsupported_count:
+        Number of elements that could not be represented and were omitted.
+    findings:
+        Ordered list of individual :class:`EasyEdaWriteFinding` records.
+    accepted:
+        ``True`` when ``unsupported_count == 0`` (no silent data loss).
+    """
+
+    represented_count: int = 0
+    transformed_count: int = 0
+    unsupported_count: int = 0
+    findings: list[EasyEdaWriteFinding] = field(default_factory=list)
+
+    @property
+    def accepted(self) -> bool:
+        return self.unsupported_count == 0
+
+    def _add(self, category: str, element: str, detail: str = "") -> None:
+        self.findings.append(EasyEdaWriteFinding(category=category, element=element, detail=detail))
+        if category == "represented":
+            self.represented_count += 1
+        elif category == "transformed":
+            self.transformed_count += 1
+        else:
+            self.unsupported_count += 1
+
+    def represented(self, element: str, detail: str = "") -> None:
+        self._add("represented", element, detail)
+
+    def transformed(self, element: str, detail: str = "") -> None:
+        self._add("transformed", element, detail)
+
+    def unsupported(self, element: str, detail: str = "") -> None:
+        self._add("unsupported", element, detail)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "represented_count": self.represented_count,
+            "transformed_count": self.transformed_count,
+            "unsupported_count": self.unsupported_count,
+            "accepted": self.accepted,
+            "findings": [f.to_dict() for f in self.findings],
+        }
+
+
+# ---------------------------------------------------------------------------
+# JSONL serialisers (write side)
+# ---------------------------------------------------------------------------
+
+
+def _build_schematic_jsonl(design: Any, report: EasyEdaWriteDegradationReport) -> str:
+    """Serialise canonical design schematic to EasyEDA Pro JSONL text."""
+    lines: list[str] = []
+
+    lines.append(json.dumps({"type": "HEADER", "version": _EASYEDA_FORMAT_VERSION, "generator": "zaptrace"}))
+    lines.append(json.dumps({"type": "CANVAS", "width": 1000, "height": 800}))
+
+    components = getattr(design, "components", {}) or {}
+    nets = getattr(design, "nets", {}) or {}
+
+    for comp_id in sorted(components):
+        comp = components[comp_id]
+        position = getattr(comp, "position", None) or (0.0, 0.0)
+        x, y = float(position[0]), float(position[1])
+        mpn = getattr(comp, "mpn", None) or ""
+        value = getattr(comp, "value", None) or ""
+        footprint = getattr(comp, "footprint", "") or ""
+        ref = getattr(comp, "ref", comp_id)
+        record: dict[str, Any] = {
+            "type": "COMPONENT",
+            "id": str(comp_id),
+            "ref": str(ref),
+            "value": str(value),
+            "package": str(footprint),
+            "mpn": str(mpn),
+            "x": x,
+            "y": y,
+        }
+        lines.append(json.dumps(record, sort_keys=True))
+        report.represented(f"component {ref}")
+
+    for net_id in sorted(nets):
+        net = nets[net_id]
+        net_name = getattr(net, "name", net_id) or net_id
+        nodes = getattr(net, "nodes", []) or []
+        pins = [{"component": str(getattr(n, "component_id", "")), "pin": str(getattr(n, "pin", ""))} for n in nodes]
+        record = {"type": "NET", "id": str(net_id), "name": str(net_name), "pins": pins}
+        lines.append(json.dumps(record, sort_keys=True))
+        report.represented(f"net {net_name}")
+
+    # Blocks and other design elements not expressible in EasyEDA Pro schematic JSONL
+    blocks = getattr(design, "blocks", []) or []
+    for blk in blocks:
+        blk_id = getattr(blk, "id", "block")
+        report.unsupported(f"block {blk_id}", "EasyEDA Pro JSONL does not support block groupings")
+
+    return "\n".join(lines) + "\n"
+
+
+def _build_pcb_jsonl(design: Any, report: EasyEdaWriteDegradationReport) -> str:
+    """Serialise canonical design PCB to EasyEDA Pro JSONL text."""
+    lines: list[str] = []
+
+    lines.append(json.dumps({"type": "HEADER", "version": _EASYEDA_FORMAT_VERSION, "generator": "zaptrace"}))
+
+    # Standard layer mapping
+    layer_map: list[dict[str, Any]] = [
+        {"type": "LAYER", "id": 1, "name": "TopCopper", "color": "#FF0000"},
+        {"type": "LAYER", "id": 2, "name": "BottomCopper", "color": "#0000FF"},
+        {"type": "LAYER", "id": 3, "name": "TopSilkscreen", "color": "#FFFF00"},
+        {"type": "LAYER", "id": 4, "name": "BottomSilkscreen", "color": "#00FFFF"},
+        {"type": "LAYER", "id": 11, "name": "BoardOutline", "color": "#FFAA00"},
+    ]
+    for lyr in layer_map:
+        lines.append(json.dumps(lyr, sort_keys=True))
+        report.represented(f"layer {lyr['name']}")
+
+    components = getattr(design, "components", {}) or {}
+    for comp_id in sorted(components):
+        comp = components[comp_id]
+        position = getattr(comp, "position", None) or (0.0, 0.0)
+        x, y = float(position[0]), float(position[1])
+        footprint = getattr(comp, "footprint", "") or ""
+        ref = getattr(comp, "ref", comp_id)
+        record = {
+            "type": "FOOTPRINT",
+            "ref": str(ref),
+            "package": str(footprint),
+            "x": x,
+            "y": y,
+            "rotation": 0.0,
+        }
+        lines.append(json.dumps(record, sort_keys=True))
+        report.represented(f"footprint {ref}")
+
+    # Routed tracks
+    routing = getattr(design, "routing", None)
+    if routing is not None:
+        traces = getattr(routing, "traces", []) or []
+        for tr in traces:
+            net = getattr(tr, "net", "") or ""
+            x1 = float(getattr(tr, "x1", 0.0))
+            y1 = float(getattr(tr, "y1", 0.0))
+            x2 = float(getattr(tr, "x2", 0.0))
+            y2 = float(getattr(tr, "y2", 0.0))
+            width = float(getattr(tr, "width", 0.2))
+            record = {
+                "type": "TRACK",
+                "layer": 1,
+                "net": str(net),
+                "x1": x1,
+                "y1": y1,
+                "x2": x2,
+                "y2": y2,
+                "width": width,
+            }
+            lines.append(json.dumps(record, sort_keys=True))
+            report.represented(f"track net={net}")
+
+        vias = getattr(routing, "vias", []) or []
+        for via in vias:
+            x = float(getattr(via, "x", 0.0))
+            y = float(getattr(via, "y", 0.0))
+            record = {
+                "type": "VIA",
+                "x": x,
+                "y": y,
+                "outerDiameter": 0.8,
+                "innerDiameter": 0.4,
+            }
+            lines.append(json.dumps(record, sort_keys=True))
+            report.represented(f"via at ({x},{y})")
+
+    # Copper pours not representable in EasyEDA Pro basic JSONL
+    copper_pours = getattr(design, "copper_pours", {}) or {}
+    for pour_id in sorted(copper_pours):
+        report.unsupported(f"copper_pour {pour_id}", "EasyEDA Pro JSONL does not support copper pours")
+
+    return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# Public writer API
+# ---------------------------------------------------------------------------
+
+
+def write_easyeda_pro_zip(
+    design: Any,
+    *,
+    project_name: str = "",
+    source_provenance: str = "zaptrace",
+) -> tuple[bytes, EasyEdaWriteDegradationReport]:
+    """Export a canonical ZapTrace design to an EasyEDA Pro ZIP archive.
+
+    The output is a deterministic, reproducible ``.epro`` compatible ZIP
+    containing:
+    * ``project.json``   — project metadata
+    * ``schematic.jsonl`` — schematic components and nets
+    * ``pcb.jsonl``       — PCB footprints and (if present) routed tracks
+
+    Parameters
+    ----------
+    design:
+        A ZapTrace :class:`~zaptrace.core.models.Design` or any object with
+        ``meta``, ``components``, ``nets``, ``routing``, and ``blocks``
+        attributes.
+    project_name:
+        Override the project name; defaults to ``design.meta.name``.
+    source_provenance:
+        Provenance label written to ``project.json``; defaults to ``"zaptrace"``.
+
+    Returns
+    -------
+    tuple[bytes, EasyEdaWriteDegradationReport]
+        * The raw ZIP bytes (suitable for writing to a ``.epro`` file).
+        * A machine-readable degradation report describing what was
+          represented, transformed, or unsupported.
+
+    Notes
+    -----
+    The report's ``accepted`` property is ``True`` when no unsupported
+    elements were encountered (zero data loss). The report is always emitted
+    even for zero-loss exports.
+    """
+    report = EasyEdaWriteDegradationReport()
+
+    meta = getattr(design, "meta", None)
+    name = project_name or (str(getattr(meta, "name", "")) if meta else "") or "untitled"
+
+    project_meta: dict[str, Any] = {
+        "name": name,
+        "formatVersion": _EASYEDA_FORMAT_VERSION,
+        "sourceProvenance": source_provenance,
+        "generator": "zaptrace",
+    }
+    if meta:
+        if getattr(meta, "version", None):
+            project_meta["version"] = str(meta.version)
+        if getattr(meta, "author", None):
+            project_meta["author"] = str(meta.author)
+        report.represented("project metadata")
+    else:
+        report.transformed("project metadata", "no DesignMeta; minimal project.json generated")
+
+    sch_jsonl = _build_schematic_jsonl(design, report)
+    pcb_jsonl = _build_pcb_jsonl(design, report)
+
+    buf = io.BytesIO()
+    # Use ZIP_DEFLATED with deterministic timestamps (1980-01-01 00:00:00)
+    epoch = (1980, 1, 1, 0, 0, 0)
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED, allowZip64=False) as zf:
+        info = zipfile.ZipInfo("project.json", date_time=epoch)
+        zf.writestr(info, json.dumps(project_meta, indent=2, sort_keys=True))
+        info = zipfile.ZipInfo("schematic.jsonl", date_time=epoch)
+        zf.writestr(info, sch_jsonl.encode("utf-8"))
+        info = zipfile.ZipInfo("pcb.jsonl", date_time=epoch)
+        zf.writestr(info, pcb_jsonl.encode("utf-8"))
+
+    return buf.getvalue(), report
+
+
+def compute_easyeda_write_fidelity(
+    design: Any,
+    *,
+    project_name: str = "",
+) -> dict[str, Any]:
+    """Write a design to EasyEDA Pro, read it back, and compute fidelity metrics.
+
+    Returns a dict with keys:
+    * ``component_jaccard`` — Jaccard similarity of component refs
+    * ``net_jaccard``       — Jaccard similarity of net names
+    * ``overall_score``     — mean of the above Jaccard scores
+    * ``degradation_report`` — the write-side :meth:`EasyEdaWriteDegradationReport.to_dict`
+    * ``roundtrip_degradation_count`` — total degradation records on re-read
+    """
+    raw_bytes, write_report = write_easyeda_pro_zip(design, project_name=project_name)
+    readback = read_easyeda_pro_zip(raw_bytes)
+
+    # Component ref Jaccard
+    orig_refs = {str(getattr(c, "ref", cid)) for cid, c in (getattr(design, "components", {}) or {}).items()}
+    read_refs = {c.ref for c in readback.schematic.components}
+    comp_j = _jaccard(orig_refs, read_refs)
+
+    # Net name Jaccard
+    orig_nets = {str(getattr(n, "name", nid)) for nid, n in (getattr(design, "nets", {}) or {}).items()}
+    read_nets = {n.name for n in readback.schematic.nets}
+    net_j = _jaccard(orig_nets, read_nets)
+
+    scores = [comp_j, net_j]
+    overall = sum(scores) / len(scores) if scores else 0.0
+
+    return {
+        "component_jaccard": round(comp_j, 4),
+        "net_jaccard": round(net_j, 4),
+        "overall_score": round(overall, 4),
+        "degradation_report": write_report.to_dict(),
+        "roundtrip_degradation_count": readback.total_degradation_count,
+    }
+
+
+def _jaccard(a: set[str], b: set[str]) -> float:
+    """Jaccard similarity coefficient for two string sets."""
+    if not a and not b:
+        return 1.0
+    union = a | b
+    intersection = a & b
+    return len(intersection) / len(union) if union else 1.0
