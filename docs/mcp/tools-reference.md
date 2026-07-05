@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 88
+> Total tools: 89
 
 ---
 
@@ -827,6 +827,16 @@ Size a buck converter's inductor + output capacitor (CCM) from Vin/Vout/Iout/Fsw
 | `f_sw_hz` | `number` | Switching frequency (Hz) |
 | `ripple_ratio` | `number` | Inductor ripple as fraction of Iout (default 0.3) |
 | `output_ripple_v` | `number` | Allowed output ripple V (default 1% of Vout) |
+
+### `easyeda_std_roundtrip`
+
+Read an EasyEDA Standard JSON document, perform a full round-trip (read→Design→write→read), and return Jaccard fidelity scores for components and nets plus degradation evidence. EasyEDA Standard is a single flat JSON file — distinct from EasyEDA Pro (ZIP+JSONL).
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `json_content` | `string` | EasyEDA Standard JSON document as a string |
 
 ---
 

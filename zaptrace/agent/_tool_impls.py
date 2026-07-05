@@ -2181,6 +2181,42 @@ def tool_calc_buck_lc(
 # Tool registry
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Tool 88 — EasyEDA Standard round-trip (issue #135)
+# ---------------------------------------------------------------------------
+
+
+def tool_easyeda_std_roundtrip(json_content: str) -> dict[str, Any]:
+    """Read an EasyEDA Standard JSON document, perform a round-trip, and return fidelity scores.
+
+    Performs read→Design→write→read and reports Jaccard similarity for
+    components and nets, plus all degradation records from unsupported fields.
+    The EasyEDA Standard format (single flat JSON) is distinct from EasyEDA
+    Pro (ZIP+JSONL).
+    """
+    from zaptrace.eda.easyeda_std import (
+        compute_easyeda_std_fidelity,
+        easyeda_std_project_to_design,
+        read_easyeda_std_json,
+    )
+
+    project = read_easyeda_std_json(json_content)
+    design = easyeda_std_project_to_design(project)
+    metrics = compute_easyeda_std_fidelity(design)
+
+    return {
+        "format": "easyeda_std",
+        "component_count": len(project.components),
+        "net_count": len(project.nets),
+        "component_jaccard": metrics["component_jaccard"],
+        "net_jaccard": metrics["net_jaccard"],
+        "overall_score": metrics["overall_score"],
+        "degradation_record_count": len(metrics["degradation_report"]),
+        "degradation_report": metrics["degradation_report"],
+        "status": "ok",
+    }
+
+
 TOOL_REGISTRY: dict[str, dict[str, Any]] = {
     "design_parse_file": {
         "name": "design_parse_file",
@@ -3022,6 +3058,21 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
             "f_sw_hz": {"type": "number", "description": "Switching frequency (Hz)"},
             "ripple_ratio": {"type": "number", "description": "Inductor ripple as fraction of Iout (default 0.3)"},
             "output_ripple_v": {"type": "number", "description": "Allowed output ripple V (default 1% of Vout)"},
+        },
+    },
+    "easyeda_std_roundtrip": {
+        "name": "easyeda_std_roundtrip",
+        "description": (
+            "Read an EasyEDA Standard JSON document, perform a full round-trip (read→Design→write→read), "
+            "and return Jaccard fidelity scores for components and nets plus degradation evidence. "
+            "EasyEDA Standard is a single flat JSON file — distinct from EasyEDA Pro (ZIP+JSONL)."
+        ),
+        "fn": tool_easyeda_std_roundtrip,
+        "params": {
+            "json_content": {
+                "type": "string",
+                "description": "EasyEDA Standard JSON document as a string",
+            },
         },
     },
 }

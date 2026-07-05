@@ -19,7 +19,7 @@
 | **Coverage target** | 75% |
 | **CI** | GitHub Actions quality, security, and release workflows |
 | **CLI** | 20+ commands via Click |
-| **MCP** | 88 agent-facing tools generated from `TOOL_REGISTRY` |
+| **MCP** | 89 agent-facing tools generated from `TOOL_REGISTRY` |
 | **API** | FastAPI-based REST server |
 
 ## Current Architecture
@@ -27,7 +27,7 @@
 ZapTrace has a layered architecture:
 
 1. **Interface layer**: CLI (Click), MCP server (FastMCP), REST API (FastAPI), Python SDK
-2. **Agent layer**: Tool registry with 88 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
+2. **Agent layer**: Tool registry with 89 agent-facing tools, MCP session/resource surfaces, pipeline autopilot
 3. **Core layer**: Pydantic models, YAML parser, diff engine
 4. **Domain layer**: EE knowledge base, net classifier, footprint generator, constraints
 5. **Verification layer**: ERC (29 rules), DRC (16 rules), auto-patch suggestions
@@ -54,10 +54,14 @@ ZapTrace has a layered architecture:
 - BOM CSV and JSON generation
 - Pick-and-place (centroid) CSV generation
 - KiCad schematic export
+- KiCad hierarchical project import (multi-sheet, symbol libraries)
+- EasyEDA Standard format import/export with round-trip fidelity evidence (single flat JSON; distinct from EasyEDA Pro)
+- EasyEDA Pro format writer (ZIP+JSONL; import-only from KiCad via MCP tool)
+- Altium Designer ASCII schematic import with unsupported-record evidence (OLE binary format not supported)
 - SVG schematic rendering
 - Markdown design report generation
 - Manufacturing ZIP bundle with manifest
-- 88 agent-facing tools registered from `TOOL_REGISTRY`
+- 89 agent-facing tools registered from `TOOL_REGISTRY`
 - FastAPI-based REST API server
 - Design diff between two designs
 - Full pipeline autopilot (parse→ERC→place→route→export)

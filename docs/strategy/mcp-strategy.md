@@ -9,7 +9,7 @@
 
 ## 1. Current State
 
-ZapTrace ships a FastMCP server with **88 agent-facing tools** generated from
+ZapTrace ships a FastMCP server with **89 agent-facing tools** generated from
 `zaptrace.agent._tool_impls.TOOL_REGISTRY`. The generated source of truth is
 `docs/mcp/tools-reference.md`. Current categories include:
 
