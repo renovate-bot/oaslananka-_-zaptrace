@@ -28,8 +28,11 @@ from zaptrace.core.models import (
     TraceSegment,
     Via,
 )
+from zaptrace.io.sexp import SexpNode
+from zaptrace.io.sexp import parse as _sexp_parse
 
-SExpr = str | list["SExpr"]
+# Backward-compatible alias so the rest of the module continues to use SExpr.
+SExpr = SexpNode
 
 
 @dataclass(frozen=True)
@@ -237,66 +240,20 @@ def score_kicad_roundtrip(
     )
 
 
-def _tokenize(text: str) -> list[str]:
-    tokens: list[str] = []
-    i = 0
-    while i < len(text):
-        ch = text[i]
-        if ch.isspace():
-            i += 1
-            continue
-        if ch == ";":
-            newline = text.find("\n", i)
-            i = len(text) if newline == -1 else newline + 1
-            continue
-        if ch in "()":
-            tokens.append(ch)
-            i += 1
-            continue
-        if ch == '"':
-            i += 1
-            buf: list[str] = []
-            while i < len(text):
-                if text[i] == "\\" and i + 1 < len(text):
-                    buf.append(text[i + 1])
-                    i += 2
-                    continue
-                if text[i] == '"':
-                    i += 1
-                    break
-                buf.append(text[i])
-                i += 1
-            tokens.append("".join(buf))
-            continue
-        start = i
-        while i < len(text) and not text[i].isspace() and text[i] not in "()":
-            i += 1
-        tokens.append(text[start:i])
-    return tokens
-
-
 def _parse_one(text: str) -> SExpr:
-    tokens = _tokenize(text)
-    stack: list[list[SExpr]] = []
-    root: SExpr | None = None
-    for token in tokens:
-        if token == "(":
-            node: list[SExpr] = []
-            if stack:
-                stack[-1].append(node)
-            stack.append(node)
-            continue
-        if token == ")":
-            if not stack:
-                raise ValueError("Unexpected ')' in KiCad S-expression")
-            root = stack.pop()
-            continue
-        if not stack:
-            raise ValueError("Token outside KiCad S-expression")
-        stack[-1].append(token)
-    if stack or root is None:
-        raise ValueError("Unclosed KiCad S-expression")
-    return root
+    """Parse a single KiCad S-expression string into an SExpr tree.
+
+    Delegates to the shared :func:`~zaptrace.io.sexp.parse` codec which
+    handles quoted strings, escape sequences, and semicolon comments.
+    Raises :class:`ValueError` if the input is malformed.
+    """
+    try:
+        result = _sexp_parse(text)
+    except Exception as exc:
+        raise ValueError(f"Malformed KiCad S-expression: {exc}") from exc
+    if not isinstance(result, list):
+        raise ValueError(f"Expected a list S-expression, got atom: {result!r}")
+    return result
 
 
 def _head(form: SExpr) -> str:
