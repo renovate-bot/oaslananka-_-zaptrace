@@ -222,7 +222,7 @@ def _run_builtin_file_inventory(
     t0 = time.monotonic()
     extensions = sorted([".kicad_pro", ".kicad_sch"])
     found = {ext: sorted(str(p) for p in project_dir.rglob(f"*{ext}")) for ext in extensions}
-    missing = [ext for ext, files in found.items() if not files]
+    missing = sorted(ext for ext, files in found.items() if not files)
 
     if missing:
         return GraderResult(
@@ -237,7 +237,7 @@ def _run_builtin_file_inventory(
         grader_id=spec.grader_id,
         status="pass",
         detail="All required KiCad file types present",
-        evidence={ext[1:]: len(files) for ext, files in found.items()},
+        evidence={ext[1:]: len(files) for ext, files in sorted(found.items())},
         elapsed_seconds=round(time.monotonic() - t0, 3),
     )
 
