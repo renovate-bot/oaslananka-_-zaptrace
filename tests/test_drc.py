@@ -216,6 +216,19 @@ class TestRightAngle:
         # This is actually ~45°, not 90°
         assert len(drc003) == 0
 
+    def test_branch_junction_not_counted_as_corner(self) -> None:
+        d = _simple_design()
+        d.routing = RouteResult(
+            traces=[
+                TraceSegment(layer="top", start=(0, 0), end=(10, 0), width=0.2, net_id="vcc"),
+                TraceSegment(layer="top", start=(10, 0), end=(10, 10), width=0.2, net_id="vcc"),
+                TraceSegment(layer="top", start=(10, 0), end=(20, 0), width=0.2, net_id="vcc"),
+            ],
+        )
+        result = DRCEngine().run(d)
+        drc003 = [v for v in result.violations if v.rule_id == "DRC-003"]
+        assert len(drc003) == 0
+
 
 # ---------------------------------------------------------------------------
 # DRC-006: Via count

@@ -342,6 +342,12 @@ def check_right_angle(design: Design, _kb: KnowledgeBase, _result: DRCResult) ->
     for seg in segments:
         net_layer[(seg.net_id, seg.layer)].append(seg)
 
+    endpoint_degree: dict[tuple[str, str, float, float], int] = defaultdict(int)
+    for (net_id, layer), segs in net_layer.items():
+        for seg in segs:
+            endpoint_degree[(net_id, layer, round(seg.start[0], 6), round(seg.start[1], 6))] += 1
+            endpoint_degree[(net_id, layer, round(seg.end[0], 6), round(seg.end[1], 6))] += 1
+
     for (net_id, layer), segs in net_layer.items():
         for i in range(len(segs)):
             for j in range(i + 1, len(segs)):
@@ -353,6 +359,9 @@ def check_right_angle(design: Design, _kb: KnowledgeBase, _result: DRCResult) ->
                         shared = p_a
                         break
                 if shared is None:
+                    continue
+                joint_count = endpoint_degree[(net_id, layer, round(shared[0], 6), round(shared[1], 6))]
+                if joint_count > 2:
                     continue
                 # Compute vectors of the two segments from the shared point
                 v1 = _vec(shared, a.end) if _dist(shared, a.start) < 0.001 else _vec(shared, a.start)
@@ -580,6 +589,12 @@ def check_acid_trap(design: Design, _kb: KnowledgeBase, _result: DRCResult) -> l
     net_layer: dict[tuple[str, str], list[TraceSegment]] = defaultdict(list)
     for seg in segments:
         net_layer[(seg.net_id, seg.layer)].append(seg)
+
+    endpoint_degree: dict[tuple[str, str, float, float], int] = defaultdict(int)
+    for (net_id, layer), segs in net_layer.items():
+        for seg in segs:
+            endpoint_degree[(net_id, layer, round(seg.start[0], 6), round(seg.start[1], 6))] += 1
+            endpoint_degree[(net_id, layer, round(seg.end[0], 6), round(seg.end[1], 6))] += 1
 
     for (net_id, layer), segs in net_layer.items():
         for i in range(len(segs)):
