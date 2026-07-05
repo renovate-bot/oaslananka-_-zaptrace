@@ -2,7 +2,7 @@
 
 > **Auto-generated from `TOOL_REGISTRY`**
 > Run `python scripts/generate_mcp_docs.py` to regenerate.
-> Total tools: 87
+> Total tools: 88
 
 ---
 
@@ -567,6 +567,17 @@ List all supported package names for footprint generation
 ---
 
 ## Other
+
+### `kicad_import_project`
+
+Import a KiCad project (hierarchical or flat) from the workspace. Accepts a project directory, .kicad_pro file, or .kicad_sch file. Returns design identity, sheet hierarchy, net score, and degradation findings. The imported design is stored in the session under the project name.
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `session_id` | `string` | Session identifier |
+| `project_path` | `string` | Path to project directory, .kicad_pro, or .kicad_sch file |
 
 ### `mechanical_review`
 

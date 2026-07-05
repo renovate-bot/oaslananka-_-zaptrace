@@ -603,7 +603,74 @@ def tool_export_kicad(
 
 
 # ---------------------------------------------------------------------------
-# Tool 20 — design_diff
+# Tool 20 — kicad_import_project
+# ---------------------------------------------------------------------------
+
+
+def tool_kicad_import_project(
+    project_path: str,
+    session_id: str = "default",
+) -> dict[str, Any]:
+    """Import a KiCad project (hierarchical or flat) into the session.
+
+    Accepts a project directory or ``.kicad_pro`` / ``.kicad_sch`` file path.
+    Returns design identity, sheet hierarchy, parity results, and degradation
+    evidence. The imported design is stored in the session under the project
+    name.
+
+    Parameters
+    ----------
+    project_path:
+        Workspace-relative or absolute path to a KiCad project directory,
+        ``.kicad_pro`` file, or ``.kicad_sch`` file.
+    session_id:
+        Session identifier (default: ``"default"``).
+
+    Returns
+    -------
+    dict
+        ``design_name`` — name of the imported design (also stored in session);
+        ``component_count`` — number of flattened components;
+        ``net_count`` — number of flattened nets;
+        ``sheet_count`` — number of schematic sheets discovered;
+        ``net_score`` — fraction of nets with at least one connection (0–1);
+        ``error_count`` — count of error-severity findings;
+        ``warning_count`` — count of warning-severity findings;
+        ``findings`` — ordered list of cross-validation and degradation findings;
+        ``sheets`` — sheet hierarchy (sheet_id, name, parent_id, component_ids).
+    """
+    from zaptrace.kicad.project_importer import import_kicad_project
+
+    path = _validate_path(project_path, must_exist=True)
+    result = import_kicad_project(path)
+
+    session = _get_session(session_id)
+    design_name = result.design.meta.name or path.stem
+    session.setdefault("designs", {})[design_name] = result.design
+
+    return {
+        "design_name": design_name,
+        "component_count": len(result.design.components),
+        "net_count": len(result.design.nets),
+        "sheet_count": len(result.sheets),
+        "net_score": result.net_score,
+        "error_count": result.error_count,
+        "warning_count": result.warning_count,
+        "findings": [f.to_dict() for f in result.findings],
+        "sheets": [
+            {
+                "sheet_id": s.sheet_id,
+                "name": s.name,
+                "parent_id": s.parent_id,
+                "component_count": len(s.component_ids),
+            }
+            for s in result.sheets
+        ],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Tool 21 — design_diff
 # ---------------------------------------------------------------------------
 
 
@@ -636,7 +703,7 @@ def tool_design_diff(design_a_name: str, design_b_name: str, session_id: str = "
 
 
 # ---------------------------------------------------------------------------
-# Tool 21 — pipeline_run
+# Tool 22 — pipeline_run
 # ---------------------------------------------------------------------------
 
 
@@ -2281,6 +2348,23 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
             "design_name": {"type": "string", "description": "Design name"},
             "output_dir": {"type": "string", "description": "Output directory"},
             "approval_id": {"type": "string", "description": "External approval or release gate identifier"},
+        },
+    },
+    "kicad_import_project": {
+        "name": "kicad_import_project",
+        "description": (
+            "Import a KiCad project (hierarchical or flat) from the workspace. "
+            "Accepts a project directory, .kicad_pro file, or .kicad_sch file. "
+            "Returns design identity, sheet hierarchy, net score, and degradation findings. "
+            "The imported design is stored in the session under the project name."
+        ),
+        "fn": tool_kicad_import_project,
+        "params": {
+            "session_id": {"type": "string", "description": "Session identifier"},
+            "project_path": {
+                "type": "string",
+                "description": "Path to project directory, .kicad_pro, or .kicad_sch file",
+            },
         },
     },
     "design_diff": {

@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "filename": "led_driver.kicad_pro",
+    "version": 1
+  },
+  "sheets": [
+    ["led_driver.kicad_sch"]
+  ],
+  "title_block_defaults": {
+    "title": "Synthetic LED Driver Design",
+    "company": "ZapTrace Corpus"
+  },
+  "$schema": "https://schemas.kicad.org/project.v1.json",
+  "provenance": {
+    "license": "CC0-1.0",
+    "origin": "synthetic",
+    "description": "Synthetic constant-current LED driver corpus fixture"
+  }
+}

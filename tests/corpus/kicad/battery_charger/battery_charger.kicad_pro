@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "filename": "battery_charger.kicad_pro",
+    "version": 1
+  },
+  "sheets": [
+    ["battery_charger.kicad_sch"]
+  ],
+  "title_block_defaults": {
+    "title": "Synthetic Battery Charger Design",
+    "company": "ZapTrace Corpus"
+  },
+  "$schema": "https://schemas.kicad.org/project.v1.json",
+  "provenance": {
+    "license": "CC0-1.0",
+    "origin": "synthetic",
+    "description": "Synthetic single-cell LiPo battery charger corpus fixture"
+  }
+}

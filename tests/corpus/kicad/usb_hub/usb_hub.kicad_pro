@@ -1,0 +1,21 @@
+{
+  "meta": {
+    "filename": "usb_hub.kicad_pro",
+    "version": 1
+  },
+  "sheets": [
+    ["usb_hub.kicad_sch"],
+    ["usb_hub_sheets/power_input.kicad_sch"],
+    ["usb_hub_sheets/data_path.kicad_sch"]
+  ],
+  "title_block_defaults": {
+    "title": "Synthetic USB Hub Design",
+    "company": "ZapTrace Corpus"
+  },
+  "$schema": "https://schemas.kicad.org/project.v1.json",
+  "provenance": {
+    "license": "CC0-1.0",
+    "origin": "synthetic",
+    "description": "Synthetic hierarchical USB hub corpus fixture with power and data sub-sheets"
+  }
+}

@@ -1,7 +1,7 @@
 # MCP Server Quickstart
 
 > **ZapTrace MCP** enables LLMs (Claude, Copilot, Codex, Gemini) to design PCBs through
-> the Model Context Protocol. 87 tools available.
+> the Model Context Protocol. 88 tools available.
 
 ---
 
@@ -62,7 +62,7 @@ Opens browser UI to test individual tools.
 | `component_add` | Add a component |
 | `footprint_generate` | Generate parametric footprint |
 | `proof_run` | Run a Proof Pack |
-| *87 tools total* | Full reference: `docs/mcp/tools-reference.md` |
+| *88 tools total* | Full reference: `docs/mcp/tools-reference.md` |
 
 Full reference: `docs/mcp/tools-reference.md`
 

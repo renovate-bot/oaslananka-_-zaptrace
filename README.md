@@ -18,7 +18,7 @@ Intent → normalized design → schematic → ERC → placement → routing →
   <a href="https://oaslananka.github.io/zaptrace"><img src="https://img.shields.io/badge/docs-mkdocs-0A7BBB?logo=materialformkdocs&logoColor=white" alt="Documentation" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License: MIT" /></a>
   <img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python 3.12+" />
-  <img src="https://img.shields.io/badge/MCP-87%20tools-7c3aed" alt="MCP: 87 tools" />
+  <img src="https://img.shields.io/badge/MCP-88%20tools-7c3aed" alt="MCP: 88 tools" />
   <img src="https://img.shields.io/badge/status-pre--1.0-orange.svg" alt="Status: pre-1.0" />
   <a href="https://www.bestpractices.dev/projects/13403"><img src="https://www.bestpractices.dev/projects/13403/badge" alt="OpenSSF Best Practices" /></a>
 </p>
@@ -51,7 +51,7 @@ Intent → normalized design → schematic → ERC → placement → routing →
 
 - **A Python SDK** for programmatic electronics design — parse, validate, place, route, export.
 - **A CLI** (`zaptrace`) for quick design iteration from the terminal.
-- **An MCP server** (`zaptrace-mcp`) that exposes 87 agent-facing tools to AI agents.
+- **An MCP server** (`zaptrace-mcp`) that exposes 88 agent-facing tools to AI agents.
 - **A REST API** for web-based design workflows.
 - **A verification engine** — Electrical Rule Checking (ERC) + Design Rule Checking (DRC) baked in.
 - **A manufacturing export pipeline** — Gerber RS-274X, Excellon drill, BOM, pick-and-place, KiCad.
@@ -91,7 +91,7 @@ Intent → normalized design → schematic → ERC → placement → routing →
 | KiCad schematic export | ✅ Implemented |
 | SVG schematic rendering | ✅ Implemented |
 | Manufacturing ZIP bundle | ✅ Implemented |
-| MCP server (87 tools) | ✅ Implemented |
+| MCP server (88 tools) | ✅ Implemented |
 | Power-tree architecture planner + netlist emit | ✅ Implemented |
 | REST API server | ✅ Implemented |
 | Design diff | ✅ Implemented |
