@@ -176,8 +176,8 @@ def _synthetic_pin_escape_point(
     cx, cy = comp_pos
     key = pin_name.strip().lower()
     semantic_angles = {
-        "gnd": -90.0,
-        "ground": -90.0,
+        "gnd": -135.0,
+        "ground": -135.0,
         "vss": -90.0,
         "vbus": 180.0,
         "vin": 180.0,
