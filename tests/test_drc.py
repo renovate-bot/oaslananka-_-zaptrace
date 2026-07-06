@@ -493,3 +493,17 @@ def test_collinear_same_direction_segments_not_acid_trap() -> None:
     result = DRCEngine().run(d)
     drc023 = [v for v in result.violations if v.rule_id == "DRC-023"]
     assert len(drc023) == 0
+
+
+def test_duplicate_shared_endpoint_clearance_reported_once() -> None:
+    d = _simple_design()
+    d.routing = RouteResult(
+        traces=[
+            TraceSegment(layer="top", start=(0, 0), end=(0, 1), width=0.2, net_id="vcc"),
+            TraceSegment(layer="top", start=(0, 0), end=(1, 0), width=0.2, net_id="gnd"),
+            TraceSegment(layer="top", start=(0, 0), end=(-1, 0), width=0.2, net_id="gnd"),
+        ],
+    )
+    result = DRCEngine().run(d)
+    drc001 = [v for v in result.violations if v.rule_id == "DRC-001"]
+    assert len(drc001) == 1

@@ -294,6 +294,7 @@ def check_clearance(design: Design, kb: KnowledgeBase, _result: DRCResult) -> li
         return vio
 
     min_clearance = design.board.min_clearance_mm if design.board else 0.2
+    reported_contacts = set()
 
     for i in range(len(segments)):
         for j in range(i + 1, len(segments)):
@@ -306,6 +307,26 @@ def check_clearance(design: Design, kb: KnowledgeBase, _result: DRCResult) -> li
             dist = _segment_min_distance(s1, s2)
             clearance = dist - (s1.width / 2) - (s2.width / 2)
             if clearance < min_clearance:
+                shared_contact: tuple[float, float] | None = None
+                for p1, p2 in (
+                    (s1.start, s2.start),
+                    (s1.start, s2.end),
+                    (s1.end, s2.start),
+                    (s1.end, s2.end),
+                ):
+                    if math.dist(p1, p2) < 0.001:
+                        shared_contact = p1
+                        break
+                if shared_contact is not None:
+                    contact_key = (
+                        tuple(sorted((s1.net_id, s2.net_id))),
+                        s1.layer,
+                        round(shared_contact[0], 3),
+                        round(shared_contact[1], 3),
+                    )
+                    if contact_key in reported_contacts:
+                        continue
+                    reported_contacts.add(contact_key)
                 vio.append(
                     DRCViolation(
                         rule_id="DRC-001",
