@@ -453,3 +453,30 @@ def test_micro_right_angle_corner_is_ignored() -> None:
     result = DRCEngine().run(d)
     drc003 = [v for v in result.violations if v.rule_id == "DRC-003"]
     assert len(drc003) == 0
+
+
+def test_solder_mask_sliver_suppressed_when_copper_clearance_fails() -> None:
+    d = _simple_design()
+    d.routing = RouteResult(
+        traces=[
+            TraceSegment(layer="top", start=(0, 0), end=(10, 0), width=0.2, net_id="vcc"),
+            TraceSegment(layer="top", start=(0, 0.25), end=(10, 0.25), width=0.2, net_id="gnd"),
+        ],
+    )
+    result = DRCEngine().run(d)
+    assert any(v.rule_id == "DRC-001" for v in result.violations)
+    assert not any(v.rule_id == "DRC-022" for v in result.violations)
+
+
+def test_solder_mask_sliver_reported_when_copper_clearance_passes() -> None:
+    d = _simple_design()
+    d.board = BoardConfig(min_clearance_mm=0.05)
+    d.routing = RouteResult(
+        traces=[
+            TraceSegment(layer="top", start=(0, 0), end=(10, 0), width=0.2, net_id="vcc"),
+            TraceSegment(layer="top", start=(0, 0.275), end=(10, 0.275), width=0.2, net_id="gnd"),
+        ],
+    )
+    result = DRCEngine().run(d)
+    assert not any(v.rule_id == "DRC-001" for v in result.violations)
+    assert any(v.rule_id == "DRC-022" for v in result.violations)

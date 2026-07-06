@@ -559,6 +559,7 @@ def check_solder_mask_sliver(design: Design, _kb: KnowledgeBase, _result: DRCRes
     vio: list[DRCViolation] = []
 
     min_sliver = 0.1
+    min_copper_clearance = design.board.min_clearance_mm if design.board else 0.2
     if design.board_def and design.board_def.constraints:
         min_sliver = design.board_def.constraints.min_solder_mask_sliver
 
@@ -576,6 +577,9 @@ def check_solder_mask_sliver(design: Design, _kb: KnowledgeBase, _result: DRCRes
 
             dist = _segment_min_distance(s1, s2)
             clearance = dist - (s1.width / 2) - (s2.width / 2)
+
+            if clearance < min_copper_clearance:
+                continue
 
             if clearance > 0.001 and clearance < min_sliver - 0.001:
                 vio.append(
