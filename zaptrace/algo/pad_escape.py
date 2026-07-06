@@ -188,7 +188,7 @@ def _synthetic_pin_escape_point(
         "vout": 0.0,
         "en": 45.0,
         "enable": 45.0,
-        "sda": 135.0,
+        "sda": -160.0,
         "scl": 45.0,
         "sck": 45.0,
         "mosi": 0.0,
