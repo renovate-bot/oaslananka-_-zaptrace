@@ -126,3 +126,9 @@ nets:
   GND:       {id: "GND",      name: "GND",       type: "ground", nodes: ["J1.GND","U3.GND","U1.GND","U2.GND","U2.SDO","C1.P2","C2.P2","C3.P2","D1.GND"]}
   I2C_SDA:   {id: "I2C_SDA",  name: "I2C_SDA",  type: "data",   nodes: ["U1.GPIO21","U2.SDA","R1.P2","TP1.P1"]}
   I2C_SCL:   {id: "I2C_SCL",  name: "I2C_SCL",  type: "clock",  nodes: ["U1.GPIO22","U2.SCK","R2.P2","TP2.P1"]}
+
+copper_pours:
+  gnd_top:
+    layer: F.Cu
+    net_id: GND
+    polygon: [[2, 2], [48, 2], [48, 38], [2, 38]]
