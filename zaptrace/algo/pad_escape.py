@@ -162,7 +162,7 @@ def _synthetic_pin_escape_point(
     pin_name: str,
     comp_pos: tuple[float, float],
     *,
-    radius_mm: float = 1.0,
+    radius_mm: float = 2.5,
 ) -> tuple[float, float]:
     """Return a deterministic synthetic escape point when pad geometry is absent.
 
