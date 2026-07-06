@@ -636,6 +636,8 @@ def check_acid_trap(design: Design, _kb: KnowledgeBase, _result: DRCResult) -> l
                 cos_theta = max(-1.0, min(1.0, cos_theta))
                 angle_deg = math.degrees(math.acos(cos_theta))
 
+                if angle_deg < 1.0:
+                    continue
                 if abs(angle_deg) < 85.0:
                     vio.append(
                         DRCViolation(

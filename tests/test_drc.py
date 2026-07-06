@@ -480,3 +480,16 @@ def test_solder_mask_sliver_reported_when_copper_clearance_passes() -> None:
     result = DRCEngine().run(d)
     assert not any(v.rule_id == "DRC-001" for v in result.violations)
     assert any(v.rule_id == "DRC-022" for v in result.violations)
+
+
+def test_collinear_same_direction_segments_not_acid_trap() -> None:
+    d = _simple_design()
+    d.routing = RouteResult(
+        traces=[
+            TraceSegment(layer="top", start=(0, 0), end=(10, 0), width=0.2, net_id="vcc"),
+            TraceSegment(layer="top", start=(0, 0), end=(5, 0), width=0.2, net_id="vcc"),
+        ],
+    )
+    result = DRCEngine().run(d)
+    drc023 = [v for v in result.violations if v.rule_id == "DRC-023"]
+    assert len(drc023) == 0
