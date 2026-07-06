@@ -300,6 +300,39 @@ def _candidate_junction_right_angles(
     return count
 
 
+def _candidate_internal_right_angles(candidate: list[RouteSegment]) -> int:
+    count = 0
+    for i, first in enumerate(candidate):
+        for second in candidate[i + 1 :]:
+            shared: tuple[float, float] | None = None
+            for p1, p2 in (
+                ((first.x1, first.y1), (second.x1, second.y1)),
+                ((first.x1, first.y1), (second.x2, second.y2)),
+                ((first.x2, first.y2), (second.x1, second.y1)),
+                ((first.x2, first.y2), (second.x2, second.y2)),
+            ):
+                if math.dist(p1, p2) < 0.001:
+                    shared = p1
+                    break
+            if shared is None:
+                continue
+            first_other = (
+                (first.x2, first.y2) if math.dist(shared, (first.x1, first.y1)) < 0.001 else (first.x1, first.y1)
+            )
+            second_other = (
+                (second.x2, second.y2) if math.dist(shared, (second.x1, second.y1)) < 0.001 else (second.x1, second.y1)
+            )
+            v1 = (first_other[0] - shared[0], first_other[1] - shared[1])
+            v2 = (second_other[0] - shared[0], second_other[1] - shared[1])
+            n1 = math.hypot(*v1)
+            n2 = math.hypot(*v2)
+            if min(n1, n2) < 0.3:
+                continue
+            if abs(((v1[0] * v2[0]) + (v1[1] * v2[1])) / (n1 * n2)) <= 0.0175:
+                count += 1
+    return count
+
+
 def _score_route_candidate(
     candidate: list[RouteSegment],
     existing_traces: list[TraceSegment],
@@ -312,6 +345,7 @@ def _score_route_candidate(
     score = sum(_route_segment_length(seg) for seg in candidate) * 0.05
     score += len(candidate) * 2.0
     score += _candidate_junction_right_angles(candidate, existing_traces, net_id) * 250.0
+    score += _candidate_internal_right_angles(candidate) * 80.0
     candidate_traces = [_to_trace_segment(seg, width_mm, net_id, layer) for seg in candidate]
     for trace in candidate_traces:
         for existing in existing_traces:
