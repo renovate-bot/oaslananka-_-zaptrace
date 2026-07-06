@@ -423,3 +423,20 @@ class TestFabProfileDRC:
         assert result.total_violations == len(result.violations)
         severities = [v.severity.value for v in result.violations]
         assert severities == sorted(severities, key=lambda s: {"error": 0, "warning": 1, "info": 2}.get(s, 9))
+
+
+def test_clearance_location_includes_trace_endpoints() -> None:
+    d = _simple_design()
+    d.routing = RouteResult(
+        traces=[
+            TraceSegment(layer="top", start=(0, 0), end=(10, 0), width=0.2, net_id="vcc"),
+            TraceSegment(layer="top", start=(0, 0.1), end=(10, 0.1), width=0.2, net_id="gnd"),
+        ],
+    )
+    result = DRCEngine().run(d)
+    drc001 = [v for v in result.violations if v.rule_id == "DRC-001"]
+    assert drc001
+    assert drc001[0].location is not None
+    assert "vcc" in drc001[0].location
+    assert "gnd" in drc001[0].location
+    assert "0.00,0.00" in drc001[0].location
