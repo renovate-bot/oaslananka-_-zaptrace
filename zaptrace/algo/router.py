@@ -184,9 +184,180 @@ def _route_manhattan_edge(
     return segments
 
 
+def _route_segment_length(seg: RouteSegment) -> float:
+    return math.hypot(seg.x2 - seg.x1, seg.y2 - seg.y1)
+
+
+def _to_trace_segment(seg: RouteSegment, width_mm: float, net_id: str, layer: str) -> TraceSegment:
+    return TraceSegment(
+        layer=layer,
+        start=(seg.x1, seg.y1),
+        end=(seg.x2, seg.y2),
+        width=width_mm,
+        net_id=net_id,
+    )
+
+
+def _point_segment_distance(point: tuple[float, float], start: tuple[float, float], end: tuple[float, float]) -> float:
+    px, py = point
+    x1, y1 = start
+    x2, y2 = end
+    dx = x2 - x1
+    dy = y2 - y1
+    denom = dx * dx + dy * dy
+    if denom <= 0.0:
+        return math.hypot(px - x1, py - y1)
+    t = max(0.0, min(1.0, ((px - x1) * dx + (py - y1) * dy) / denom))
+    proj_x = x1 + t * dx
+    proj_y = y1 + t * dy
+    return math.hypot(px - proj_x, py - proj_y)
+
+
+def _segment_distance(a: TraceSegment, b: TraceSegment) -> float:
+    return min(
+        _point_segment_distance(a.start, b.start, b.end),
+        _point_segment_distance(a.end, b.start, b.end),
+        _point_segment_distance(b.start, a.start, a.end),
+        _point_segment_distance(b.end, a.start, a.end),
+    )
+
+
+def _dogleg_route_x(x1: float, y1: float, x2: float, y2: float, net_name: str, offset: float) -> list[RouteSegment]:
+    segments: list[RouteSegment] = []
+    if _is_zero_length(x1, y1, x2, y2):
+        return segments
+    if math.isclose(x1, x2, abs_tol=_ZERO_LENGTH_TOLERANCE_MM) or math.isclose(
+        y1, y2, abs_tol=_ZERO_LENGTH_TOLERANCE_MM
+    ):
+        _append_segment_if_nonzero(segments, x1, y1, x2, y2, net_name)
+        return segments
+    x_lane = (x1 + x2) / 2.0 + offset
+    _append_segment_if_nonzero(segments, x1, y1, x_lane, y1, net_name)
+    _append_segment_if_nonzero(segments, x_lane, y1, x_lane, y2, net_name)
+    _append_segment_if_nonzero(segments, x_lane, y2, x2, y2, net_name)
+    return segments
+
+
+def _dogleg_route_y(x1: float, y1: float, x2: float, y2: float, net_name: str, offset: float) -> list[RouteSegment]:
+    segments: list[RouteSegment] = []
+    if _is_zero_length(x1, y1, x2, y2):
+        return segments
+    if math.isclose(x1, x2, abs_tol=_ZERO_LENGTH_TOLERANCE_MM) or math.isclose(
+        y1, y2, abs_tol=_ZERO_LENGTH_TOLERANCE_MM
+    ):
+        _append_segment_if_nonzero(segments, x1, y1, x2, y2, net_name)
+        return segments
+    y_lane = (y1 + y2) / 2.0 + offset
+    _append_segment_if_nonzero(segments, x1, y1, x1, y_lane, net_name)
+    _append_segment_if_nonzero(segments, x1, y_lane, x2, y_lane, net_name)
+    _append_segment_if_nonzero(segments, x2, y_lane, x2, y2, net_name)
+    return segments
+
+
+def _route_edge_candidates(x1: float, y1: float, x2: float, y2: float, net_name: str) -> list[list[RouteSegment]]:
+    preferred = _prefer_vertical_first(net_name)
+    candidates = [
+        _route_manhattan_edge(x1, y1, x2, y2, net_name, vertical_first=preferred),
+        _route_manhattan_edge(x1, y1, x2, y2, net_name, vertical_first=not preferred),
+    ]
+    for offset in (-1.2, -0.8, -0.4, 0.4, 0.8, 1.2):
+        candidates.append(_dogleg_route_x(x1, y1, x2, y2, net_name, offset))
+        candidates.append(_dogleg_route_y(x1, y1, x2, y2, net_name, offset))
+    return [candidate for candidate in candidates if candidate]
+
+
+def _candidate_junction_right_angles(
+    candidate: list[RouteSegment], existing_traces: list[TraceSegment], net_id: str
+) -> int:
+    count = 0
+    candidate_traces = [_to_trace_segment(seg, 0.2, net_id, "F.Cu") for seg in candidate]
+    for trace in candidate_traces:
+        for existing in existing_traces:
+            if existing.net_id != net_id or existing.layer != trace.layer:
+                continue
+            shared: tuple[float, float] | None = None
+            for p1, p2 in (
+                (trace.start, existing.start),
+                (trace.start, existing.end),
+                (trace.end, existing.start),
+                (trace.end, existing.end),
+            ):
+                if math.dist(p1, p2) < 0.001:
+                    shared = p1
+                    break
+            if shared is None:
+                continue
+            trace_other = trace.end if math.dist(shared, trace.start) < 0.001 else trace.start
+            existing_other = existing.end if math.dist(shared, existing.start) < 0.001 else existing.start
+            v1 = (trace_other[0] - shared[0], trace_other[1] - shared[1])
+            v2 = (existing_other[0] - shared[0], existing_other[1] - shared[1])
+            n1 = math.hypot(*v1)
+            n2 = math.hypot(*v2)
+            if min(n1, n2) < 0.3:
+                continue
+            if abs(((v1[0] * v2[0]) + (v1[1] * v2[1])) / (n1 * n2)) <= 0.0175:
+                count += 1
+    return count
+
+
+def _score_route_candidate(
+    candidate: list[RouteSegment],
+    existing_traces: list[TraceSegment],
+    *,
+    width_mm: float,
+    net_id: str,
+    layer: str,
+    clearance_mm: float,
+) -> float:
+    score = sum(_route_segment_length(seg) for seg in candidate) * 0.05
+    score += len(candidate) * 2.0
+    score += _candidate_junction_right_angles(candidate, existing_traces, net_id) * 250.0
+    candidate_traces = [_to_trace_segment(seg, width_mm, net_id, layer) for seg in candidate]
+    for trace in candidate_traces:
+        for existing in existing_traces:
+            if existing.layer != layer or existing.net_id == net_id:
+                continue
+            gap = _segment_distance(trace, existing) - (trace.width / 2.0) - (existing.width / 2.0)
+            if gap < clearance_mm:
+                score += 500.0 + (clearance_mm - gap) * 2000.0
+            elif gap < clearance_mm + 0.15:
+                score += (clearance_mm + 0.15 - gap) * 250.0
+    return score
+
+
+def _route_edge_costed(
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    net_name: str,
+    *,
+    existing_traces: list[TraceSegment],
+    width_mm: float,
+    net_id: str,
+    layer: str,
+    clearance_mm: float,
+) -> list[RouteSegment]:
+    candidates = _route_edge_candidates(x1, y1, x2, y2, net_name)
+    if not candidates:
+        return []
+    return min(
+        candidates,
+        key=lambda candidate: _score_route_candidate(
+            candidate, existing_traces, width_mm=width_mm, net_id=net_id, layer=layer, clearance_mm=clearance_mm
+        ),
+    )
+
+
 def _route_net_mst(
     positions: list[tuple[float, float]],
     net_name: str,
+    *,
+    existing_traces: list[TraceSegment] | None = None,
+    width_mm: float = 0.2,
+    net_id: str | None = None,
+    layer: str = "F.Cu",
+    clearance_mm: float = 0.2,
 ) -> list[RouteSegment]:
     """Build MST via Prim's algorithm, route each edge as Manhattan L-shape."""
     n = len(positions)
@@ -215,10 +386,28 @@ def _route_net_mst(
         in_mst[best_j] = True
 
     segments: list[RouteSegment] = []
+    routed_traces = list(existing_traces or [])
+    route_net_id = net_id or net_name
     for i, j in mst_edges:
         x1, y1 = positions[i]
         x2, y2 = positions[j]
-        segments.extend(_route_manhattan_edge(x1, y1, x2, y2, net_name))
+        if existing_traces is None:
+            edge_segments = _route_manhattan_edge(x1, y1, x2, y2, net_name)
+        else:
+            edge_segments = _route_edge_costed(
+                x1,
+                y1,
+                x2,
+                y2,
+                net_name,
+                existing_traces=routed_traces,
+                width_mm=width_mm,
+                net_id=route_net_id,
+                layer=layer,
+                clearance_mm=clearance_mm,
+            )
+        segments.extend(edge_segments)
+        routed_traces.extend(_to_trace_segment(seg, width_mm, route_net_id, layer) for seg in edge_segments)
 
     return segments
 
@@ -359,7 +548,15 @@ def route_design_smart(
         clearance_mm = rule.clearance
 
         try:
-            net_segments = _route_net_mst(node_positions, net.name)
+            net_segments = _route_net_mst(
+                node_positions,
+                net.name,
+                existing_traces=traces,
+                width_mm=width_mm,
+                net_id=net.id,
+                layer=layer,
+                clearance_mm=clearance_mm,
+            )
             for seg in net_segments:
                 seg.width_mm = width_mm
             segments.extend(net_segments)
