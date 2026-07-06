@@ -440,3 +440,16 @@ def test_clearance_location_includes_trace_endpoints() -> None:
     assert "vcc" in drc001[0].location
     assert "gnd" in drc001[0].location
     assert "0.00,0.00" in drc001[0].location
+
+
+def test_micro_right_angle_corner_is_ignored() -> None:
+    d = _simple_design()
+    d.routing = RouteResult(
+        traces=[
+            TraceSegment(layer="top", start=(0, 0), end=(0.1, 0), width=0.2, net_id="vcc"),
+            TraceSegment(layer="top", start=(0.1, 0), end=(0.1, 1.0), width=0.2, net_id="vcc"),
+        ],
+    )
+    result = DRCEngine().run(d)
+    drc003 = [v for v in result.violations if v.rule_id == "DRC-003"]
+    assert len(drc003) == 0

@@ -380,6 +380,8 @@ def check_right_angle(design: Design, _kb: KnowledgeBase, _result: DRCResult) ->
                 n2 = _norm(v2)
                 if n1 < 0.001 or n2 < 0.001:
                     continue
+                if min(n1, n2) < 0.25:
+                    continue
 
                 cos_theta = _dot(v1, v2) / (n1 * n2)
                 cos_theta = max(-1.0, min(1.0, cos_theta))
