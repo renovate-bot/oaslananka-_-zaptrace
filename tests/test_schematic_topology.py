@@ -5,13 +5,17 @@ import json
 import pytest
 
 from zaptrace.generation import (
+    ComponentDecisionStatus,
     TopologySynthesisStatus,
+    apply_component_decision_plan_to_design_ir,
     apply_schematic_topology_to_design_ir,
     compile_electronics_intent_to_architecture,
     compile_intent_to_design_ir,
     convert_architecture_to_board_generation_intent,
     generate_kicad_schematic_project,
+    schematic_component_decision_plan_json,
     schematic_topology_plan_json,
+    synthesize_component_decision_plan,
     synthesize_schematic_topology_plan,
 )
 
@@ -121,3 +125,82 @@ def test_apply_schematic_topology_to_design_ir_rejects_blocked_plan() -> None:
     payload = json.loads(str(excinfo.value))
     assert payload["status"] == "blocked"
     assert payload["blocking_reasons"] == ["intent is too vague to derive electronics architecture"]
+
+
+def test_synthesize_component_decision_plan_from_topology() -> None:
+    architecture, intent, compiled = _ready_architecture_intent_compiled()
+    topology = synthesize_schematic_topology_plan(architecture, intent, compiled)
+
+    plan = synthesize_component_decision_plan(topology, compiled)
+
+    assert plan.status == ComponentDecisionStatus.PLANNED
+    assert plan.planned is True
+    assert plan.design_name == topology.design_name
+    assert plan.family_id == "esp32_usb_sensor"
+    assert plan.source_topology_status == "synthesized"
+    assert plan.decisions
+    assert {decision.role for decision in plan.decisions} >= {
+        "microcontroller",
+        "external_connector",
+        "sensor",
+    }
+    assert all(decision.requirement_ids for decision in plan.decisions)
+    assert "not fabrication-ready" in " ".join(plan.non_claims)
+
+
+def test_component_decision_plan_json_round_trip() -> None:
+    architecture, intent, compiled = _ready_architecture_intent_compiled()
+    topology = synthesize_schematic_topology_plan(architecture, intent, compiled)
+    plan = synthesize_component_decision_plan(topology, compiled)
+
+    payload = json.loads(schematic_component_decision_plan_json(plan))
+
+    assert payload["schema_version"] == "1.0"
+    assert payload["status"] == "planned"
+    assert payload["method"] == "topology_component_decision_planning"
+    assert payload["decisions"]
+
+
+def test_apply_component_decision_plan_to_design_ir_annotates_components() -> None:
+    architecture, intent, compiled = _ready_architecture_intent_compiled()
+    topology = synthesize_schematic_topology_plan(architecture, intent, compiled)
+    decision_plan = synthesize_component_decision_plan(topology, compiled)
+
+    applied = apply_component_decision_plan_to_design_ir(compiled, decision_plan)
+
+    assert "topology-component-decisions-applied" in applied.design.meta.tags
+    assert applied.report.method.endswith("+topology_component_decision_planning")
+    assert applied.report.assumptions[-1] == (
+        "topology-derived component role/value decisions applied to Design IR metadata"
+    )
+    assert len(applied.design.prov_records) == len(compiled.design.prov_records) + 1
+    assert applied.design.prov_records[-1].tool == "zaptrace.generation.topology"
+    assert "component_decision_plan" in applied.design.prov_records[-1].artifact_hashes
+
+    annotated = [
+        component for component in applied.design.components.values() if component.properties.get("topology_role")
+    ]
+    assert annotated
+    assert {component.properties["topology_role"] for component in annotated} >= {
+        "microcontroller",
+        "external_connector",
+        "sensor",
+    }
+
+
+def test_component_decision_plan_blocks_when_topology_is_blocked() -> None:
+    architecture = compile_electronics_intent_to_architecture("make a small board")
+    _, intent, compiled = _ready_architecture_intent_compiled()
+    topology = synthesize_schematic_topology_plan(architecture, intent, compiled)
+
+    plan = synthesize_component_decision_plan(topology, compiled)
+
+    assert plan.status == ComponentDecisionStatus.BLOCKED
+    assert plan.planned is False
+    assert plan.blocking_reasons == ["intent is too vague to derive electronics architecture"]
+
+    with pytest.raises(ValueError) as excinfo:
+        apply_component_decision_plan_to_design_ir(compiled, plan)
+
+    payload = json.loads(str(excinfo.value))
+    assert payload["status"] == "blocked"
