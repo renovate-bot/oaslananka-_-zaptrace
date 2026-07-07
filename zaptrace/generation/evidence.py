@@ -9,12 +9,20 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from zaptrace.generation.architecture import (
+    ElectronicsArchitectureArtifact,
+    architecture_intent_bridge_report_json,
+    convert_architecture_to_board_generation_intent_report,
+    electronics_architecture_artifact_json,
+)
 from zaptrace.generation.compiler import CompiledDesignIR, design_ir_compilation_report_json
 from zaptrace.generation.intent import BoardGenerationIntent, board_generation_intent_json
 from zaptrace.generation.kicad_pcb import GeneratedKiCadPcbProject, generate_kicad_pcb_project
 from zaptrace.generation.kicad_schematic import GeneratedKiCadSchematicProject, generate_kicad_schematic_project
 
 GeneratedProjectArtifactKind = Literal[
+    "architecture",
+    "architecture-intent-bridge-report",
     "intent",
     "design-ir-compile-report",
     "kicad-project",
@@ -58,6 +66,10 @@ class GeneratedProjectEvidenceBundle(BaseModel):
     pcb_passed: bool
     manufacturing_manifest_present: bool
     review_handoff_present: bool
+    architecture_present: bool = False
+    architecture_status: str | None = None
+    architecture_requirement_count: int = Field(default=0, ge=0)
+    architecture_bridge_status: str | None = None
     artifacts: list[GeneratedProjectArtifact]
     non_claims: list[str] = Field(default_factory=list)
     blocking_reasons: list[str] = Field(default_factory=list)
@@ -181,10 +193,29 @@ def generate_project_evidence_bundle(
     intent: BoardGenerationIntent,
     compiled: CompiledDesignIR,
     output_dir: str | Path,
+    architecture: ElectronicsArchitectureArtifact | None = None,
 ) -> GeneratedProjectEvidenceResult:
     """Generate schematic/PCB artifacts and aggregate generated-project evidence."""
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
+
+    architecture_path: Path | None = None
+    architecture_bridge_path: Path | None = None
+    architecture_bridge_status: str | None = None
+    if architecture is not None:
+        architecture_path = _write_json(
+            out / "architecture" / "electronics-architecture.json",
+            electronics_architecture_artifact_json(architecture),
+        )
+        bridge_report = convert_architecture_to_board_generation_intent_report(
+            architecture,
+            family_id=intent.family_id,
+        )
+        architecture_bridge_status = bridge_report.status.value
+        architecture_bridge_path = _write_json(
+            out / "architecture" / "architecture-intent-bridge.json",
+            architecture_intent_bridge_report_json(bridge_report),
+        )
 
     intent_path = _write_json(out / "board-generation-intent.json", board_generation_intent_json(intent))
     compile_report_path = _write_json(
@@ -196,17 +227,24 @@ def generate_project_evidence_bundle(
     manufacturing_manifest = _write_manufacturing_manifest(compiled, out)
     review_handoff = _write_review_handoff(compiled, out)
 
-    artifacts = [
-        _artifact("intent", intent_path, out),
-        _artifact("design-ir-compile-report", compile_report_path, out),
-        _artifact("kicad-project", schematic.project_path, out),
-        _artifact("kicad-schematic", schematic.schematic_path, out),
-        _artifact("schematic-generation-report", schematic.report_path, out),
-        _artifact("kicad-pcb", pcb.pcb_path, out),
-        _artifact("pcb-generation-report", pcb.report_path, out),
-        _artifact("manufacturing-export-manifest", manufacturing_manifest, out),
-        _artifact("review-handoff", review_handoff, out),
-    ]
+    artifacts = []
+    if architecture_path is not None:
+        artifacts.append(_artifact("architecture", architecture_path, out))
+    if architecture_bridge_path is not None:
+        artifacts.append(_artifact("architecture-intent-bridge-report", architecture_bridge_path, out))
+    artifacts.extend(
+        [
+            _artifact("intent", intent_path, out),
+            _artifact("design-ir-compile-report", compile_report_path, out),
+            _artifact("kicad-project", schematic.project_path, out),
+            _artifact("kicad-schematic", schematic.schematic_path, out),
+            _artifact("schematic-generation-report", schematic.report_path, out),
+            _artifact("kicad-pcb", pcb.pcb_path, out),
+            _artifact("pcb-generation-report", pcb.report_path, out),
+            _artifact("manufacturing-export-manifest", manufacturing_manifest, out),
+            _artifact("review-handoff", review_handoff, out),
+        ]
+    )
     missing_required = sum(1 for artifact in artifacts if artifact.required and not (out / artifact.path).is_file())
     manufacturing_present = manufacturing_manifest.is_file()
     review_present = review_handoff.is_file()
@@ -231,6 +269,10 @@ def generate_project_evidence_bundle(
         pcb_passed=pcb.report.passed,
         manufacturing_manifest_present=manufacturing_present,
         review_handoff_present=review_present,
+        architecture_present=architecture is not None,
+        architecture_status=architecture.status.value if architecture is not None else None,
+        architecture_requirement_count=len(architecture.requirements) if architecture is not None else 0,
+        architecture_bridge_status=architecture_bridge_status,
         artifacts=artifacts,
         non_claims=compiled.report.non_claims,
         blocking_reasons=reasons,

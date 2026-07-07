@@ -99,3 +99,33 @@ def test_generated_project_evidence_bundle_file_matches_returned_model(tmp_path)
     payload = json.loads(result.bundle_path.read_text(encoding="utf-8"))
 
     assert payload == result.bundle.model_dump(mode="json")
+
+
+def test_generated_project_evidence_accepts_architecture_artifact(tmp_path) -> None:
+    from zaptrace.generation import (
+        compile_electronics_intent_to_architecture,
+        convert_architecture_to_board_generation_intent,
+    )
+
+    architecture = compile_electronics_intent_to_architecture(
+        "ESP32 USB-C temperature sensor board with I2C sensor and 3.3V logic rail",
+        design_name="esp32_usb_temperature_sensor_architecture_v1",
+    )
+    intent = convert_architecture_to_board_generation_intent(architecture)
+    compiled = compile_intent_to_design_ir(intent)
+
+    result = generate_project_evidence_bundle(intent, compiled, tmp_path, architecture=architecture)
+
+    assert result.bundle.passed is True
+    assert result.bundle.artifact_count == 11
+    assert result.bundle.required_artifact_count == 11
+    assert result.bundle.architecture_present is True
+    assert result.bundle.architecture_status == "ready"
+    assert result.bundle.architecture_requirement_count == len(architecture.requirements)
+    assert result.bundle.architecture_bridge_status == "converted"
+
+    artifact_kinds = {artifact.kind for artifact in result.bundle.artifacts}
+    assert "architecture" in artifact_kinds
+    assert "architecture-intent-bridge-report" in artifact_kinds
+    assert (tmp_path / "architecture/electronics-architecture.json").is_file()
+    assert (tmp_path / "architecture/architecture-intent-bridge.json").is_file()
