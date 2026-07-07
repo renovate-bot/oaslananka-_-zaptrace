@@ -153,9 +153,10 @@ class TestKicadImportProjectErrors:
         with pytest.raises((FileNotFoundError, ValueError, OSError)):
             _call_tool("/nonexistent/path/to/project", session_id="err_test")
 
-    def test_invalid_path_type_handled(self) -> None:
+    def test_invalid_path_type_handled(self, tmp_path: Path) -> None:
+        project_path = str(tmp_path)
         with pytest.raises((FileNotFoundError, ValueError, OSError)):
-            _call_tool("/tmp", session_id="err_tmp")
+            _call_tool(project_path, session_id="err_tmp")
 
 
 # ---------------------------------------------------------------------------

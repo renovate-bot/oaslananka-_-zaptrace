@@ -24,6 +24,7 @@ Covers:
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from zaptrace.algo.freerouting import (
     DEFAULT_CONFIG,
@@ -76,9 +77,9 @@ class TestDiscoverFreerouting:
         result = discover_freerouting(jar_search_paths=[])
         assert isinstance(result, FreeroutingDiscovery)
 
-    def test_discovery_never_raises(self) -> None:
+    def test_discovery_never_raises(self, tmp_path: Path) -> None:
         # Should not raise even with bizarre paths
-        discover_freerouting(jar_search_paths=["/tmp/does-not-exist-zaptrace-test"])
+        discover_freerouting(jar_search_paths=[str(tmp_path / "does-not-exist-zaptrace-test")])
 
 
 # ---------------------------------------------------------------------------

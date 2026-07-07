@@ -30,9 +30,72 @@ Usage::
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+_MODEL_REF_NUMBER = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
+_MODEL_REF_REFERENCE_RE = re.compile(r'\(reference\s+"([^"]+)"')
+_MODEL_REF_SOURCE_RE = re.compile(r'\(model\s+"([^"]+)"')
+_MODEL_REF_XYZ_RE = {
+    name: re.compile(rf"\({name}\s+\(xyz\s+({_MODEL_REF_NUMBER})\s+({_MODEL_REF_NUMBER})\s+({_MODEL_REF_NUMBER})\)\)")
+    for name in ("offset", "scale", "rotation")
+}
+
+
+def _iter_kicad_sexp_blocks(text: str, head: str) -> list[str]:
+    blocks: list[str] = []
+    needle = f"({head}"
+    pos = 0
+    while True:
+        start = text.find(needle, pos)
+        if start < 0:
+            break
+        block, next_pos = _read_balanced_sexp(text, start)
+        if block is None:
+            break
+        blocks.append(block)
+        pos = next_pos
+    return blocks
+
+
+def _read_balanced_sexp(text: str, start: int) -> tuple[str | None, int]:
+    depth = 0
+    in_string = False
+    escaped = False
+    for idx in range(start, len(text)):
+        ch = text[idx]
+        if in_string:
+            escaped, in_string = _advance_quoted_char(ch, escaped, in_string)
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+            if depth == 0:
+                return text[start : idx + 1], idx + 1
+    return None, len(text)
+
+
+def _advance_quoted_char(ch: str, escaped: bool, in_string: bool) -> tuple[bool, bool]:
+    if escaped:
+        return False, in_string
+    if ch == "\\":
+        return True, in_string
+    if ch == '"':
+        return False, False
+    return False, in_string
+
+
+def _parse_model_xyz(block: str, name: str, default: tuple[float, float, float]) -> tuple[float, float, float]:
+    match = _MODEL_REF_XYZ_RE[name].search(block)
+    if not match:
+        return default
+    return (float(match.group(1)), float(match.group(2)), float(match.group(3)))
+
 
 # ---------------------------------------------------------------------------
 # Data models
@@ -368,44 +431,22 @@ def extract_model_refs_from_kicad_pcb(kicad_pcb_text: str) -> list[ModelRef]:
     list[ModelRef]
         One entry per ``(model ...)`` block found (duplicates included).
     """
-    import re
-
     refs: list[ModelRef] = []
-
-    # Match: (footprint "name" ... (model "path.step" (offset ...) (scale ...) (rotation ...)) ...)
-    # We need to find (reference "Rn") inside each footprint block first
-    fp_pattern = re.compile(r"\(footprint\s+\"[^\"]*\"(?:[^(]|\((?:[^(]|\([^)]*\))*\))*\)", re.DOTALL)
-    ref_pattern = re.compile(r'\(reference\s+"([^"]+)"')
-    model_pattern = re.compile(
-        r'\(model\s+"([^"]+)"'
-        r"(?:.*?\(offset\s+\(xyz\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\))?"
-        r"(?:.*?\(scale\s+\(xyz\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\))?"
-        r"(?:.*?\(rotation\s+\(xyz\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\s+([\d.eE+\-]+)\))?",
-        re.DOTALL,
-    )
-
-    for fp_match in fp_pattern.finditer(kicad_pcb_text):
-        fp_text = fp_match.group(0)
-        ref_m = ref_pattern.search(fp_text)
+    for fp_text in _iter_kicad_sexp_blocks(kicad_pcb_text, "footprint"):
+        ref_m = _MODEL_REF_REFERENCE_RE.search(fp_text)
         ref_name = ref_m.group(1) if ref_m else "?"
 
-        for m in model_pattern.finditer(fp_text):
-            source = m.group(1)
-
-            def _f(g: str | None) -> float:
-                return float(g) if g else 0.0
-
-            offset = (_f(m.group(2)), _f(m.group(3)), _f(m.group(4)))
-            scale = (_f(m.group(5)) or 1.0, _f(m.group(6)) or 1.0, _f(m.group(7)) or 1.0)
-            rotation = (_f(m.group(8)), _f(m.group(9)), _f(m.group(10)))
-
+        for model_text in _iter_kicad_sexp_blocks(fp_text, "model"):
+            source_m = _MODEL_REF_SOURCE_RE.search(model_text)
+            if not source_m:
+                continue
             refs.append(
                 ModelRef(
                     ref=ref_name,
-                    source=source,
-                    offset=offset,
-                    scale=scale,
-                    rotation=rotation,
+                    source=source_m.group(1),
+                    offset=_parse_model_xyz(model_text, "offset", (0.0, 0.0, 0.0)),
+                    scale=_parse_model_xyz(model_text, "scale", (1.0, 1.0, 1.0)),
+                    rotation=_parse_model_xyz(model_text, "rotation", (0.0, 0.0, 0.0)),
                 )
             )
 

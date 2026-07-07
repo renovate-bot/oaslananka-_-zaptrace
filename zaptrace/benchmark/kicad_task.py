@@ -249,6 +249,37 @@ _BUILTIN_GRADERS: dict[str, Any] = {
 }
 
 
+def _is_relative_to(path: Path, base: Path) -> bool:
+    try:
+        path.relative_to(base)
+    except ValueError:
+        return False
+    return True
+
+
+def _validate_subprocess_command(command: list[str], spec: GraderSpec, project_dir: Path) -> list[str]:
+    if not command:
+        raise ValueError("Subprocess grader has no command defined")
+
+    project_root = project_dir.resolve(strict=True)
+    executable_name = Path(command[0]).name
+    declared_tool = Path(spec.tool).name
+    if executable_name != declared_tool:
+        raise ValueError(f"Command executable {executable_name!r} does not match declared tool {declared_tool!r}")
+
+    validated: list[str] = []
+    for raw_arg in command:
+        if any(ord(ch) < 32 for ch in raw_arg):
+            raise ValueError("Command argument contains a control character")
+        substituted = raw_arg.replace("{project_dir}", str(project_root))
+        if "{project_dir}" in raw_arg:
+            candidate = Path(substituted).resolve(strict=False)
+            if not _is_relative_to(candidate, project_root):
+                raise ValueError(f"Command argument escapes project directory: {raw_arg!r}")
+        validated.append(substituted)
+    return validated
+
+
 def _run_subprocess_grader(
     project_dir: Path,
     spec: GraderSpec,
@@ -291,16 +322,14 @@ def _run_subprocess_grader(
             elapsed_seconds=round(time.monotonic() - t0, 3),
         )
 
-    # Substitute {project_dir} placeholder
-    cmd = [c.replace("{project_dir}", str(project_dir)) for c in spec.command]
-
     try:
+        cmd = _validate_subprocess_command(spec.command, spec, project_dir)
         proc = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             timeout=spec.timeout_seconds,
-            cwd=project_dir,
+            cwd=project_dir.resolve(strict=True),
         )
         elapsed = round(time.monotonic() - t0, 3)
         passed = proc.returncode == 0

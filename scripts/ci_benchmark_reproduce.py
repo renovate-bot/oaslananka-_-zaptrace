@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 # Ensure repo root is importable
@@ -50,6 +51,24 @@ _BENCHMARK_DIRS = [
 ]
 
 _INTEROP_EVIDENCE = _REPO_ROOT / "benchmarks" / "interop-track-v1" / "evidence-battery-charger.yaml"
+
+
+def _is_relative_to(path: Path, base: Path) -> bool:
+    try:
+        path.relative_to(base)
+    except ValueError:
+        return False
+    return True
+
+
+def _resolve_reference_cli_path(raw: Path) -> Path:
+    candidate = raw if raw.is_absolute() else _REPO_ROOT / raw
+    resolved = candidate.resolve(strict=False)
+    parent = resolved.parent.resolve(strict=False)
+    allowed_roots = (_REPO_ROOT.resolve(strict=True), Path(tempfile.gettempdir()).resolve(strict=True))
+    if not any(_is_relative_to(parent, allowed) for allowed in allowed_roots):
+        raise ValueError("Reference path is outside allowed roots")
+    return resolved
 
 
 # ---------------------------------------------------------------------------
@@ -162,19 +181,20 @@ def main() -> None:
         help="Path to the reference JSON file",
     )
     args = parser.parse_args()
+    reference_file = _resolve_reference_cli_path(args.reference_file)
 
     print("Collecting benchmark run hashes...")
     current = _collect_hashes()
     print(f"  Collected {len(current)} hash(es)")
 
     if args.update_reference:
-        _save_reference(current, args.reference_file)
+        _save_reference(current, reference_file)
         sys.exit(0)
 
-    reference = _load_reference(args.reference_file)
+    reference = _load_reference(reference_file)
     if reference is None:
         print(
-            f"ERROR: Reference file not found: {args.reference_file}\nRun with --update-reference to generate it.",
+            f"ERROR: Reference file not found: {reference_file}\nRun with --update-reference to generate it.",
             file=sys.stderr,
         )
         sys.exit(2)

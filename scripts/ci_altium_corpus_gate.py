@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 
 # Ensure project root is on sys.path when run as a script
@@ -30,6 +31,39 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from zaptrace.eda.altium import read_altium_ascii_sch  # noqa: E402
+
+
+def _is_relative_to(path: Path, base: Path) -> bool:
+    try:
+        path.relative_to(base)
+    except ValueError:
+        return False
+    return True
+
+
+def _resolve_read_dir_cli_arg(raw: str, *, base: Path) -> Path:
+    candidate = Path(raw)
+    if not candidate.is_absolute():
+        candidate = base / candidate
+    resolved = candidate.resolve(strict=False)
+    root = base.resolve(strict=True)
+    if not _is_relative_to(resolved, root):
+        raise ValueError(f"Path escapes repository root: {raw}")
+    if not resolved.is_dir():
+        raise NotADirectoryError(resolved)
+    return resolved
+
+
+def _resolve_write_file_cli_arg(raw: str, *, base: Path) -> Path:
+    candidate = Path(raw)
+    if not candidate.is_absolute():
+        candidate = base / candidate
+    resolved = candidate.resolve(strict=False)
+    parent = resolved.parent.resolve(strict=False)
+    allowed_roots = (base.resolve(strict=True), Path(tempfile.gettempdir()).resolve(strict=True))
+    if not any(_is_relative_to(parent, allowed) for allowed in allowed_roots):
+        raise ValueError(f"Output path is outside allowed report roots: {raw}")
+    return resolved
 
 
 def _score_fixture(path: Path) -> dict[str, object]:
@@ -79,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    corpus_dir = Path(args.corpus_dir)
+    corpus_dir = _resolve_read_dir_cli_arg(args.corpus_dir, base=_ROOT)
     fixtures = sorted(corpus_dir.glob("*.asc"))
 
     if not fixtures:
@@ -118,7 +152,9 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     if args.output:
-        Path(args.output).write_text(json.dumps(report, indent=2), encoding="utf-8")
+        output_path = _resolve_write_file_cli_arg(args.output, base=_ROOT)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
     print(f"\nSummary: {len(summaries)} fixtures, mean net_score={mean_score:.3f} (threshold={args.min_score})")
 
