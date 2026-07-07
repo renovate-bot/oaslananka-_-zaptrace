@@ -278,12 +278,8 @@ def _point_segment_dist(p: tuple[float, float], a: tuple[float, float], b: tuple
     return _dist(p, proj)
 
 
-
 def _format_trace_location(seg: TraceSegment) -> str:
-    return (
-        f"{seg.net_id} ({seg.start[0]:.2f},{seg.start[1]:.2f})"
-        f" -> ({seg.end[0]:.2f},{seg.end[1]:.2f})"
-    )
+    return f"{seg.net_id} ({seg.start[0]:.2f},{seg.start[1]:.2f}) -> ({seg.end[0]:.2f},{seg.end[1]:.2f})"
 
 
 def check_clearance(design: Design, kb: KnowledgeBase, _result: DRCResult) -> list[DRCViolation]:

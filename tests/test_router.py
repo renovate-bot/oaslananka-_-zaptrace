@@ -52,11 +52,8 @@ class TestRouteNetMst:
 
 
 class TestRouteNets:
-
     def test_costed_routing_avoids_existing_trace(self) -> None:
-        existing = [
-            TraceSegment(layer="F.Cu", start=(1.0, 0.0), end=(9.0, 0.0), width=0.2, net_id="vcc")
-        ]
+        existing = [TraceSegment(layer="F.Cu", start=(1.0, 0.0), end=(9.0, 0.0), width=0.2, net_id="vcc")]
         segments = _route_net_mst(
             [(0.0, 0.0), (10.0, 10.0)],
             "I2C_SCL",
@@ -67,6 +64,7 @@ class TestRouteNets:
             clearance_mm=0.2,
         )
         assert segments[0].x1 == segments[0].x2
+
     def _make_design(self) -> Design:
         d = Design(meta=DesignMeta(name="test"))
         d.components["c1"] = Component(id="c1", ref="U1", type="mcu")

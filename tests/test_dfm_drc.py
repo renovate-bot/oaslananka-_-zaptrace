@@ -1,4 +1,5 @@
 from zaptrace.core.models import (
+    BoardConfig,
     BoardConstraints,
     BoardDefinition,
     CopperPourArea,
@@ -127,11 +128,13 @@ class TestSolderMaskSliver:
 
     def test_solder_mask_sliver_fail(self) -> None:
         d = _simple_design()
+        d.board = BoardConfig(min_clearance_mm=0.05)
         d.routing = RouteResult(
             traces=[
                 TraceSegment(layer="top", start=(0, 0), end=(5, 0), width=0.2, net_id="vcc"),
-                # dist = 0.25. clearance = 0.25 - 0.1 - 0.1 = 0.05 < 0.1
-                TraceSegment(layer="top", start=(0, 0.25), end=(5, 0.25), width=0.2, net_id="gnd"),
+                # dist = 0.28. copper clearance = 0.08mm, so copper clearance passes
+                # while the remaining solder-mask web is still below the 0.10mm sliver rule.
+                TraceSegment(layer="top", start=(0, 0.28), end=(5, 0.28), width=0.2, net_id="gnd"),
             ]
         )
         engine = DRCEngine()
