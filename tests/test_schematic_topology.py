@@ -5,16 +5,20 @@ import json
 import pytest
 
 from zaptrace.generation import (
+    BlockPlacementStatus,
     ComponentDecisionStatus,
     TopologySynthesisStatus,
+    apply_block_placement_plan_to_design_ir,
     apply_component_decision_plan_to_design_ir,
     apply_schematic_topology_to_design_ir,
     compile_electronics_intent_to_architecture,
     compile_intent_to_design_ir,
     convert_architecture_to_board_generation_intent,
     generate_kicad_schematic_project,
+    schematic_block_placement_plan_json,
     schematic_component_decision_plan_json,
     schematic_topology_plan_json,
+    synthesize_block_placement_plan,
     synthesize_component_decision_plan,
     synthesize_schematic_topology_plan,
 )
@@ -201,6 +205,75 @@ def test_component_decision_plan_blocks_when_topology_is_blocked() -> None:
 
     with pytest.raises(ValueError) as excinfo:
         apply_component_decision_plan_to_design_ir(compiled, plan)
+
+    payload = json.loads(str(excinfo.value))
+    assert payload["status"] == "blocked"
+
+
+def test_synthesize_block_placement_plan_from_topology() -> None:
+    architecture, intent, compiled = _ready_architecture_intent_compiled()
+    topology = synthesize_schematic_topology_plan(architecture, intent, compiled)
+
+    plan = synthesize_block_placement_plan(topology)
+
+    assert plan.status == BlockPlacementStatus.PLANNED
+    assert plan.planned is True
+    assert plan.design_name == topology.design_name
+    assert plan.family_id == "esp32_usb_sensor"
+    assert plan.source_topology_status == "synthesized"
+    assert plan.placements
+    assert {placement.block_id for placement in plan.placements} >= {
+        "SUBSYS-MCU",
+        "SUBSYS-SENSOR",
+        "SUBSYS-USB",
+    }
+    assert all(placement.requirement_ids for placement in plan.placements)
+    assert "not fabrication-ready" in " ".join(plan.non_claims)
+
+
+def test_block_placement_plan_json_round_trip() -> None:
+    architecture, intent, compiled = _ready_architecture_intent_compiled()
+    topology = synthesize_schematic_topology_plan(architecture, intent, compiled)
+    plan = synthesize_block_placement_plan(topology)
+
+    payload = json.loads(schematic_block_placement_plan_json(plan))
+
+    assert payload["schema_version"] == "1.0"
+    assert payload["status"] == "planned"
+    assert payload["method"] == "topology_block_placement_planning"
+    assert payload["placements"]
+
+
+def test_apply_block_placement_plan_to_design_ir_positions_blocks() -> None:
+    architecture, intent, compiled = _ready_architecture_intent_compiled()
+    topology = synthesize_schematic_topology_plan(architecture, intent, compiled)
+    applied_topology = apply_schematic_topology_to_design_ir(compiled, topology)
+    placement_plan = synthesize_block_placement_plan(topology)
+
+    applied = apply_block_placement_plan_to_design_ir(applied_topology, placement_plan)
+
+    assert "topology-block-placements-applied" in applied.design.meta.tags
+    assert applied.report.method.endswith("+topology_block_placement_planning")
+    assert applied.report.assumptions[-1] == ("topology-derived schematic block placements applied to Design IR blocks")
+    assert all(block.position is not None for block in applied.design.blocks)
+    assert len(applied.design.prov_records) == len(applied_topology.design.prov_records) + 1
+    assert applied.design.prov_records[-1].tool == "zaptrace.generation.topology"
+    assert "block_placement_plan" in applied.design.prov_records[-1].artifact_hashes
+
+
+def test_block_placement_plan_blocks_when_topology_is_blocked() -> None:
+    architecture = compile_electronics_intent_to_architecture("make a small board")
+    _, intent, compiled = _ready_architecture_intent_compiled()
+    topology = synthesize_schematic_topology_plan(architecture, intent, compiled)
+
+    plan = synthesize_block_placement_plan(topology)
+
+    assert plan.status == BlockPlacementStatus.BLOCKED
+    assert plan.planned is False
+    assert plan.blocking_reasons == ["intent is too vague to derive electronics architecture"]
+
+    with pytest.raises(ValueError) as excinfo:
+        apply_block_placement_plan_to_design_ir(compiled, plan)
 
     payload = json.loads(str(excinfo.value))
     assert payload["status"] == "blocked"

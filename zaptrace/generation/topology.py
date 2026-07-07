@@ -502,3 +502,158 @@ def apply_component_decision_plan_to_design_ir(
         deep=True,
     )
     return CompiledDesignIR(design=design, report=report)
+
+
+class BlockPlacementStatus(StrEnum):
+    """Status emitted by topology block placement planning."""
+
+    PLANNED = "planned"
+    BLOCKED = "blocked"
+
+
+class SchematicBlockPlacement(BaseModel):
+    """Schematic sheet placement decision for one topology block."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    block_id: str = Field(min_length=1)
+    block_name: str = Field(min_length=1)
+    position: tuple[float, float]
+    lane: str = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+    requirement_ids: list[str] = Field(default_factory=list)
+
+
+class SchematicBlockPlacementPlan(BaseModel):
+    """Topology-derived schematic block placement plan."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: BlockPlacementStatus
+    design_name: str = Field(min_length=1)
+    family_id: str = Field(min_length=1)
+    method: Literal["topology_block_placement_planning"] = "topology_block_placement_planning"
+    source_topology_status: TopologySynthesisStatus
+    placements: list[SchematicBlockPlacement] = Field(default_factory=list)
+    blocking_reasons: list[str] = Field(default_factory=list)
+    non_claims: list[str] = Field(default_factory=list)
+
+    @property
+    def planned(self) -> bool:
+        """Return whether block placements were planned."""
+        return self.status == BlockPlacementStatus.PLANNED
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-serializable representation."""
+        return self.model_dump(mode="json")
+
+
+def schematic_block_placement_plan_json(plan: SchematicBlockPlacementPlan) -> str:
+    """Serialize a block placement plan as stable JSON."""
+    return json.dumps(plan.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"
+
+
+_BLOCK_LANE_POSITIONS: dict[str, tuple[str, tuple[float, float]]] = {
+    "power": ("left-power-entry", (20.0, 30.0)),
+    "interface": ("left-external-interface", (20.0, 90.0)),
+    "mcu": ("center-control", (110.0, 60.0)),
+    "sensor": ("right-sensing", (200.0, 60.0)),
+    "protection": ("left-protection", (55.0, 30.0)),
+    "mechanical": ("bottom-mechanical", (110.0, 135.0)),
+    "generic": ("support", (110.0, 110.0)),
+}
+
+
+def _placement_for_block(block: SchematicTopologyBlock, index: int) -> SchematicBlockPlacement:
+    lane, base = _BLOCK_LANE_POSITIONS.get(block.kind, _BLOCK_LANE_POSITIONS["generic"])
+    x, y = base
+    return SchematicBlockPlacement(
+        block_id=block.id,
+        block_name=block.name,
+        position=(x, y + index * 18.0),
+        lane=lane,
+        rationale=f"Placed {block.name} in the {lane} schematic lane for topology readability.",
+        requirement_ids=block.requirement_ids,
+    )
+
+
+def synthesize_block_placement_plan(plan: SchematicTopologyPlan) -> SchematicBlockPlacementPlan:
+    """Create deterministic schematic sheet placements from a topology plan."""
+    if not plan.synthesized:
+        return SchematicBlockPlacementPlan(
+            status=BlockPlacementStatus.BLOCKED,
+            design_name=plan.design_name,
+            family_id=plan.family_id,
+            source_topology_status=plan.status,
+            blocking_reasons=plan.blocking_reasons or ["topology plan is not synthesized"],
+            non_claims=plan.non_claims,
+        )
+
+    placements = [_placement_for_block(block, index) for index, block in enumerate(plan.blocks)]
+    reasons: list[str] = []
+    if not placements:
+        reasons.append("topology plan did not produce block placements")
+    return SchematicBlockPlacementPlan(
+        status=BlockPlacementStatus.BLOCKED if reasons else BlockPlacementStatus.PLANNED,
+        design_name=plan.design_name,
+        family_id=plan.family_id,
+        source_topology_status=plan.status,
+        placements=placements,
+        blocking_reasons=reasons,
+        non_claims=plan.non_claims,
+    )
+
+
+def _block_placement_plan_hash(plan: SchematicBlockPlacementPlan) -> str:
+    import hashlib
+
+    return hashlib.sha256(schematic_block_placement_plan_json(plan).encode("utf-8")).hexdigest()
+
+
+def apply_block_placement_plan_to_design_ir(
+    compiled: CompiledDesignIR,
+    plan: SchematicBlockPlacementPlan,
+) -> CompiledDesignIR:
+    """Apply block placement decisions to Design IR blocks."""
+    from zaptrace.core.models import ProvRecord
+
+    if not plan.planned:
+        payload = {
+            "status": plan.status.value,
+            "blocking_reasons": plan.blocking_reasons,
+            "design_name": plan.design_name,
+        }
+        raise ValueError(json.dumps(payload, sort_keys=True))
+
+    design = compiled.design.model_copy(deep=True)
+    by_id = {placement.block_id: placement for placement in plan.placements}
+    for block in design.blocks:
+        placement = by_id.get(block.id)
+        if placement is not None:
+            block.position = placement.position
+    tags = set(design.meta.tags)
+    tags.add("topology-block-placements-applied")
+    design.meta.tags = sorted(tags)
+    design.prov_records.append(
+        ProvRecord(
+            record_id=f"block-placement:{plan.family_id}:{plan.design_name}",
+            tool="zaptrace.generation.topology",
+            tool_version="0.3.0",
+            input_artifact_ids=[f"block-placement-plan:{plan.family_id}:{plan.design_name}"],
+            output_artifact_ids=[f"design-ir-block-placement:{plan.design_name}"],
+            artifact_hashes={"block_placement_plan": _block_placement_plan_hash(plan)},
+            decision_summary="Applied topology-derived schematic block placements; not fabrication-ready.",
+        )
+    )
+    report = compiled.report.model_copy(
+        update={
+            "method": f"{compiled.report.method}+topology_block_placement_planning",
+            "assumptions": [
+                *compiled.report.assumptions,
+                "topology-derived schematic block placements applied to Design IR blocks",
+            ],
+        },
+        deep=True,
+    )
+    return CompiledDesignIR(design=design, report=report)

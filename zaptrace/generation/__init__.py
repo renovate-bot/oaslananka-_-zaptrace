@@ -66,7 +66,10 @@ from zaptrace.generation.kicad_schematic import (
     generated_kicad_schematic_report_json,
 )
 from zaptrace.generation.topology import (
+    BlockPlacementStatus,
     ComponentDecisionStatus,
+    SchematicBlockPlacement,
+    SchematicBlockPlacementPlan,
     SchematicComponentDecision,
     SchematicComponentDecisionPlan,
     SchematicTopologyBlock,
@@ -74,15 +77,24 @@ from zaptrace.generation.topology import (
     SchematicTopologyNet,
     SchematicTopologyPlan,
     TopologySynthesisStatus,
+    apply_block_placement_plan_to_design_ir,
     apply_component_decision_plan_to_design_ir,
     apply_schematic_topology_to_design_ir,
+    schematic_block_placement_plan_json,
     schematic_component_decision_plan_json,
     schematic_topology_plan_json,
+    synthesize_block_placement_plan,
     synthesize_component_decision_plan,
     synthesize_schematic_topology_plan,
 )
 
 __all__ = [
+    "synthesize_block_placement_plan",
+    "schematic_block_placement_plan_json",
+    "apply_block_placement_plan_to_design_ir",
+    "SchematicBlockPlacementPlan",
+    "SchematicBlockPlacement",
+    "BlockPlacementStatus",
     "synthesize_component_decision_plan",
     "schematic_component_decision_plan_json",
     "apply_component_decision_plan_to_design_ir",
