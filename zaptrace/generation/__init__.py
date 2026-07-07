@@ -1,5 +1,22 @@
 """Board generation pipeline contracts."""
 
+from zaptrace.generation.architecture import (
+    ArchitectureAcceptanceTest,
+    ArchitectureAssumption,
+    ArchitectureCompileStatus,
+    ArchitectureConstraint,
+    ArchitectureRequirement,
+    ArchitectureRisk,
+    ArchitectureSubsystem,
+    ElectronicsArchitectureArtifact,
+    InterfacePlan,
+    PowerRailPlan,
+    RequirementCategory,
+    compile_electronics_intent_to_architecture,
+    electronics_architecture_artifact_json,
+    electronics_architecture_schema_json,
+    minimal_electronics_architecture_example,
+)
 from zaptrace.generation.compiler import (
     CompilationStatus,
     CompiledDesignIR,
@@ -44,6 +61,21 @@ from zaptrace.generation.kicad_schematic import (
 )
 
 __all__ = [
+    "ArchitectureAcceptanceTest",
+    "ArchitectureAssumption",
+    "ArchitectureCompileStatus",
+    "ArchitectureConstraint",
+    "ArchitectureRequirement",
+    "ArchitectureRisk",
+    "ArchitectureSubsystem",
+    "ElectronicsArchitectureArtifact",
+    "InterfacePlan",
+    "PowerRailPlan",
+    "RequirementCategory",
+    "compile_electronics_intent_to_architecture",
+    "electronics_architecture_artifact_json",
+    "electronics_architecture_schema_json",
+    "minimal_electronics_architecture_example",
     "GeneratedProjectArtifact",
     "GeneratedProjectEvidenceBundle",
     "GeneratedProjectEvidenceResult",
