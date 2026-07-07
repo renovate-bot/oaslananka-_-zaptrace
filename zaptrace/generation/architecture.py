@@ -5,9 +5,12 @@ from __future__ import annotations
 import json
 import re
 from enum import StrEnum
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+if TYPE_CHECKING:
+    from zaptrace.generation.intent import BoardGenerationIntent
 
 
 class ArchitectureCompileStatus(StrEnum):
@@ -676,3 +679,186 @@ def minimal_electronics_architecture_example() -> dict[str, Any]:
         design_name="esp32_usb_temperature_sensor_architecture_v1",
     )
     return artifact.model_dump(mode="json")
+
+
+class ArchitectureIntentBridgeStatus(StrEnum):
+    """Status for architecture-to-generation-intent conversion."""
+
+    CONVERTED = "converted"
+    NOT_READY = "not-ready"
+    UNSUPPORTED_ARCHITECTURE = "unsupported-architecture"
+
+
+class ArchitectureIntentBridgeReport(BaseModel):
+    """Machine-readable report for architecture-to-intent conversion."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal["1.0"] = "1.0"
+    status: ArchitectureIntentBridgeStatus
+    architecture_status: ArchitectureCompileStatus
+    design_name: str = Field(min_length=1)
+    family_id: str | None = None
+    requirement_ids: list[str] = Field(default_factory=list)
+    power_rails: list[str] = Field(default_factory=list)
+    interfaces: list[str] = Field(default_factory=list)
+    assumptions_carried: list[str] = Field(default_factory=list)
+    blocking_reasons: list[str] = Field(default_factory=list)
+
+    @property
+    def converted(self) -> bool:
+        """Return whether conversion succeeded."""
+        return self.status == ArchitectureIntentBridgeStatus.CONVERTED
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-serializable representation."""
+        return self.model_dump(mode="json")
+
+
+def _architecture_tokens(artifact: ElectronicsArchitectureArtifact) -> set[str]:
+    haystack = " ".join(
+        [
+            artifact.source_intent,
+            artifact.design_name,
+            *(subsystem.name for subsystem in artifact.subsystems),
+            *(interface.name for interface in artifact.interfaces),
+            *(interface.protocol for interface in artifact.interfaces),
+        ]
+    )
+    return _words(haystack)
+
+
+def infer_board_generation_family(artifact: ElectronicsArchitectureArtifact) -> str | None:
+    """Infer the supported board generation family for an architecture artifact."""
+    tokens = _architecture_tokens(artifact)
+    protocols = {interface.protocol.lower() for interface in artifact.interfaces}
+    names = {interface.name.lower() for interface in artifact.interfaces}
+    subsystem_kinds = {subsystem.kind for subsystem in artifact.subsystems}
+
+    has_mcu = "mcu" in subsystem_kinds or _has_any(tokens, "esp32", "mcu", "microcontroller")
+    has_sensor = "sensor" in subsystem_kinds or _has_any(tokens, "sensor", "temperature", "humidity", "imu")
+    has_usb = bool({"usb", "usb2", "usb-c", "usbc"} & (protocols | names | tokens))
+    has_i2c = "i2c" in protocols or "i2c" in names or "i2c" in tokens
+
+    if has_mcu and has_sensor and has_usb and has_i2c:
+        return "esp32_usb_sensor"
+    return None
+
+
+def architecture_intent_bridge_report_json(report: ArchitectureIntentBridgeReport) -> str:
+    """Serialize an architecture-to-intent bridge report as stable JSON."""
+    return json.dumps(report.model_dump(mode="json"), indent=2, sort_keys=True) + "\n"
+
+
+def _architecture_intent_bridge_report(
+    artifact: ElectronicsArchitectureArtifact,
+    *,
+    status: ArchitectureIntentBridgeStatus,
+    family_id: str | None,
+    blocking_reasons: list[str] | None = None,
+) -> ArchitectureIntentBridgeReport:
+    return ArchitectureIntentBridgeReport(
+        status=status,
+        architecture_status=artifact.status,
+        design_name=artifact.design_name,
+        family_id=family_id,
+        requirement_ids=sorted(artifact.requirement_ids),
+        power_rails=[rail.net_name for rail in artifact.power_tree],
+        interfaces=[interface.name for interface in artifact.interfaces],
+        assumptions_carried=[assumption.id for assumption in artifact.assumptions],
+        blocking_reasons=blocking_reasons or [],
+    )
+
+
+def convert_architecture_to_board_generation_intent_report(
+    artifact: ElectronicsArchitectureArtifact,
+    *,
+    family_id: str | None = None,
+) -> ArchitectureIntentBridgeReport:
+    """Return the bridge report that would accompany architecture conversion."""
+    resolved_family_id = family_id or infer_board_generation_family(artifact)
+    if artifact.status != ArchitectureCompileStatus.READY:
+        return _architecture_intent_bridge_report(
+            artifact,
+            status=ArchitectureIntentBridgeStatus.NOT_READY,
+            family_id=resolved_family_id,
+            blocking_reasons=artifact.blocking_reasons or [f"architecture status is {artifact.status.value}"],
+        )
+    if resolved_family_id is None:
+        return _architecture_intent_bridge_report(
+            artifact,
+            status=ArchitectureIntentBridgeStatus.UNSUPPORTED_ARCHITECTURE,
+            family_id=None,
+            blocking_reasons=["no supported board generation family could be inferred"],
+        )
+    return _architecture_intent_bridge_report(
+        artifact,
+        status=ArchitectureIntentBridgeStatus.CONVERTED,
+        family_id=resolved_family_id,
+    )
+
+
+def convert_architecture_to_board_generation_intent(
+    artifact: ElectronicsArchitectureArtifact,
+    *,
+    family_id: str | None = None,
+    target_output_dir: str | None = None,
+) -> BoardGenerationIntent:
+    """Convert a ready architecture artifact into a board generation intent."""
+    from zaptrace.generation.intent import (
+        ArtifactPolicy,
+        BoardGenerationIntent,
+        EvidenceExpectation,
+        InterfaceConstraint,
+        PowerConstraint,
+        RequirementRef,
+    )
+
+    report = convert_architecture_to_board_generation_intent_report(artifact, family_id=family_id)
+    if not report.converted:
+        raise ValueError(architecture_intent_bridge_report_json(report))
+
+    return BoardGenerationIntent(
+        family_id=report.family_id or "",
+        design_name=artifact.design_name,
+        description=(f"Architecture-derived board generation intent. Source intent: {artifact.source_intent}"),
+        requirements=[
+            RequirementRef(
+                id=requirement.id,
+                text=requirement.text,
+                source=f"architecture:{requirement.source}",
+                release_blocking=requirement.release_blocking,
+            )
+            for requirement in artifact.requirements
+        ],
+        power=[
+            PowerConstraint(
+                net_name=rail.net_name,
+                voltage_v=rail.nominal_voltage_v,
+                max_current_a=rail.max_current_a,
+                source=rail.source,
+                release_blocking=bool(rail.requirement_ids),
+            )
+            for rail in artifact.power_tree
+        ],
+        interfaces=[
+            InterfaceConstraint(
+                name=interface.name,
+                role=interface.role,
+                nets=interface.nets,
+                controlled_impedance=interface.controlled_impedance,
+                release_blocking=bool(interface.requirement_ids),
+            )
+            for interface in artifact.interfaces
+        ],
+        artifact_policy=ArtifactPolicy(),
+        evidence=EvidenceExpectation(),
+        target_output_dir=target_output_dir or f"generated/{artifact.design_name}",
+        non_claims=sorted(
+            {
+                *artifact.non_claims,
+                "board generation intent is derived from a requirements architecture artifact",
+                "not fabrication-ready",
+            }
+        ),
+    )

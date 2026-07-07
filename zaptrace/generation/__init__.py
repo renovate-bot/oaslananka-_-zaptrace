@@ -5,6 +5,8 @@ from zaptrace.generation.architecture import (
     ArchitectureAssumption,
     ArchitectureCompileStatus,
     ArchitectureConstraint,
+    ArchitectureIntentBridgeReport,
+    ArchitectureIntentBridgeStatus,
     ArchitectureRequirement,
     ArchitectureRisk,
     ArchitectureSubsystem,
@@ -12,9 +14,13 @@ from zaptrace.generation.architecture import (
     InterfacePlan,
     PowerRailPlan,
     RequirementCategory,
+    architecture_intent_bridge_report_json,
     compile_electronics_intent_to_architecture,
+    convert_architecture_to_board_generation_intent,
+    convert_architecture_to_board_generation_intent_report,
     electronics_architecture_artifact_json,
     electronics_architecture_schema_json,
+    infer_board_generation_family,
     minimal_electronics_architecture_example,
 )
 from zaptrace.generation.compiler import (
@@ -61,6 +67,12 @@ from zaptrace.generation.kicad_schematic import (
 )
 
 __all__ = [
+    "ArchitectureIntentBridgeReport",
+    "ArchitectureIntentBridgeStatus",
+    "architecture_intent_bridge_report_json",
+    "convert_architecture_to_board_generation_intent",
+    "convert_architecture_to_board_generation_intent_report",
+    "infer_board_generation_family",
     "ArchitectureAcceptanceTest",
     "ArchitectureAssumption",
     "ArchitectureCompileStatus",
