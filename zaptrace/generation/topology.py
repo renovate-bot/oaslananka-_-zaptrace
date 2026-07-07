@@ -229,3 +229,67 @@ def synthesize_schematic_topology_plan(
         blocking_reasons=reasons,
         non_claims=compiled.report.non_claims,
     )
+
+
+def _topology_plan_hash(plan: SchematicTopologyPlan) -> str:
+    import hashlib
+
+    return hashlib.sha256(schematic_topology_plan_json(plan).encode("utf-8")).hexdigest()
+
+
+def apply_schematic_topology_to_design_ir(
+    compiled: CompiledDesignIR,
+    plan: SchematicTopologyPlan,
+) -> CompiledDesignIR:
+    """Apply a synthesized topology plan to Design IR functional blocks."""
+    from zaptrace.core.models import Block, ProvRecord
+
+    if not plan.synthesized:
+        raise ValueError(
+            json.dumps(
+                {
+                    "status": plan.status.value,
+                    "blocking_reasons": plan.blocking_reasons,
+                    "design_name": plan.design_name,
+                },
+                sort_keys=True,
+            )
+        )
+
+    design = compiled.design.model_copy(deep=True)
+    design.blocks = [
+        Block(
+            id=block.id,
+            name=block.name,
+            components=[ref for ref in block.component_refs if ref in design.components],
+        )
+        for block in plan.blocks
+    ]
+    tags = set(design.meta.tags)
+    tags.update({"architecture-topology-applied", "topology-driven-schematic"})
+    design.meta.tags = sorted(tags)
+    design.prov_records.append(
+        ProvRecord(
+            record_id=f"topology-plan:{plan.family_id}:{plan.design_name}",
+            tool="zaptrace.generation.topology",
+            tool_version="0.3.0",
+            input_artifact_ids=[f"schematic-topology-plan:{plan.family_id}:{plan.design_name}"],
+            output_artifact_ids=[f"design-ir-topology-blocks:{plan.design_name}"],
+            artifact_hashes={"schematic_topology_plan": _topology_plan_hash(plan)},
+            decision_summary=(
+                "Applied architecture-derived schematic topology plan to Design IR functional blocks; "
+                "not fabrication-ready."
+            ),
+        )
+    )
+    report = compiled.report.model_copy(
+        update={
+            "method": f"{compiled.report.method}+architecture_topology_planning",
+            "assumptions": [
+                *compiled.report.assumptions,
+                "architecture-derived schematic topology plan applied to Design IR functional blocks",
+            ],
+        },
+        deep=True,
+    )
+    return CompiledDesignIR(design=design, report=report)

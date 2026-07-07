@@ -71,11 +71,13 @@ from zaptrace.generation.topology import (
     SchematicTopologyNet,
     SchematicTopologyPlan,
     TopologySynthesisStatus,
+    apply_schematic_topology_to_design_ir,
     schematic_topology_plan_json,
     synthesize_schematic_topology_plan,
 )
 
 __all__ = [
+    "apply_schematic_topology_to_design_ir",
     "SchematicTopologyBlock",
     "SchematicTopologyInterface",
     "SchematicTopologyNet",

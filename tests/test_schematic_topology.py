@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from zaptrace.generation import (
     TopologySynthesisStatus,
+    apply_schematic_topology_to_design_ir,
     compile_electronics_intent_to_architecture,
     compile_intent_to_design_ir,
     convert_architecture_to_board_generation_intent,
@@ -85,3 +88,36 @@ def test_generate_kicad_schematic_project_with_topology_plan(tmp_path) -> None:
     assert "topology-plan" in {artifact.kind for artifact in generated.report.generated_files}
     assert payload["topology_present"] is True
     assert payload["topology_status"] == "synthesized"
+
+
+def test_apply_schematic_topology_to_design_ir_populates_functional_blocks() -> None:
+    architecture, intent, compiled = _ready_architecture_intent_compiled()
+    plan = synthesize_schematic_topology_plan(architecture, intent, compiled)
+
+    applied = apply_schematic_topology_to_design_ir(compiled, plan)
+
+    assert compiled.design.blocks == []
+    assert applied.design.blocks
+    assert {block.id for block in applied.design.blocks} >= {"SUBSYS-MCU", "SUBSYS-SENSOR", "SUBSYS-USB"}
+    assert any(block.components for block in applied.design.blocks if block.id == "SUBSYS-MCU")
+    assert "topology-driven-schematic" in applied.design.meta.tags
+    assert applied.report.method.endswith("+architecture_topology_planning")
+    assert applied.report.assumptions[-1] == (
+        "architecture-derived schematic topology plan applied to Design IR functional blocks"
+    )
+    assert len(applied.design.prov_records) == len(compiled.design.prov_records) + 1
+    assert applied.design.prov_records[-1].tool == "zaptrace.generation.topology"
+    assert "schematic_topology_plan" in applied.design.prov_records[-1].artifact_hashes
+
+
+def test_apply_schematic_topology_to_design_ir_rejects_blocked_plan() -> None:
+    architecture = compile_electronics_intent_to_architecture("make a small board")
+    _, intent, compiled = _ready_architecture_intent_compiled()
+    plan = synthesize_schematic_topology_plan(architecture, intent, compiled)
+
+    with pytest.raises(ValueError) as excinfo:
+        apply_schematic_topology_to_design_ir(compiled, plan)
+
+    payload = json.loads(str(excinfo.value))
+    assert payload["status"] == "blocked"
+    assert payload["blocking_reasons"] == ["intent is too vague to derive electronics architecture"]
