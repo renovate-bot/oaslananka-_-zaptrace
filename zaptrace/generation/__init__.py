@@ -65,8 +65,24 @@ from zaptrace.generation.kicad_schematic import (
     generate_kicad_schematic_project,
     generated_kicad_schematic_report_json,
 )
+from zaptrace.generation.topology import (
+    SchematicTopologyBlock,
+    SchematicTopologyInterface,
+    SchematicTopologyNet,
+    SchematicTopologyPlan,
+    TopologySynthesisStatus,
+    schematic_topology_plan_json,
+    synthesize_schematic_topology_plan,
+)
 
 __all__ = [
+    "SchematicTopologyBlock",
+    "SchematicTopologyInterface",
+    "SchematicTopologyNet",
+    "SchematicTopologyPlan",
+    "TopologySynthesisStatus",
+    "schematic_topology_plan_json",
+    "synthesize_schematic_topology_plan",
     "ArchitectureIntentBridgeReport",
     "ArchitectureIntentBridgeStatus",
     "architecture_intent_bridge_report_json",
