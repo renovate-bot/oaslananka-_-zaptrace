@@ -299,7 +299,7 @@ class TestPcbJsonl:
         r1 = next(r for r in records if r.get("ref") == "R1")
         assert r1["package"] == "0402"
         assert r1["x"] == pytest.approx(1.0)
-        assert r1["rotation"] == 0.0
+        assert r1["rotation"] == pytest.approx(0.0)
 
     def test_tracks_not_written_without_routing(self) -> None:
         d = _make_design()

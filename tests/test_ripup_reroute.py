@@ -25,6 +25,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from zaptrace.algo.ripup_reroute import (
     DEFAULT_RIPUP_CONFIG,
     NetConflict,
@@ -42,9 +44,9 @@ from zaptrace.algo.ripup_reroute import (
 class TestRipupConfig:
     def test_defaults(self) -> None:
         assert DEFAULT_RIPUP_CONFIG.max_iterations == 10
-        assert DEFAULT_RIPUP_CONFIG.max_seconds == 30.0
-        assert DEFAULT_RIPUP_CONFIG.min_improvement == 0.0
-        assert DEFAULT_RIPUP_CONFIG.cost_inflation == 1.5
+        assert DEFAULT_RIPUP_CONFIG.max_seconds == pytest.approx(30.0)
+        assert DEFAULT_RIPUP_CONFIG.min_improvement == pytest.approx(0.0)
+        assert DEFAULT_RIPUP_CONFIG.cost_inflation == pytest.approx(1.5)
         assert DEFAULT_RIPUP_CONFIG.max_rip_per_iter == 5
 
     def test_to_dict_keys(self) -> None:
@@ -57,7 +59,7 @@ class TestRipupConfig:
     def test_custom_config(self) -> None:
         cfg = RipupConfig(max_iterations=3, max_seconds=5.0, max_rip_per_iter=2)
         assert cfg.max_iterations == 3
-        assert cfg.max_seconds == 5.0
+        assert cfg.max_seconds == pytest.approx(5.0)
         assert cfg.max_rip_per_iter == 2
 
 
@@ -174,7 +176,7 @@ class TestRipupResult:
 
     def test_completion_rate_after(self) -> None:
         r = self._pass_result()
-        assert r.completion_rate_after == 1.0
+        assert r.completion_rate_after == pytest.approx(1.0)
 
     def test_improvement(self) -> None:
         r = self._pass_result()
@@ -208,8 +210,8 @@ class TestRipupResult:
 
     def test_completion_rate_zero_total(self) -> None:
         r = RipupResult(status="skipped", design_name="empty", total_nets=0)
-        assert r.completion_rate_before == 1.0
-        assert r.completion_rate_after == 1.0
+        assert r.completion_rate_before == pytest.approx(1.0)
+        assert r.completion_rate_after == pytest.approx(1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -236,7 +238,7 @@ class TestRunRipupSkipped:
 
     def test_skipped_completion_rate_100(self) -> None:
         result = run_ripup_reroute("board", unrouted_nets=[], routed_nets=10, total_nets=10)
-        assert result.completion_rate_after == 1.0
+        assert result.completion_rate_after == pytest.approx(1.0)
 
 
 # ---------------------------------------------------------------------------
@@ -576,7 +578,7 @@ class TestEdgeCases:
             total_nets=0,
         )
         assert result.status == "skipped"
-        assert result.completion_rate_after == 1.0
+        assert result.completion_rate_after == pytest.approx(1.0)
 
     def test_result_always_serialisable(self) -> None:
         for nets in [[], ["A"], ["A", "B", "C"]]:

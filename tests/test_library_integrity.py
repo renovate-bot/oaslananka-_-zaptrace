@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import yaml
 
 from zaptrace.library.integrity import (
@@ -45,9 +46,9 @@ from zaptrace.library.integrity import (
 
 class TestLibraryIntegrityConfig:
     def test_defaults(self) -> None:
-        assert DEFAULT_INTEGRITY_CONFIG.min_confidence_score == 0.5
+        assert DEFAULT_INTEGRITY_CONFIG.min_confidence_score == pytest.approx(0.5)
         assert DEFAULT_INTEGRITY_CONFIG.min_library_size == 500
-        assert DEFAULT_INTEGRITY_CONFIG.min_high_confidence_pct == 0.70
+        assert DEFAULT_INTEGRITY_CONFIG.min_high_confidence_pct == pytest.approx(0.70)
 
     def test_to_dict_keys(self) -> None:
         d = DEFAULT_INTEGRITY_CONFIG.to_dict()
@@ -151,7 +152,7 @@ class TestLibraryIntegrityReport:
 
     def test_high_confidence_pct_zero_total(self) -> None:
         r = LibraryIntegrityReport(status="fail", total_parts=0)
-        assert r.high_confidence_pct == 0.0
+        assert r.high_confidence_pct == pytest.approx(0.0)
 
     def test_to_dict_keys(self) -> None:
         d = self._pass_report().to_dict()

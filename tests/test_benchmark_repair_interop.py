@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import yaml
 
 from zaptrace.benchmark.interop_track import (
@@ -284,7 +285,7 @@ class TestInteropTaskSpecLoading:
 
     def test_category_spec_defaults(self) -> None:
         c = InteropCategorySpec.from_dict({"category": "connectivity"})
-        assert c.min_score == 0.75
+        assert c.min_score == pytest.approx(0.75)
         assert c.required is True
 
 
@@ -319,7 +320,7 @@ class TestInteropTrackScoring:
         spec = _make_interop_task_spec({"connectivity": 0.75, "components": 0.75})
         result = run_interop_task(spec, ev)
         comp = next(c for c in result.category_scores if c.category == "components")
-        assert comp.score == 0.0
+        assert comp.score == pytest.approx(0.0)
 
     def test_mean_score_computed(self, tmp_path: Path) -> None:
         ev = _write_evidence(tmp_path, {"connectivity": 0.80, "components": 0.60})

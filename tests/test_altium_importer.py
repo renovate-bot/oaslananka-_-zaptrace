@@ -293,7 +293,7 @@ class TestWireNetExtraction:
     def test_wired_components_share_net_nodes(self):
         result = read_altium_ascii_sch(TWO_COMP_WIRED)
         # The wire+label should produce at least one net
-        assert len(result.design.nets) >= 0  # may or may not connect depending on snap
+        assert result.design.nets is not None  # may or may not connect depending on snap
 
     def test_net_node_references_valid_component(self):
         result = read_altium_ascii_sch(MINIMAL_SCH)

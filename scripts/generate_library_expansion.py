@@ -3385,7 +3385,8 @@ def main(argv: list[str] | None = None) -> int:
     total_existing = sum(1 for _ in Path(args.output_dir).rglob("*.yaml"))
     action = "Would write" if args.dry_run else "Wrote"
     print(f"{action} {written} new parts ({skipped} already exist)")
-    print(f"Total after: {total_existing if args.dry_run else total_existing} parts in library")
+    total_after = total_existing + written if args.dry_run else total_existing
+    print(f"Total after: {total_after} parts in library")
     return 0
 
 

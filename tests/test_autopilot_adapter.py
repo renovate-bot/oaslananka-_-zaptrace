@@ -319,7 +319,7 @@ class TestPartialLoopResult:
     def test_fields(self) -> None:
         partial = PartialLoopResult(intent="x", elapsed_s=1.5)
         assert partial.intent == "x"
-        assert partial.elapsed_s == 1.5
+        assert partial.elapsed_s == pytest.approx(1.5)
         assert partial.stages_completed == []
 
     def test_stages_completed(self) -> None:

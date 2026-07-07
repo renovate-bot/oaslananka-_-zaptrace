@@ -421,7 +421,7 @@ class TestComputeEagleRoundtripScore:
 
     def test_empty_empty_score_one(self) -> None:
         empty = EagleImportResult()
-        assert compute_eagle_roundtrip_score(empty, empty) == 1.0
+        assert compute_eagle_roundtrip_score(empty, empty) == pytest.approx(1.0)
 
     def test_disjoint_gives_low_score(self) -> None:
         r1 = EagleImportResult(

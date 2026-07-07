@@ -382,7 +382,7 @@ class TestSelfRoundTrip:
         imported_res = import_kicad_schematic_string(content)
 
         score = compute_schematic_net_score(exported_res, imported_res)
-        assert score == 1.00, f"Round-trip net score {score} < 1.00"
+        assert score == pytest.approx(1.00), f"Round-trip net score {score} < 1.00"
 
     def test_net_score_function_empty(self) -> None:
         empty = Design(meta=DesignMeta(name="e", author="t"))
@@ -390,7 +390,7 @@ class TestSelfRoundTrip:
 
         r1 = Res(design=empty)
         r2 = Res(design=empty)
-        assert compute_schematic_net_score(r1, r2) == 1.0
+        assert compute_schematic_net_score(r1, r2) == pytest.approx(1.0)
 
     def test_net_score_partial(self) -> None:
         d1 = Design(meta=DesignMeta(name="a", author="t"))

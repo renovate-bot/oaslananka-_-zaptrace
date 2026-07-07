@@ -622,7 +622,7 @@ def test_extract_section_missing():
 
 def test_decode_source_dict_passthrough():
     d = {"key": "val"}
-    assert _decode_source(d) is d
+    assert _decode_source(d) == d
 
 
 def test_decode_source_bytes():

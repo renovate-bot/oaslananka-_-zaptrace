@@ -324,4 +324,4 @@ class TestLeaderboard:
         (tmp_path / "tool-x-v2.json").write_text(json.dumps(report_high))
         board = generate_leaderboard(tmp_path)
         assert len(board.entries) == 1
-        assert board.entries[0].mean_score == 0.9
+        assert board.entries[0].mean_score == pytest.approx(0.9)

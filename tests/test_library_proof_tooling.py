@@ -35,6 +35,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from zaptrace.library.loader import ComponentSpec
 from zaptrace.library.proof_tooling import (
     DedupeConflict,
@@ -255,7 +257,7 @@ class TestLibraryProofDashboard:
 
     def test_trusted_pct_full_when_zero_total(self) -> None:
         d = LibraryProofDashboard(design_name="x", total_selected=0)
-        assert d.trusted_pct == 1.0
+        assert d.trusted_pct == pytest.approx(1.0)
 
     def test_to_dict_keys(self) -> None:
         d = self._dashboard().to_dict()
@@ -470,7 +472,7 @@ class TestBuildLibraryProofDashboard:
         d = build_library_proof_dashboard("board", selected_parts=[])
         assert d.total_selected == 0
         assert d.accepted is True
-        assert d.trusted_pct == 1.0
+        assert d.trusted_pct == pytest.approx(1.0)
 
     def test_detects_same_manufacturer_duplicate(self) -> None:
         # Same MPN, same manufacturer → conflict with severity="review" (not blocking)

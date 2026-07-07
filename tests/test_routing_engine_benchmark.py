@@ -34,6 +34,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from zaptrace.benchmark.routing_engine_benchmark import (
     DEFAULT_ENGINE_CONFIG,
     SUPPORTED_ENGINES,
@@ -74,9 +76,9 @@ class TestSupportedEngines:
 class TestNetClassConstraint:
     def test_defaults(self) -> None:
         c = NetClassConstraint(class_name="signal")
-        assert c.min_clearance_mm == 0.15
-        assert c.preferred_width_mm == 0.2
-        assert c.cost_multiplier == 1.0
+        assert c.min_clearance_mm == pytest.approx(0.15)
+        assert c.preferred_width_mm == pytest.approx(0.2)
+        assert c.cost_multiplier == pytest.approx(1.0)
 
     def test_to_dict_keys(self) -> None:
         d = NetClassConstraint(class_name="power", min_clearance_mm=0.3).to_dict()
@@ -199,7 +201,7 @@ class TestEngineRoutingResult:
 
     def test_completion_rate_full(self) -> None:
         r = self._pass()
-        assert r.completion_rate == 1.0
+        assert r.completion_rate == pytest.approx(1.0)
 
     def test_completion_rate_partial(self) -> None:
         r = EngineRoutingResult(engine="native", family_name="x", routed_nets=6, total_nets=12)
@@ -207,7 +209,7 @@ class TestEngineRoutingResult:
 
     def test_completion_rate_zero_total(self) -> None:
         r = EngineRoutingResult(engine="native", family_name="x", total_nets=0)
-        assert r.completion_rate == 1.0
+        assert r.completion_rate == pytest.approx(1.0)
 
     def test_to_dict_keys(self) -> None:
         d = self._pass().to_dict()
@@ -344,7 +346,7 @@ class TestAggregateBenchmarkReport:
 
     def test_corpus_pass_rate_zero_when_all_fail(self) -> None:
         report = AggregateBenchmarkReport(families=[])
-        assert report.corpus_pass_rate == 0.0
+        assert report.corpus_pass_rate == pytest.approx(0.0)
 
     def test_engine_pass_counts_present(self) -> None:
         d = self._report().engine_pass_counts
@@ -464,7 +466,7 @@ class TestRunEngineRoutingNetClass:
 
     def test_hard_clearance_not_reduced_by_multiplier(self) -> None:
         c = NetClassConstraint(class_name="signal", min_clearance_mm=0.15, cost_multiplier=10.0)
-        assert c.min_clearance_mm == 0.15
+        assert c.min_clearance_mm == pytest.approx(0.15)
 
 
 class TestRunEngineRoutingDiffPair:
@@ -547,7 +549,7 @@ class TestRunRoutingBenchmark:
     def test_empty_families_no_crash(self) -> None:
         report = run_routing_benchmark([])
         assert report.total_families == 0
-        assert report.corpus_pass_rate == 0.0
+        assert report.corpus_pass_rate == pytest.approx(0.0)
 
     def test_engine_pass_counts_keys(self) -> None:
         report = run_routing_benchmark(self.FAMILIES, engines=["native"], net_count=12)

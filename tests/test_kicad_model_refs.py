@@ -9,6 +9,8 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
+
 from zaptrace.kicad.model_refs import (
     ModelCoverage,
     ModelRef,
@@ -52,20 +54,20 @@ class TestModelCoverageSchema:
         cov = ModelCoverage()
         assert cov.total == 0
         assert cov.complete is True  # vacuously true
-        assert cov.coverage_fraction == 1.0
+        assert cov.coverage_fraction == pytest.approx(1.0)
 
     def test_all_included(self):
         m = ResolvedModel(ref="R1", source="r.step", status="included", sha256_match=True)
         cov = ModelCoverage(included=[m])
         assert cov.total == 1
         assert cov.complete is True
-        assert cov.coverage_fraction == 1.0
+        assert cov.coverage_fraction == pytest.approx(1.0)
 
     def test_missing_model_not_complete(self):
         missing = ResolvedModel(ref="C1", source="c.step", status="missing")
         cov = ModelCoverage(missing=[missing])
         assert cov.complete is False
-        assert cov.coverage_fraction == 0.0
+        assert cov.coverage_fraction == pytest.approx(0.0)
 
     def test_degraded_model_not_complete(self):
         degraded = ResolvedModel(ref="U1", source="u.step", status="degraded")
@@ -76,7 +78,7 @@ class TestModelCoverageSchema:
         included = [ResolvedModel(ref="R1", source="r.step", status="included")]
         missing = [ResolvedModel(ref="C1", source="c.step", status="missing")]
         cov = ModelCoverage(included=included, missing=missing)
-        assert cov.coverage_fraction == 0.5
+        assert cov.coverage_fraction == pytest.approx(0.5)
         assert cov.complete is False
 
     def test_to_dict_schema_label(self):
@@ -163,7 +165,7 @@ class TestResolveModelRefs:
 
         assert len(cov.included) == 1
         assert len(cov.missing) == 1
-        assert cov.coverage_fraction == 0.5
+        assert cov.coverage_fraction == pytest.approx(0.5)
         assert cov.complete is False
 
     def test_empty_source_is_missing(self):

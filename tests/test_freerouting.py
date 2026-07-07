@@ -26,6 +26,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from zaptrace.algo.freerouting import (
     DEFAULT_CONFIG,
     FREEROUTING_EVIDENCE_SCHEMA,
@@ -89,7 +91,7 @@ class TestDiscoverFreerouting:
 
 class TestFreeroutingConfig:
     def test_defaults(self) -> None:
-        assert DEFAULT_CONFIG.timeout_s == 120.0
+        assert DEFAULT_CONFIG.timeout_s == pytest.approx(120.0)
         assert DEFAULT_CONFIG.max_passes == 20
         assert DEFAULT_CONFIG.fanout_passes == 5
 
@@ -149,7 +151,7 @@ class TestSesImport:
             routed_net_count=10,
             total_net_count=10,
         )
-        assert ses.coverage_pct == 100.0
+        assert ses.coverage_pct == pytest.approx(100.0)
 
     def test_coverage_pct_50_when_half_routed(self) -> None:
         ses = SesImport(
@@ -157,11 +159,11 @@ class TestSesImport:
             routed_net_count=5,
             total_net_count=10,
         )
-        assert ses.coverage_pct == 50.0
+        assert ses.coverage_pct == pytest.approx(50.0)
 
     def test_coverage_pct_0_when_no_total(self) -> None:
         ses = SesImport(design_name="board", routed_net_count=0, total_net_count=0)
-        assert ses.coverage_pct == 0.0
+        assert ses.coverage_pct == pytest.approx(0.0)
 
     def test_to_dict_keys(self) -> None:
         ses = SesImport(design_name="board", routed_net_count=5, total_net_count=10)
@@ -353,7 +355,7 @@ class TestRunFreeroutingWithStub:
     def test_ses_import_present_when_pass(self) -> None:
         result = run_freerouting("esp32_usb_sensor", _stub_ses=self._full_ses())
         assert result.ses_import is not None
-        assert result.ses_import.coverage_pct == 100.0
+        assert result.ses_import.coverage_pct == pytest.approx(100.0)
 
     def test_drc_report_present_when_pass(self) -> None:
         result = run_freerouting("esp32_usb_sensor", _stub_ses=self._full_ses())
@@ -376,7 +378,7 @@ class TestRunFreeroutingWithStub:
 
     def test_config_in_result(self) -> None:
         result = run_freerouting("esp32_usb_sensor", _stub_ses=self._full_ses())
-        assert result.config.timeout_s == 120.0
+        assert result.config.timeout_s == pytest.approx(120.0)
 
     def test_dsn_hash_deterministic(self) -> None:
         r1 = run_freerouting("esp32_usb_sensor", _stub_ses=self._full_ses())

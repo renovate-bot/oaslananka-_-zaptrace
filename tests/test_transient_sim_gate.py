@@ -73,7 +73,7 @@ class TestTransientWaveform:
 
     def test_ripple_v_empty(self) -> None:
         w = TransientWaveform(node="x")
-        assert w.ripple_v() == 0.0
+        assert w.ripple_v() == pytest.approx(0.0)
 
     def test_steady_state_window_fraction(self) -> None:
         w = _make_waveform(list(range(10)), list(range(10)))
@@ -430,5 +430,5 @@ class TestTransientCheck:
         c = TransientCheck(name="ripple", passed=False, actual=75.0, reference=50.0, unit="mV")
         d = c.to_dict()
         assert d["passed"] is False
-        assert d["actual"] == 75.0
+        assert d["actual"] == pytest.approx(75.0)
         assert d["unit"] == "mV"
