@@ -80,3 +80,9 @@ def sample_design_path(tmp_path: Path) -> Path:
     path = tmp_path / "sample.yaml"
     path.write_text(MINIMAL_YAML, encoding="utf-8")
     return path
+
+
+@pytest.fixture(autouse=True)
+def _enable_local_api_capability_headers_for_tests(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Run API tests in the explicitly opted-in loopback development mode."""
+    monkeypatch.setenv("ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS", "1")

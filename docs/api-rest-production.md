@@ -1,20 +1,62 @@
 # REST API production hardening
 
-ZapTrace REST is designed for local, CI, and controlled team deployments. Production use should enable explicit session IDs, scoped capabilities, optional bearer-token authentication, bounded request sizes, and artifact lifecycle controls.
+ZapTrace REST is designed for local, CI, and controlled team deployments. The supported `zaptrace-api` entry point is secure by default: it binds to `127.0.0.1`, rejects unauthenticated non-loopback startup, and does not accept client-granted capability headers unless local development mode is explicitly enabled.
 
 ## Configuration
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `ZAPTRACE_API_TOKEN` | Optional bearer token. When set, `/api/*` requests require `Authorization: Bearer <token>`. | unset |
+| `ZAPTRACE_API_TOKEN` | Static bearer token. Required when binding beyond loopback. `/api/*` requests must send `Authorization: Bearer <token>`. | unset |
+| `ZAPTRACE_API_TOKEN_SCOPES` | Server-controlled capability grants for the authenticated token. | none |
+| `ZAPTRACE_API_TOKEN_SUBJECT` | Actor recorded in authorization audit events. | `api-token` |
+| `ZAPTRACE_API_TOKEN_AUDIENCE` | Optional required `X-ZapTrace-Audience` value. | unset |
+| `ZAPTRACE_API_TOKEN_SESSIONS` | Comma/space-separated session IDs available to the token; `*` permits all sessions. | `*` |
+| `ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS` | Explicitly enable capability and actor headers for loopback-only development. Startup fails if this is enabled on a non-loopback bind. | disabled |
 | `ZAPTRACE_CORS_ORIGINS` | Comma-separated allowed browser origins. | `http://localhost:5173,http://localhost:8080` |
 | `ZAPTRACE_API_ARTIFACT_ROOT` | Filesystem root for REST artifact storage. | `.zaptrace/api-artifacts` |
 | `ZAPTRACE_API_ARTIFACT_RETENTION_SECONDS` | Artifact retention before cleanup. | `86400` |
 | `ZAPTRACE_API_MAX_ARTIFACT_BYTES` | Maximum stored artifact payload size. | `5242880` |
 
+Static bearer credentials are compared with a constant-time comparison. Invalid or missing credentials return `401 AUTH_REQUIRED`; audience failures return `403 AUTH_AUDIENCE_MISMATCH`.
+
+## Startup configuration matrix
+
+| Bind target | Bearer token | Local capability headers | Result |
+|---|---:|---:|---|
+| `127.0.0.1` / `::1` | no | no | Allowed. Read-only API access; mutating calls are denied. |
+| `127.0.0.1` / `::1` | yes | no | Allowed. Token identity and server-configured scopes apply. |
+| `127.0.0.1` / `::1` | no | yes | Allowed only as explicit local development mode. |
+| `0.0.0.0`, `::`, LAN/DNS address | no | no | Startup fails. |
+| `0.0.0.0`, `::`, LAN/DNS address | yes | no | Allowed. Every `/api/*` request requires the token. |
+| Any non-loopback target | yes/no | yes | Startup fails because client-granted capabilities are local-only. |
+
+Secure team deployment example:
+
+```bash
+export ZAPTRACE_API_TOKEN='replace-with-a-long-random-secret'
+export ZAPTRACE_API_TOKEN_SUBJECT='ci-agent'
+export ZAPTRACE_API_TOKEN_SCOPES='preview-write sandbox-write'
+export ZAPTRACE_API_TOKEN_SESSIONS='ci-session'
+python -c 'from zaptrace.api.server import run; run(host="0.0.0.0", port=8080)'
+```
+
+Loopback-only development example:
+
+```bash
+export ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS=1
+zaptrace-api
+```
+
+Do not expose local capability-header mode through a reverse proxy or non-loopback bind. Direct custom Uvicorn launch commands are responsible for reproducing the same startup policy; the supported `zaptrace-api` entry point performs the validation automatically.
+
 ## Authorization model
 
-Mutating routes require an explicit `X-ZapTrace-Session-Id` and capability header. Capability decisions are recorded in the session audit log.
+Read-only routes remain available in loopback development. Mutating routes require an explicit `X-ZapTrace-Session-Id` and one of these two authorization sources:
+
+1. an authenticated bearer identity with capabilities from `ZAPTRACE_API_TOKEN_SCOPES`; or
+2. explicit loopback development mode with `X-ZapTrace-Capabilities` enabled by `ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS=1`.
+
+Without the local-development opt-in, `X-ZapTrace-Capabilities` and `X-ZapTrace-Actor` cannot grant permissions or spoof an audit actor. Capability decisions record the authenticated principal, effective grants, source, request path, and decision in the session audit log.
 
 Examples:
 

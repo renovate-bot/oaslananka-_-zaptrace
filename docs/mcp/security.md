@@ -54,7 +54,7 @@ ZapTrace gates every mutating or release-export MCP/REST operation with an expli
 | `approved-commit` | Explicit confirmation of a design state. |
 | `release-export` | KiCad, Gerber, Excellon, and manufacturing artifact generation. |
 
-MCP sessions default to no write capability. Use `session_create(capabilities="preview-write,sandbox-write")` for controlled test/dev sessions, or set `ZAPTRACE_MCP_CAPABILITIES` for local trusted automation. REST mutating endpoints require `X-ZapTrace-Session-Id` and `X-ZapTrace-Capabilities`.
+MCP sessions default to no write capability. Session capability grants require an explicit loopback-development opt-in; trusted automation uses server-controlled capabilities. REST mutation uses authenticated token scopes or the separately enabled loopback-only capability-header mode. See [Network transport authentication](../security/network-transport-authentication.md).
 
 `release-export` is a two-part gate: callers must have the `release-export` capability and must pass an `approval_id` for a design state that has fresh passing ERC validation. If DRC has been run for that state, it must also be passing. Exported responses include the `release_gate` evidence used for the decision.
 

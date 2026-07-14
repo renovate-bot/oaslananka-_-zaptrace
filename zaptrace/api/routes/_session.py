@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import Depends, Header, HTTPException, Request
 
 from zaptrace.agent._tool_impls import _get_session
+from zaptrace.security.network import environment_flag
 from zaptrace.security.policy import (
     authorize_capability,
     granted_capabilities_from_header,
@@ -59,10 +60,14 @@ def authorize_tool(tool_name: str) -> Callable[..., str]:
             granted = {str(scope).lower() for scope in auth.get("scopes", set())}
             actor = str(auth.get("actor") or "api-token")
             auth_source = "bearer-token"
-        else:
+        elif environment_flag("ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS"):
             granted = granted_capabilities_from_header(x_zaptrace_capabilities)
-            actor = x_zaptrace_actor or "rest-client"
-            auth_source = "local-capability-header"
+            actor = x_zaptrace_actor or "local-rest-client"
+            auth_source = "explicit-loopback-development"
+        else:
+            granted = set()
+            actor = "unauthenticated-rest-client"
+            auth_source = "capability-headers-disabled"
         allowed, reason = authorize_capability(required, granted)
         session = _get_session(session_id)
         record_audit_event(
@@ -79,6 +84,7 @@ def authorize_tool(tool_name: str) -> Callable[..., str]:
                 "path": str(request.url.path),
                 "granted_capabilities": sorted(granted),
                 "auth_source": auth_source,
+                "authenticated": isinstance(auth, dict),
             },
         )
         if not allowed:

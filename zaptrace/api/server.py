@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import os
 import time
 from collections.abc import AsyncGenerator, Callable
@@ -15,6 +16,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from zaptrace import __version__
 from zaptrace.api.routes import api_router
+from zaptrace.security.network import environment_flag, validate_network_auth_configuration
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -96,7 +98,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         api_token = os.environ.get("ZAPTRACE_API_TOKEN", "")
         if api_token and request.method != "OPTIONS" and request.url.path.startswith("/api/"):
             expected = f"Bearer {api_token}"
-            if request.headers.get("Authorization", "") != expected:
+            if not hmac.compare_digest(request.headers.get("Authorization", ""), expected):
                 return JSONResponse(
                     status_code=401,
                     content={
@@ -234,6 +236,7 @@ def create_app() -> FastAPI:
             "X-ZapTrace-Session-Id",
             "X-ZapTrace-Actor",
             "X-ZapTrace-Reason",
+            *(["X-ZapTrace-Capabilities"] if environment_flag("ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS") else []),
         ],
     )
 
@@ -249,8 +252,15 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
-def run(host: str = "0.0.0.0", port: int = 8080) -> None:
-    """Run the API server with uvicorn."""
+def run(host: str = "127.0.0.1", port: int = 8080) -> None:
+    """Run the API server with secure network defaults."""
+    validate_network_auth_configuration(
+        surface="ZapTrace REST API",
+        host=host,
+        token=os.environ.get("ZAPTRACE_API_TOKEN", ""),
+        allow_local_development=environment_flag("ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS"),
+    )
+
     import uvicorn
 
     uvicorn.run("zaptrace.api.server:app", host=host, port=port, reload=False)

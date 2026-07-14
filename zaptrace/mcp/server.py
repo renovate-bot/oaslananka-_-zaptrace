@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import hmac
 import inspect
 import os
 import time
@@ -19,9 +20,13 @@ from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
+from starlette.middleware import Middleware
+from starlette.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from zaptrace import __version__
 from zaptrace.agent._tool_impls import TOOL_REGISTRY, _get_session, _sessions
+from zaptrace.security.network import environment_flag, validate_network_auth_configuration
 from zaptrace.security.policy import (
     authorize_capability,
     granted_capabilities_from_header,
@@ -39,6 +44,8 @@ _DEFAULT_SESSION_ID = "mcp-default-session"
 _DEFAULT_TIMEOUT_S = 120  # per-tool timeout
 _MAX_PATH_LENGTH = 4096
 _ALLOWED_EXPORT_ROOT = Path.cwd()  # sandbox base for file exports
+_HTTP_AUTH_ACTIVE = False
+_HTTP_AUTH_ACTOR = "mcp-client"
 
 # ---------------------------------------------------------------------------
 # Structured response helpers
@@ -119,6 +126,44 @@ def _session_capabilities(session_id: str) -> set[str]:
     return caps
 
 
+class MCPBearerAuthMiddleware:
+    """Require a static bearer token for MCP HTTP requests."""
+
+    def __init__(self, app: ASGIApp, token: str) -> None:
+        self.app = app
+        self.expected_authorization = f"Bearer {token}"
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        headers = {key.decode("latin-1").lower(): value.decode("latin-1") for key, value in scope.get("headers", [])}
+        if not hmac.compare_digest(headers.get("authorization", ""), self.expected_authorization):
+            response = JSONResponse(
+                status_code=401,
+                content={
+                    "ok": False,
+                    "error": {"code": "AUTH_REQUIRED", "message": "Valid MCP bearer token is required"},
+                },
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            await response(scope, receive, send)
+            return
+
+        await self.app(scope, receive, send)
+
+
+def create_http_app(token: str | None = None) -> ASGIApp:
+    """Create the MCP HTTP app with configured bearer authentication."""
+    global _HTTP_AUTH_ACTIVE, _HTTP_AUTH_ACTOR
+    resolved_token = os.environ.get("ZAPTRACE_MCP_HTTP_TOKEN", "") if token is None else token
+    _HTTP_AUTH_ACTIVE = bool(resolved_token)
+    _HTTP_AUTH_ACTOR = os.environ.get("ZAPTRACE_MCP_TOKEN_SUBJECT", "mcp-token") if resolved_token else "mcp-client"
+    middleware = [Middleware(MCPBearerAuthMiddleware, token=resolved_token)] if resolved_token else None
+    return server.http_app(middleware=middleware)
+
+
 # ---------------------------------------------------------------------------
 # Per-session tools exposed as MCP resources
 # ---------------------------------------------------------------------------
@@ -176,12 +221,16 @@ def _make_sandboxed_tool(tool_name: str, tool_def: dict) -> Callable:
                 session,
                 surface="mcp",
                 session_id=session_id,
-                actor="mcp-client",
+                actor=_HTTP_AUTH_ACTOR if _HTTP_AUTH_ACTIVE else "mcp-client",
                 tool=tool_name,
                 capability=required_capability,
                 decision="allow" if allowed else "deny",
                 reason=reason,
-                metadata={"granted_capabilities": sorted(granted_capabilities)},
+                metadata={
+                    "granted_capabilities": sorted(granted_capabilities),
+                    "auth_source": "bearer-token" if _HTTP_AUTH_ACTIVE else "stdio-or-loopback-development",
+                    "authenticated": _HTTP_AUTH_ACTIVE,
+                },
             )
         if not allowed:
             return _err(
@@ -259,11 +308,7 @@ server = FastMCP(
 def session_create(capabilities: str | None = None) -> dict[str, Any]:
     session_id = f"mcp-{int(time.time() * 1000)}-{hash(str(time.time_ns())) & 0xFFFF:04x}"
     session = _get_session(session_id)  # initialize
-    allow_local_grants = os.environ.get("ZAPTRACE_MCP_ALLOW_SESSION_CAPABILITY_GRANTS", "").lower() in {
-        "1",
-        "true",
-        "yes",
-    }
+    allow_local_grants = environment_flag("ZAPTRACE_MCP_ALLOW_SESSION_CAPABILITY_GRANTS")
     if capabilities and allow_local_grants:
         session["capabilities"] = granted_capabilities_from_header(capabilities)
     return _ok({"session_id": session_id, "capabilities": sorted(session.get("capabilities", set()))})
@@ -406,11 +451,19 @@ def run() -> None:
     server.run()
 
 
-def run_http(host: str = "0.0.0.0", port: int = 8090) -> None:
-    """Run the MCP server over HTTP (for development/testing)."""
+def run_http(host: str = "127.0.0.1", port: int = 8090) -> None:
+    """Run the MCP server over HTTP with secure network defaults."""
+    token = os.environ.get("ZAPTRACE_MCP_HTTP_TOKEN", "")
+    validate_network_auth_configuration(
+        surface="ZapTrace MCP HTTP",
+        host=host,
+        token=token,
+        allow_local_development=environment_flag("ZAPTRACE_MCP_ALLOW_SESSION_CAPABILITY_GRANTS"),
+    )
+
     import uvicorn
 
-    uvicorn.run(server.http_app(), host=host, port=port)
+    uvicorn.run(create_http_app(token), host=host, port=port)
 
 
 if __name__ == "__main__":
