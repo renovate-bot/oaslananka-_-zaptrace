@@ -122,6 +122,23 @@ def test_client_capability_header_cannot_self_grant_by_default(monkeypatch: pyte
     assert event["metadata"]["authenticated"] is False
 
 
+def test_authenticated_session_scoped_read_requires_explicit_session_header(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    api_token = token_hex(32)
+    monkeypatch.setenv("ZAPTRACE_API_TOKEN", api_token)
+    monkeypatch.setenv("ZAPTRACE_API_TOKEN_SUBJECT", "api-reader")
+    client = TestClient(create_app())
+
+    response = client.get(
+        "/api/v1/designs/missing",
+        headers={"Authorization": f"Bearer {api_token}"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "SESSION_REQUIRED"
+
+
 def test_explicit_loopback_development_mode_allows_capability_header(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ZAPTRACE_API_TOKEN", raising=False)
     monkeypatch.setenv("ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS", "1")

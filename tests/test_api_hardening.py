@@ -40,6 +40,9 @@ def test_openapi_schema_exposes_hardened_artifact_lifecycle(monkeypatch, tmp_pat
     assert "/api/v1/artifacts/{artifact_id}" in schema["paths"]
     assert "/api/v1/artifacts/expired" in schema["paths"]
     assert "/api/v1/artifacts/config" in schema["paths"]
+    assert "/api/v1/agent/sessions" in schema["paths"]
+    assert "/api/v1/agent/sessions/{session_id}/access" in schema["paths"]
+    assert "/api/v1/agent/sessions/{session_id}/delegates/{delegate_principal}" in schema["paths"]
 
 
 def test_artifact_lifecycle_store_list_delete_and_cleanup(monkeypatch, tmp_path) -> None:

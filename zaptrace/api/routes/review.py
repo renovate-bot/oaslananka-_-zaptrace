@@ -12,10 +12,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from zaptrace.agent._tool_impls import _get_session
-from zaptrace.api.routes._session import authorize_tool, resolve_session_id
+from zaptrace.api.routes._session import (
+    authorize_object_or_403,
+    authorize_tool,
+    current_request_principal,
+    resolve_session_id,
+)
 from zaptrace.core.diff import diff_designs
 from zaptrace.review.panels import collect_panels, collect_review_bundle
 from zaptrace.review.workflow import (
@@ -29,6 +34,15 @@ from zaptrace.review.workflow import (
 )
 
 router = APIRouter()
+
+
+def _authorize_review_object(request: Request, review_session_id: str, action: str) -> None:
+    authorize_object_or_403(
+        request,
+        object_type="review-session",
+        object_id=review_session_id,
+        action=action,
+    )
 
 
 def _get_design_or_404(name: str, session: str = "api-default") -> Any:
@@ -134,6 +148,7 @@ def review_diff(
 @router.post("/session/{design_name}")
 def start_review_session(
     design_name: str,
+    request: Request,
     session: str = Depends(authorize_tool("review_start")),
 ) -> dict[str, Any]:
     """Start a new review session for *design_name*.
@@ -144,16 +159,33 @@ def start_review_session(
     from zaptrace.core.state import design_state_hash
 
     state_hash = design_state_hash(design)
-    rs = create_review_session(design_name, state_hash)
+    principal = current_request_principal(request)
+    rs = create_review_session(
+        design_name,
+        state_hash,
+        design_session_id=session,
+        owner_principal=principal.principal_id,
+    )
+    authorize_object_or_403(
+        request,
+        object_type="review-session",
+        object_id=rs.session_id,
+        action="create-review-session",
+        allow_claim=True,
+        parent_object_type="session",
+        parent_object_id=session,
+    )
     return {"ok": True, "session": rs.model_dump(mode="json")}
 
 
 @router.get("/session/{session_id}")
 def get_review_session_route(
     session_id: str,
+    request: Request,
     _session: str = Depends(resolve_session_id),
 ) -> dict[str, Any]:
     """Get review session state by ID."""
+    _authorize_review_object(request, session_id, "read-review-session")
     rs = get_review_session(session_id)
     if rs is None:
         raise HTTPException(404, f"Review session '{session_id}' not found")
@@ -163,12 +195,14 @@ def get_review_session_route(
 @router.post("/session/{session_id}/checklist/{item_id}/approve")
 def approve_checklist_route(
     session_id: str,
+    request: Request,
     item_id: str,
     decided_by: str = "reviewer",
     reason: str = "",
     _session: str = Depends(authorize_tool("review_approve")),
 ) -> dict[str, Any]:
     """Approve a single checklist item in a review session."""
+    _authorize_review_object(request, session_id, "approve-review-item")
     rs = get_review_session(session_id)
     if rs is None:
         raise HTTPException(404, f"Review session '{session_id}' not found")
@@ -182,12 +216,14 @@ def approve_checklist_route(
 @router.post("/session/{session_id}/checklist/{item_id}/reject")
 def reject_checklist_route(
     session_id: str,
+    request: Request,
     item_id: str,
     decided_by: str = "reviewer",
     reason: str = "",
     _session: str = Depends(authorize_tool("review_reject")),
 ) -> dict[str, Any]:
     """Reject a single checklist item in a review session."""
+    _authorize_review_object(request, session_id, "reject-review-item")
     rs = get_review_session(session_id)
     if rs is None:
         raise HTTPException(404, f"Review session '{session_id}' not found")
@@ -201,6 +237,7 @@ def reject_checklist_route(
 @router.post("/session/{session_id}/checklist/{item_id}/waive")
 def waive_checklist_route(
     session_id: str,
+    request: Request,
     item_id: str,
     decided_by: str = "reviewer",
     reason: str = "",
@@ -208,6 +245,7 @@ def waive_checklist_route(
     _session: str = Depends(authorize_tool("review_waive")),
 ) -> dict[str, Any]:
     """Waive a checklist item (non-blocking override)."""
+    _authorize_review_object(request, session_id, "waive-review-item")
     rs = get_review_session(session_id)
     if rs is None:
         raise HTTPException(404, f"Review session '{session_id}' not found")
@@ -221,6 +259,7 @@ def waive_checklist_route(
 @router.post("/session/{session_id}/decide")
 def decide_review_route(
     session_id: str,
+    request: Request,
     decision: str = Query(..., description="One of: approve, reject, rollback"),
     decided_by: str = "reviewer",
     reason: str = "",
@@ -228,6 +267,7 @@ def decide_review_route(
     _session: str = Depends(authorize_tool("review_decide")),
 ) -> dict[str, Any]:
     """Finalize a review session with a global decision (approve/reject/rollback)."""
+    _authorize_review_object(request, session_id, "decide-review-session")
     rs = get_review_session(session_id)
     if rs is None:
         raise HTTPException(404, f"Review session '{session_id}' not found")

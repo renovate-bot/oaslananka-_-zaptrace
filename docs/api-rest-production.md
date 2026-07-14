@@ -51,12 +51,25 @@ Do not expose local capability-header mode through a reverse proxy or non-loopba
 
 ## Authorization model
 
-Read-only routes remain available in loopback development. Mutating routes require an explicit `X-ZapTrace-Session-Id` and one of these two authorization sources:
+Read-only routes remain available in loopback development. In authenticated deployments, every session-scoped read or write requires an explicit `X-ZapTrace-Session-Id`. Mutating routes additionally require one of these two authorization sources:
 
 1. an authenticated bearer identity with capabilities from `ZAPTRACE_API_TOKEN_SCOPES`; or
 2. explicit loopback development mode with `X-ZapTrace-Capabilities` enabled by `ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS=1`.
 
 Without the local-development opt-in, `X-ZapTrace-Capabilities` and `X-ZapTrace-Actor` cannot grant permissions or spoof an audit actor. Capability decisions record the authenticated principal, effective grants, source, request path, and decision in the session audit log.
+
+Session identifiers are object selectors, not authority. The first authorized principal owns a newly claimed session; later access requires ownership, an explicit delegate grant, or the `object-admin` scope. Cross-principal failures return `403 OBJECT_NOT_AUTHORIZED` without revealing whether a guessed identifier exists.
+
+Session lifecycle and delegation endpoints:
+
+```text
+POST   /api/v1/agent/sessions
+GET    /api/v1/agent/sessions/{session_id}/access
+POST   /api/v1/agent/sessions/{session_id}/delegates/{principal_id}
+DELETE /api/v1/agent/sessions/{session_id}/delegates/{principal_id}
+```
+
+Creating a session requires `preview-write`; changing delegates requires `approved-commit`. Delegation does not transfer capabilities: each principal must still satisfy the tool capability gate. See [Object-level authorization](security/object-authorization.md).
 
 Examples:
 
@@ -75,7 +88,7 @@ The `/api/v1/artifacts` routes provide deterministic artifact metadata for CI an
 - `DELETE /api/v1/artifacts/expired`: remove expired artifacts according to retention policy;
 - `GET /api/v1/artifacts/config`: expose storage configuration for clients and smoke tests.
 
-Artifact records include `sha256`, `size_bytes`, `created_at`, `retention_seconds`, and a root-relative path. The API does not claim cloud storage, multi-tenant isolation, or procurement/manufacturing approval.
+Artifact records include `owner_principal`, `sha256`, `size_bytes`, `created_at`, `retention_seconds`, and a root-relative path. Session selectors that normalize to similar filenames are separated with a deterministic hash suffix, and expiration cleanup is restricted to the authorized session. The API does not claim cloud storage, multi-tenant isolation, or procurement/manufacturing approval.
 
 ## OpenAPI contract
 

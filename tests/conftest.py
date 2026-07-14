@@ -86,3 +86,15 @@ def sample_design_path(tmp_path: Path) -> Path:
 def _enable_local_api_capability_headers_for_tests(monkeypatch: pytest.MonkeyPatch) -> None:
     """Run API tests in the explicitly opted-in loopback development mode."""
     monkeypatch.setenv("ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS", "1")
+
+
+@pytest.fixture(autouse=True)
+def _reset_api_rate_limiter_between_tests() -> None:
+    """Keep process-global API rate-limit state isolated between tests."""
+    from zaptrace.api import server as api_server
+
+    api_server._request_log.clear()
+    api_server._LAST_CLEANUP = 0.0
+    yield
+    api_server._request_log.clear()
+    api_server._LAST_CLEANUP = 0.0

@@ -236,6 +236,7 @@ def create_app() -> FastAPI:
             "X-ZapTrace-Session-Id",
             "X-ZapTrace-Actor",
             "X-ZapTrace-Reason",
+            "X-Request-ID",
             *(["X-ZapTrace-Capabilities"] if environment_flag("ZAPTRACE_API_ALLOW_LOCAL_CAPABILITY_HEADERS") else []),
         ],
     )

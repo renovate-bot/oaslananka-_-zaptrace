@@ -160,3 +160,8 @@ def record_tool_call(
 def get_replay(session_id: str) -> SessionLog | None:
     """Get the replayable session log for *session_id*, or ``None``."""
     return _session_logs.get(session_id)
+
+
+def remove_replay(session_id: str) -> bool:
+    """Remove the replay log for a destroyed session."""
+    return _session_logs.pop(session_id, None) is not None

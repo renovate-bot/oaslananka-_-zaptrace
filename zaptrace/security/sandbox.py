@@ -249,6 +249,11 @@ def reset_sandbox(session_id: str) -> None:
     _sandboxes[session_id] = SandboxState()
 
 
+def remove_sandbox(session_id: str) -> bool:
+    """Remove all sandbox state for a destroyed session."""
+    return _sandboxes.pop(session_id, None) is not None
+
+
 # ---------------------------------------------------------------------------
 # Audit event enrichment
 # ---------------------------------------------------------------------------

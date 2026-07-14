@@ -9,9 +9,10 @@ ZapTrace is an agent-facing EDA runtime. Agent clients can create or mutate hard
 
 1. Deny mutating operations unless an explicit capability grant is present.
 2. Keep all file I/O inside the configured workspace sandbox.
-3. Record who/what/when/why audit evidence for mutating or release-export operations.
-4. Make blocked operations observable through structured errors and audit events.
-5. Avoid implying that generated manufacturing output is safe without engineering review.
+3. Bind every session-scoped object to an owner principal and explicit delegates.
+4. Record who/what/when/why audit evidence for capability and object decisions.
+5. Make blocked operations observable through structured errors and audit events.
+6. Avoid implying that generated manufacturing output is safe without engineering review.
 
 ## Trust boundaries
 
@@ -19,7 +20,7 @@ ZapTrace is an agent-facing EDA runtime. Agent clients can create or mutate hard
 |---|---:|---|
 | Core Python process | Yes | In-process policy enforcement and session store. |
 | MCP client / LLM agent | No | May be prompt-injected, confused, or over-scoped. |
-| REST caller | No | Must provide session and capability headers for writes. |
+| REST caller | No | Network authentication, server scopes, session allowlists, and object ACLs are enforced. |
 | Workspace files | Partially | Paths must resolve under the workspace root. |
 | External tools / plugins | No | Must be treated as separate capability subjects in later issues. |
 | Manufacturing artifacts | No | Must be checked and human-reviewed before use. |
@@ -36,20 +37,20 @@ ZapTrace uses an ordered capability ladder:
 | `approved-commit` | Explicit confirmation of a design state | design commit |
 | `release-export` | Manufacturing or release artifact generation | KiCad, Gerber, Excellon, manufacturing bundle |
 
-Read-only operations are public by process policy. Every non-read operation is deny-by-default unless the caller presents a capability at the required level or higher. Release-export tools additionally require a non-empty `approval_id` and fresh passing validation evidence for the current design state before artifacts are emitted.
+Read-only operations remain capability-public, but session-scoped reads require object authorization. Every non-read operation is deny-by-default unless the caller owns or is delegated to the target object and presents a capability at the required level or higher. Release-export tools additionally require a non-empty `approval_id` and fresh passing validation evidence for the current design state before artifacts are emitted.
 
 ## Threats and controls
 
 | Threat | Impact | Current control |
 |---|---|---|
 | Confused deputy agent calls write/export tool after prompt injection | Design mutation or unsafe release artifacts | Capability-gated write/export operations; audit event with actor/tool/reason. |
-| Missing or fixed session on mutating REST call | Cross-client state confusion | Mutating REST endpoints require `X-ZapTrace-Session-Id`. |
-| Token/capability misuse | Over-scoped operations | Capability headers are explicit and recorded in audit metadata. Future work should replace headers with signed grants. |
+| Missing, guessed, or reused object identifier | Cross-client state disclosure or mutation | Central owner/delegate/admin ACL; stable `OBJECT_NOT_AUTHORIZED`; parent authorization for review objects. |
+| Token/capability misuse | Over-scoped operations | Production capabilities are server-controlled; client grants are loopback-only; object ACL and token session allowlist are enforced before tools run. |
 | Workspace escape / path traversal | Arbitrary file read/write | Shared path validation rejects resolved paths outside workspace. |
 | Unsafe manufacturing export | False confidence or accidental fab submission | `release-export` capability required; export tools also require fresh passing validation evidence plus a non-empty `approval_id`. |
-| MCP session overreach | LLM writes without explicit grant | MCP session capabilities default to empty; write tools are denied and audited. |
-| REST unauthorized write | Remote mutation | REST dependency denies missing session or missing capability before tool execution. |
-| Missing evidence for decisions | Cannot reconstruct incident | Audit events include timestamp, surface, session, actor, tool, capability, decision, reason. |
+| MCP session overreach | LLM reads or writes another session | Cryptographic session IDs, central ACL checks in every tool wrapper, filtered session listing, and capability enforcement. |
+| REST unauthorized read/write | Remote disclosure or mutation | Authenticated session-scoped requests require an explicit session selector; session ACL, review-parent ACL, artifact ownership, and capability dependencies deny cross-principal access. |
+| Missing evidence for decisions | Cannot reconstruct incident | Audit events include principal, actor, object, action, capability, request ID, decision, and reason. |
 | SSRF-like URL access | Remote data exfiltration | Current agent tools do not accept arbitrary remote URLs; future network tools must declare separate capability. |
 | Unsafe subprocess/tool execution | Host compromise | Current MCP wrapper does not expose generic shell execution; future plugins require signed manifests and deny-by-default admission. |
 
@@ -96,7 +97,12 @@ zaptrace://audit/events
 
 ## Current limitations
 
-- Capability grants are explicit runtime headers/session values, not cryptographically signed grants.
+- Static bearer subjects and in-memory ACLs are intended for controlled deployments, not enterprise identity federation.
 - Audit storage is in-memory and process-local.
 - Plugin/tool admission, signed manifests, and persistent audit logs are tracked separately.
 - This policy does not certify generated hardware output; it only controls agent/runtime authority.
+
+## Related policy
+
+- Object ownership, delegation, administrator override, and stable denial semantics: `docs/security/object-authorization.md`.
+- Network transport authentication: `docs/security/network-transport-authentication.md`.

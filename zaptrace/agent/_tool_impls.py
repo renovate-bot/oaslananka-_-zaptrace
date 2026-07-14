@@ -1975,8 +1975,7 @@ def tool_design_transaction_preview(
     session_id: str = "default",
 ) -> dict[str, Any]:
     """Preview a design mutation as an isolated transaction without committing it."""
-    import time
-    import uuid
+    from secrets import token_urlsafe
 
     session = _get_session(session_id)
     design = session.get("designs", {}).get(design_name)
@@ -1986,9 +1985,10 @@ def tool_design_transaction_preview(
     candidate = copy.deepcopy(design)
     _apply_transaction_operation(candidate, operation, params)
     entries = diff_designs(design, candidate)
-    tx_id = f"tx-{int(time.time() * 1000)}-{str(uuid.uuid4())[:8]}"
+    tx_id = f"tx-{token_urlsafe(24)}"
     record = {
         "transaction_id": tx_id,
+        "session_id": session_id,
         "design_name": design_name,
         "operation": operation,
         "params": params,

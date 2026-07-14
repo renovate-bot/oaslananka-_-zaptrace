@@ -60,6 +60,12 @@ MCP sessions default to no write capability. Session capability grants require a
 
 Denied write/export calls return `OPERATION_NOT_AUTHORIZED` and write an audit event. Release gates that fail after authorization return a user-facing validation or approval error and do not emit artifacts.
 
+## Object-level session authorization
+
+Every MCP tool that selects a session authorizes the stable MCP principal against the central owner/delegate/admin ACL before evaluating capabilities. Session-scoped resources (`zaptrace://designs`, `zaptrace://proof/result`, `zaptrace://audit/events`, and `zaptrace://snapshots`) apply the same policy and return `OBJECT_NOT_AUTHORIZED` to other principals. Existing in-memory sessions without ACL metadata cannot be claimed retroactively.
+
+`session_create` emits a cryptographically strong identifier. `session_list` filters inaccessible sessions, and `session_destroy` removes the session, sandbox state, replay log, linked review sessions, and cascaded ACL metadata. The MCP audit resource returns capability events and object-authorization events as separate collections. See [Object-level authorization](../security/object-authorization.md).
+
 ## Audit Evidence
 
 Every mutating or release-export policy decision records an event with timestamp, surface, session, actor, tool, required capability, decision, reason, and request metadata. REST events are exposed at `/api/v1/audit/events`; MCP events are exposed as `zaptrace://audit/events`.

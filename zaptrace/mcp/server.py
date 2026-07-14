@@ -14,7 +14,6 @@ import functools
 import hmac
 import inspect
 import os
-import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -27,6 +26,15 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from zaptrace import __version__
 from zaptrace.agent._tool_impls import TOOL_REGISTRY, _get_session, _sessions
 from zaptrace.security.network import environment_flag, validate_network_auth_configuration
+from zaptrace.security.objects import (
+    ObjectAccessDeniedError,
+    RequestPrincipal,
+    authorize_object,
+    generate_secure_object_id,
+    get_object_access,
+    object_authorization_events,
+    remove_object_access,
+)
 from zaptrace.security.policy import (
     authorize_capability,
     granted_capabilities_from_header,
@@ -126,6 +134,48 @@ def _session_capabilities(session_id: str) -> set[str]:
     return caps
 
 
+def _mcp_principal() -> RequestPrincipal:
+    """Resolve the stable principal for stdio or authenticated HTTP MCP."""
+    raw_scopes = {
+        item.strip().lower()
+        for item in os.environ.get("ZAPTRACE_MCP_CAPABILITIES", "").replace(",", " ").split()
+        if item.strip()
+    }
+    if _HTTP_AUTH_ACTIVE:
+        return RequestPrincipal(
+            principal_id=_HTTP_AUTH_ACTOR,
+            actor=_HTTP_AUTH_ACTOR,
+            scopes=frozenset(raw_scopes),
+            authenticated=True,
+        )
+    return RequestPrincipal(
+        principal_id="mcp-local",
+        actor="mcp-local",
+        scopes=frozenset(raw_scopes),
+        local_development=True,
+    )
+
+
+def _authorize_mcp_session_object(
+    session_id: str,
+    *,
+    action: str,
+) -> tuple[RequestPrincipal, str]:
+    """Authorize a session object for an MCP tool or resource read."""
+    principal = _mcp_principal()
+    request_id = generate_secure_object_id("mcp-request")
+    allow_claim = get_object_access("session", session_id) is None and session_id not in _sessions
+    authorize_object(
+        object_type="session",
+        object_id=session_id,
+        principal=principal,
+        action=action,
+        request_id=request_id,
+        allow_claim=allow_claim,
+    )
+    return principal, request_id
+
+
 class MCPBearerAuthMiddleware:
     """Require a static bearer token for MCP HTTP requests."""
 
@@ -210,8 +260,16 @@ def _make_sandboxed_tool(tool_name: str, tool_def: dict) -> Callable:
                 code="INVALID_PARAMETER",
             )
 
-        # 3. Enforce deny-by-default capability policy for mutating/export tools
+        # 3. Enforce object ownership before capability policy.
         session_id = str(kwargs.get("session_id", _DEFAULT_SESSION_ID))
+        try:
+            principal, request_id = _authorize_mcp_session_object(session_id, action=tool_name)
+        except ObjectAccessDeniedError:
+            return _err(
+                "Principal is not authorized for the target object",
+                code="OBJECT_NOT_AUTHORIZED",
+                details={"tool": tool_name, "session_id": session_id},
+            )
         required_capability = str(tool_def.get("capability", "read"))
         granted_capabilities = _session_capabilities(session_id)
         allowed, reason = authorize_capability(required_capability, granted_capabilities)
@@ -230,6 +288,10 @@ def _make_sandboxed_tool(tool_name: str, tool_def: dict) -> Callable:
                     "granted_capabilities": sorted(granted_capabilities),
                     "auth_source": "bearer-token" if _HTTP_AUTH_ACTIVE else "stdio-or-loopback-development",
                     "authenticated": _HTTP_AUTH_ACTIVE,
+                    "principal_id": principal.principal_id,
+                    "target_object_type": "session",
+                    "target_object_id": session_id,
+                    "request_id": request_id,
                 },
             )
         if not allowed:
@@ -306,7 +368,16 @@ server = FastMCP(
 
 @server.tool(description="Create a new isolated session and return its ID")
 def session_create(capabilities: str | None = None) -> dict[str, Any]:
-    session_id = f"mcp-{int(time.time() * 1000)}-{hash(str(time.time_ns())) & 0xFFFF:04x}"
+    session_id = generate_secure_object_id("mcp")
+    principal = _mcp_principal()
+    authorize_object(
+        object_type="session",
+        object_id=session_id,
+        principal=principal,
+        action="create-session",
+        request_id=generate_secure_object_id("mcp-request"),
+        allow_claim=True,
+    )
     session = _get_session(session_id)  # initialize
     allow_local_grants = environment_flag("ZAPTRACE_MCP_ALLOW_SESSION_CAPABILITY_GRANTS")
     if capabilities and allow_local_grants:
@@ -316,16 +387,47 @@ def session_create(capabilities: str | None = None) -> dict[str, Any]:
 
 @server.tool(description="Destroy a session and release its resources")
 def session_destroy(session_id: str) -> dict[str, Any]:
+    try:
+        authorize_object(
+            object_type="session",
+            object_id=session_id,
+            principal=_mcp_principal(),
+            action="destroy-session",
+            request_id=generate_secure_object_id("mcp-request"),
+        )
+    except ObjectAccessDeniedError:
+        return _err("Principal is not authorized for the target object", code="OBJECT_NOT_AUTHORIZED")
     if session_id not in _sessions:
         return _err(f"Session '{session_id}' not found", code="SESSION_NOT_FOUND")
     del _sessions[session_id]
-    return _ok({"message": f"Session '{session_id}' destroyed"})
+    from zaptrace.review.workflow import remove_review_sessions_for_design_session
+    from zaptrace.security.replay import remove_replay
+    from zaptrace.security.sandbox import remove_sandbox
+
+    remove_sandbox(session_id)
+    remove_replay(session_id)
+    removed_reviews = remove_review_sessions_for_design_session(session_id)
+    remove_object_access("session", session_id)
+    return _ok(
+        {
+            "message": f"Session '{session_id}' destroyed",
+            "removed_review_sessions": removed_reviews,
+        }
+    )
 
 
 @server.tool(description="List all active sessions and their design counts")
 def session_list() -> dict[str, Any]:
     result = []
+    principal = _mcp_principal()
     for sid, session_data in _sessions.items():
+        access = get_object_access("session", sid)
+        if access is None or not (
+            principal.is_admin
+            or principal.principal_id == access.owner_principal
+            or principal.principal_id in access.delegates
+        ):
+            continue
         designs = session_data.get("designs", {})
         result.append(
             {
@@ -345,7 +447,10 @@ def session_list() -> dict[str, Any]:
 def list_designs() -> list[dict[str, Any]] | dict[str, Any]:
     """List all designs in the current MCP session."""
     try:
+        _authorize_mcp_session_object(_DEFAULT_SESSION_ID, action="resource:list-designs")
         return _list_session_designs(_DEFAULT_SESSION_ID)
+    except ObjectAccessDeniedError:
+        return _err("Principal is not authorized for the target object", code="OBJECT_NOT_AUTHORIZED")
     except Exception as exc:
         return _err(str(exc), code="RESOURCE_ERROR")
 
@@ -376,6 +481,7 @@ def synthesis_templates() -> dict[str, Any]:
 def last_proof_result() -> dict[str, Any]:
     """Show the last proof pack run result (if available)."""
     try:
+        _authorize_mcp_session_object(_DEFAULT_SESSION_ID, action="resource:last-proof-result")
         from zaptrace.agent._tool_impls import _get_session as _gs
 
         session = _gs(_DEFAULT_SESSION_ID)
@@ -383,6 +489,8 @@ def last_proof_result() -> dict[str, Any]:
         if result is None:
             return _ok({"message": "No proof pack has been run in this session"})
         return _ok(result)
+    except ObjectAccessDeniedError:
+        return _err("Principal is not authorized for the target object", code="OBJECT_NOT_AUTHORIZED")
     except Exception as exc:
         return _err(str(exc), code="RESOURCE_ERROR")
 
@@ -391,9 +499,34 @@ def last_proof_result() -> dict[str, Any]:
 def audit_events() -> dict[str, Any]:
     """List recent audit events for the default MCP session."""
     try:
+        _authorize_mcp_session_object(_DEFAULT_SESSION_ID, action="resource:audit-events")
         session = _get_session(_DEFAULT_SESSION_ID)
         events = list(session.get("audit_events", []))
-        return _ok({"session_id": _DEFAULT_SESSION_ID, "count": len(events), "events": events[-50:]})
+        direct_object_events = object_authorization_events(
+            object_type="session",
+            object_id=_DEFAULT_SESSION_ID,
+            limit=50,
+        )
+        child_object_events = object_authorization_events(
+            parent_object_type="session",
+            parent_object_id=_DEFAULT_SESSION_ID,
+            limit=50,
+        )
+        object_events = sorted(
+            [*direct_object_events, *child_object_events],
+            key=lambda event: str(event["timestamp"]),
+        )[-50:]
+        return _ok(
+            {
+                "session_id": _DEFAULT_SESSION_ID,
+                "count": len(events),
+                "events": events[-50:],
+                "object_authorization_count": len(object_events),
+                "object_authorization_events": object_events,
+            }
+        )
+    except ObjectAccessDeniedError:
+        return _err("Principal is not authorized for the target object", code="OBJECT_NOT_AUTHORIZED")
     except Exception as exc:
         return _err(str(exc), code="RESOURCE_ERROR")
 
@@ -402,12 +535,15 @@ def audit_events() -> dict[str, Any]:
 def design_snapshots() -> dict[str, Any]:
     """List available snapshots for all designs."""
     try:
+        _authorize_mcp_session_object(_DEFAULT_SESSION_ID, action="resource:snapshots")
         session = _get_session(_DEFAULT_SESSION_ID)
         all_snaps = session.get("snapshots", {})
         result = {}
         for dname, snaps in all_snaps.items():
             result[dname] = list(snaps.keys())
         return _ok({"snapshots_by_design": result})
+    except ObjectAccessDeniedError:
+        return _err("Principal is not authorized for the target object", code="OBJECT_NOT_AUTHORIZED")
     except Exception as exc:
         return _err(str(exc), code="RESOURCE_ERROR")
 

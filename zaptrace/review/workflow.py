@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import StrEnum
+from secrets import token_urlsafe
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -68,6 +69,8 @@ class ReviewSession(BaseModel):
     session_id: str
     design_name: str
     design_state_hash: str = ""
+    design_session_id: str = ""
+    owner_principal: str = ""
     checklist: dict[str, HumanChecklistItem] = Field(default_factory=dict)
     decisions: list[ReviewDecision] = Field(default_factory=list)
     created_at: str = ""
@@ -100,9 +103,7 @@ def _utc_now_str() -> str:
 
 
 def _generate_id(prefix: str = "rev") -> str:
-    import secrets
-
-    return f"{prefix}-{secrets.token_hex(8)}"
+    return f"{prefix}-{token_urlsafe(24)}"
 
 
 # ---------------------------------------------------------------------------
@@ -115,6 +116,8 @@ def create_review_session(
     design_state_hash: str = "",
     *,
     panel_ids: list[str] | None = None,
+    design_session_id: str = "",
+    owner_principal: str = "",
 ) -> ReviewSession:
     """Create a new review session with a default checklist.
 
@@ -122,6 +125,8 @@ def create_review_session(
         design_name: Name of the design under review.
         design_state_hash: Deterministic design state hash for provenance.
         panel_ids: Panel IDs to create checklist items for; ``None`` builds for all.
+        design_session_id: Parent design-session object identifier.
+        owner_principal: Principal that owns the review object.
 
     Returns:
         A new :class:`ReviewSession` with checklist items for each panel.
@@ -155,6 +160,8 @@ def create_review_session(
         session_id=session_id,
         design_name=design_name,
         design_state_hash=design_state_hash,
+        design_session_id=design_session_id,
+        owner_principal=owner_principal,
         checklist=checklist,
         created_at=now,
         updated_at=now,
@@ -166,6 +173,18 @@ def create_review_session(
 def get_review_session(session_id: str) -> ReviewSession | None:
     """Look up an in-memory review session by ID."""
     return _REVIEW_SESSIONS.get(session_id)
+
+
+def remove_review_sessions_for_design_session(design_session_id: str) -> list[str]:
+    """Remove review objects linked to a destroyed design session."""
+    removed = [
+        session_id
+        for session_id, review_session in _REVIEW_SESSIONS.items()
+        if review_session.design_session_id == design_session_id
+    ]
+    for session_id in removed:
+        del _REVIEW_SESSIONS[session_id]
+    return removed
 
 
 def approve_checklist_item(

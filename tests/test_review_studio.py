@@ -384,7 +384,8 @@ class TestReviewApi:
 
     def test_session_not_found(self) -> None:
         resp = client.get("/api/v1/review/session/nonexistent", headers=_SESSION_HEADERS)
-        assert resp.status_code == 404
+        assert resp.status_code == 403
+        assert resp.json()["detail"]["code"] == "OBJECT_NOT_AUTHORIZED"
 
     def test_diff_endpoint(self) -> None:
         _load_design_via_api(client, "DesignA")

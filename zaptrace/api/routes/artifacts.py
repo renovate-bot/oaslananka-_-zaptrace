@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
-from zaptrace.api.routes._session import authorize_tool, resolve_session_id
+from zaptrace.api.routes._session import authorize_tool, current_request_principal, resolve_session_id
 from zaptrace.api.storage import ArtifactCreateRequest, ArtifactStore
 
 router = APIRouter()
@@ -32,6 +32,7 @@ def list_artifacts(session: str = Depends(resolve_session_id)) -> dict[str, Any]
 @router.post("")
 def create_artifact(
     request: ArtifactCreateRequest,
+    http_request: Request,
     session: str = Depends(authorize_tool("artifact_create")),
 ) -> dict[str, Any]:
     """Store a deterministic REST artifact and return its lifecycle metadata."""
@@ -41,6 +42,7 @@ def create_artifact(
             filename=request.filename,
             kind=request.kind,
             content=request.content,
+            owner_principal=current_request_principal(http_request).principal_id,
         )
     except ValueError as exc:
         raise HTTPException(status_code=413, detail={"code": "ARTIFACT_TOO_LARGE", "message": str(exc)}) from exc
@@ -50,7 +52,7 @@ def create_artifact(
 @router.delete("/expired")
 def cleanup_expired_artifacts(session: str = Depends(authorize_tool("artifact_cleanup"))) -> dict[str, Any]:
     """Delete expired artifacts across the configured artifact root."""
-    deleted = ArtifactStore().cleanup_expired()
+    deleted = ArtifactStore().cleanup_expired(session_id=session)
     return {
         "ok": True,
         "session_id": session,

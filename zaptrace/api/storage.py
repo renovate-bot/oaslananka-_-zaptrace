@@ -28,6 +28,16 @@ def _artifact_root() -> Path:
     return Path(os.environ.get("ZAPTRACE_API_ARTIFACT_ROOT", ".zaptrace/api-artifacts")).resolve()
 
 
+def _safe_session_segment(value: str) -> str:
+    """Map a session selector to a collision-resistant filesystem segment."""
+    raw = value.strip()
+    cleaned = _safe_segment(raw, fallback="session")
+    if raw == cleaned and len(raw) <= 128:
+        return cleaned
+    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+    return f"{cleaned[:111]}-{digest}"
+
+
 def _retention_seconds() -> int:
     raw = os.environ.get("ZAPTRACE_API_ARTIFACT_RETENTION_SECONDS", "86400")
     try:
@@ -50,6 +60,7 @@ class ArtifactRecord(BaseModel):
     model_config = ConfigDict(strict=False)
 
     session_id: str
+    owner_principal: str = ""
     artifact_id: str
     kind: str
     filename: str
@@ -79,9 +90,17 @@ class ArtifactStore:
         self.max_bytes = _max_artifact_bytes() if max_bytes is None else max_bytes
 
     def _session_dir(self, session_id: str) -> Path:
-        return self.root / _safe_segment(session_id, fallback="session")
+        return self.root / _safe_session_segment(session_id)
 
-    def store_text(self, session_id: str, *, filename: str, kind: str, content: str) -> ArtifactRecord:
+    def store_text(
+        self,
+        session_id: str,
+        *,
+        filename: str,
+        kind: str,
+        content: str,
+        owner_principal: str = "",
+    ) -> ArtifactRecord:
         payload = content.encode("utf-8")
         if len(payload) > self.max_bytes:
             raise ValueError(f"artifact exceeds {self.max_bytes} byte limit")
@@ -95,6 +114,7 @@ class ArtifactStore:
         artifact_path.write_bytes(payload)
         record = ArtifactRecord(
             session_id=session_id,
+            owner_principal=owner_principal,
             artifact_id=artifact_id,
             kind=safe_kind,
             filename=safe_filename,
@@ -118,7 +138,7 @@ class ArtifactStore:
         records: list[ArtifactRecord] = []
         for manifest_path in sorted(session_dir.glob("*/manifest.json")):
             record = self._read_manifest(manifest_path)
-            if record is not None:
+            if record is not None and record.session_id == session_id:
                 records.append(record)
         return records
 
@@ -126,16 +146,21 @@ class ArtifactStore:
         safe_id = _safe_segment(artifact_id, fallback="artifact")
         artifact_dir = self._session_dir(session_id) / safe_id
         record = self._read_manifest(artifact_dir / "manifest.json")
+        if record is None or record.session_id != session_id:
+            return None
         if artifact_dir.exists():
             shutil.rmtree(artifact_dir)
         return record
 
-    def cleanup_expired(self, *, now: datetime | None = None) -> list[ArtifactRecord]:
+    def cleanup_expired(self, *, session_id: str | None = None, now: datetime | None = None) -> list[ArtifactRecord]:
         current = now or _utc_now()
         deleted: list[ArtifactRecord] = []
+        expected_session_segment = _safe_session_segment(session_id) if session_id is not None else None
         for manifest_path in sorted(self.root.glob("*/*/manifest.json")):
+            if expected_session_segment is not None and manifest_path.parent.parent.name != expected_session_segment:
+                continue
             record = self._read_manifest(manifest_path)
-            if record is None:
+            if record is None or (session_id is not None and record.session_id != session_id):
                 continue
             try:
                 created = datetime.fromisoformat(record.created_at)

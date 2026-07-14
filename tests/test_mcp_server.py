@@ -80,6 +80,38 @@ def test_server_instructions() -> None:
     assert "structured envelope" in server.instructions
 
 
+def test_session_scoped_resources_enforce_default_session_owner(monkeypatch) -> None:
+    import zaptrace.mcp.server as mcp_server
+    from zaptrace.security.objects import reset_object_authorization_state
+
+    reset_object_authorization_state()
+    _sessions.clear()
+    monkeypatch.setattr(mcp_server, "_HTTP_AUTH_ACTIVE", True)
+    monkeypatch.setattr(mcp_server, "_HTTP_AUTH_ACTOR", "resource-owner")
+
+    assert mcp_server.list_designs() == []
+    assert mcp_server.last_proof_result()["ok"] is True
+    audit = mcp_server.audit_events()
+    assert audit["ok"] is True
+    assert audit["data"]["object_authorization_count"] >= 1
+    assert audit["data"]["object_authorization_events"][-1]["action"] == "resource:audit-events"
+    assert mcp_server.design_snapshots()["ok"] is True
+
+    monkeypatch.setattr(mcp_server, "_HTTP_AUTH_ACTOR", "resource-intruder")
+    for resource in (
+        mcp_server.list_designs,
+        mcp_server.last_proof_result,
+        mcp_server.audit_events,
+        mcp_server.design_snapshots,
+    ):
+        denied = resource()
+        assert denied["ok"] is False
+        assert denied["error"]["code"] == "OBJECT_NOT_AUTHORIZED"
+
+    reset_object_authorization_state()
+    _sessions.clear()
+
+
 # ---------------------------------------------------------------------------
 # Structured response helpers
 # ---------------------------------------------------------------------------
@@ -162,17 +194,29 @@ def test_session_destroy_not_found() -> None:
 
     result = session_destroy("session-nonexistent")
     assert result["ok"] is False
-    assert result["error"]["code"] == "SESSION_NOT_FOUND"
+    assert result["error"]["code"] == "OBJECT_NOT_AUTHORIZED"
 
 
-def test_session_create_and_destroy() -> None:
+def test_session_create_and_destroy_releases_linked_runtime_state() -> None:
     from zaptrace.mcp.server import session_create, session_destroy
+    from zaptrace.review.workflow import _REVIEW_SESSIONS, create_review_session
+    from zaptrace.security.replay import get_replay, record_tool_call
+    from zaptrace.security.sandbox import _sandboxes, sandbox_status
 
     created = session_create()
     sid = created["data"]["session_id"]
+    review = create_review_session("DestroyDesign", design_session_id=sid, owner_principal="mcp-local")
+    sandbox_status(sid)
+    record_tool_call(sid, "design_inspect", {}, {"ok": True}, 1.0)
+
     destroyed = session_destroy(sid)
+
     assert destroyed["ok"] is True
+    assert destroyed["data"]["removed_review_sessions"] == [review.session_id]
     assert sid not in _sessions
+    assert sid not in _sandboxes
+    assert get_replay(sid) is None
+    assert review.session_id not in _REVIEW_SESSIONS
 
 
 # ---------------------------------------------------------------------------
@@ -221,11 +265,31 @@ async def test_mcp_denies_write_tool_without_capability_and_records_audit() -> N
 
 async def test_mcp_allows_write_tool_with_session_capability_and_records_audit() -> None:
     from zaptrace.agent._tool_impls import TOOL_REGISTRY
+    from zaptrace.mcp.server import session_create
 
-    _sessions["mcp-allowed-session"] = {"designs": {}, "capabilities": {"preview-write"}}
+    created = session_create()
+    session_id = created["data"]["session_id"]
+    _sessions[session_id]["capabilities"] = {"preview-write"}
     wrapped = _make_sandboxed_tool("design_parse_str", TOOL_REGISTRY["design_parse_str"])
-    result = await wrapped(session_id="mcp-allowed-session", yaml_content="meta:\n  name: AllowedMcp\n")
+    result = await wrapped(session_id=session_id, yaml_content="meta:\n  name: AllowedMcp\n")
     assert result["ok"] is True
-    events = _sessions["mcp-allowed-session"]["audit_events"]
+    events = _sessions[session_id]["audit_events"]
     assert events[-1]["decision"] == "allow"
     assert events[-1]["capability"] == "preview-write"
+
+
+async def test_mcp_cannot_claim_preexisting_unowned_session() -> None:
+    from zaptrace.agent._tool_impls import TOOL_REGISTRY
+    from zaptrace.security.objects import reset_object_authorization_state
+
+    reset_object_authorization_state()
+    session_id = "legacy-unowned-mcp-session"
+    _sessions[session_id] = {"designs": {}, "capabilities": {"preview-write"}}
+    wrapped = _make_sandboxed_tool("design_parse_str", TOOL_REGISTRY["design_parse_str"])
+
+    result = await wrapped(session_id=session_id, yaml_content="meta:\n  name: LegacyDenied\n")
+
+    assert result["ok"] is False
+    assert result["error"]["code"] == "OBJECT_NOT_AUTHORIZED"
+    reset_object_authorization_state()
+    _sessions.pop(session_id, None)
