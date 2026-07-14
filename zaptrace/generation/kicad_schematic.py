@@ -11,9 +11,22 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from zaptrace.export.kicad import export_kicad_schematic
 from zaptrace.generation.compiler import CompiledDesignIR
-from zaptrace.generation.topology import SchematicTopologyPlan, schematic_topology_plan_json
+from zaptrace.generation.topology import (
+    SchematicBlockPlacementPlan,
+    SchematicComponentDecisionPlan,
+    SchematicTopologyPlan,
+    schematic_block_placement_plan_json,
+    schematic_component_decision_plan_json,
+    schematic_topology_plan_json,
+)
 
-SchematicArtifactKind = Literal["project", "schematic", "topology-plan"]
+SchematicArtifactKind = Literal[
+    "project",
+    "schematic",
+    "topology-plan",
+    "component-decision-plan",
+    "block-placement-plan",
+]
 
 
 class GeneratedSchematicArtifact(BaseModel):
@@ -46,6 +59,10 @@ class GeneratedKiCadSchematicReport(BaseModel):
     topology_status: str | None = None
     topology_block_count: int = Field(default=0, ge=0)
     topology_net_count: int = Field(default=0, ge=0)
+    component_decision_present: bool = False
+    component_decision_count: int = Field(default=0, ge=0)
+    block_placement_present: bool = False
+    block_placement_count: int = Field(default=0, ge=0)
 
     def to_dict(self) -> dict[str, object]:
         return self.model_dump(mode="json")
@@ -105,6 +122,8 @@ def generate_kicad_schematic_project(
     compiled: CompiledDesignIR,
     output_dir: str | Path,
     topology_plan: SchematicTopologyPlan | None = None,
+    component_decision_plan: SchematicComponentDecisionPlan | None = None,
+    block_placement_plan: SchematicBlockPlacementPlan | None = None,
 ) -> GeneratedKiCadSchematicProject:
     """Generate a reviewable KiCad schematic project from compiled Design IR.
 
@@ -117,6 +136,8 @@ def generate_kicad_schematic_project(
     schematic_path = files["schematic"]
     generated_paths = [project_path, schematic_path]
     topology_path: Path | None = None
+    component_decision_path: Path | None = None
+    block_placement_path: Path | None = None
     if topology_plan is not None:
         topology_path = out / f"{compiled.design.meta.name}.schematic_topology.json"
         topology_path.write_text(
@@ -125,6 +146,22 @@ def generate_kicad_schematic_project(
             newline="\n",
         )
         generated_paths.append(topology_path)
+    if component_decision_plan is not None:
+        component_decision_path = out / f"{compiled.design.meta.name}.component_decisions.json"
+        component_decision_path.write_text(
+            schematic_component_decision_plan_json(component_decision_plan),
+            encoding="utf-8",
+            newline="\n",
+        )
+        generated_paths.append(component_decision_path)
+    if block_placement_plan is not None:
+        block_placement_path = out / f"{compiled.design.meta.name}.block_placements.json"
+        block_placement_path.write_text(
+            schematic_block_placement_plan_json(block_placement_plan),
+            encoding="utf-8",
+            newline="\n",
+        )
+        generated_paths.append(block_placement_path)
     claim_violations = _claim_violations(generated_paths)
     report = GeneratedKiCadSchematicReport(
         design_name=compiled.design.meta.name,
@@ -135,6 +172,16 @@ def generate_kicad_schematic_project(
             _artifact("project", project_path, out),
             _artifact("schematic", schematic_path, out),
             *([_artifact("topology-plan", topology_path, out)] if topology_path is not None else []),
+            *(
+                [_artifact("component-decision-plan", component_decision_path, out)]
+                if component_decision_path is not None
+                else []
+            ),
+            *(
+                [_artifact("block-placement-plan", block_placement_path, out)]
+                if block_placement_path is not None
+                else []
+            ),
         ],
         requirement_trace_count=len(compiled.report.requirement_traces),
         provenance_record_count=len(compiled.design.prov_records),
@@ -144,6 +191,10 @@ def generate_kicad_schematic_project(
         topology_status=topology_plan.status.value if topology_plan is not None else None,
         topology_block_count=len(topology_plan.blocks) if topology_plan is not None else 0,
         topology_net_count=len(topology_plan.nets) if topology_plan is not None else 0,
+        component_decision_present=component_decision_plan is not None,
+        component_decision_count=len(component_decision_plan.decisions) if component_decision_plan is not None else 0,
+        block_placement_present=block_placement_plan is not None,
+        block_placement_count=len(block_placement_plan.placements) if block_placement_plan is not None else 0,
     )
     report_path = out / f"{compiled.design.meta.name}.kicad_schematic_generation.json"
     report_path.write_text(generated_kicad_schematic_report_json(report), encoding="utf-8", newline="\n")

@@ -9,7 +9,7 @@
     "manufacturing-export-manifest": "1f49b6c584e94847734e89ac715f650a95ab19e4606df67d5532a3238e3a9576",
     "pcb-generation-report": "a30f065c9376814348706f6135917bcfdfba4dda313631c2cad2cc976b2d6967",
     "review-handoff": "df586620a33f74ae270aa193e0a4bdf4e59eb947d7b45da2e34513b6680b30ed",
-    "schematic-generation-report": "d143c3f64f474be876bc0a74b28b615e12d6880b51af89fff3957ea19a351d07"
+    "schematic-generation-report": "b047bacc20b262493c313b9a142b02cd001192f996c5929c78c8d857f4caef6e"
   },
   "artifact_paths": {
     "design-ir-compile-report": "esp32_usb_sensor_generated_v1.design_ir_compilation.json",

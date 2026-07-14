@@ -277,3 +277,35 @@ def test_block_placement_plan_blocks_when_topology_is_blocked() -> None:
 
     payload = json.loads(str(excinfo.value))
     assert payload["status"] == "blocked"
+
+
+def test_generate_kicad_schematic_project_with_all_planning_artifacts(tmp_path) -> None:
+    architecture, intent, compiled = _ready_architecture_intent_compiled()
+    topology = synthesize_schematic_topology_plan(architecture, intent, compiled)
+    component_plan = synthesize_component_decision_plan(topology, compiled)
+    placement_plan = synthesize_block_placement_plan(topology)
+
+    generated = generate_kicad_schematic_project(
+        compiled,
+        tmp_path,
+        topology_plan=topology,
+        component_decision_plan=component_plan,
+        block_placement_plan=placement_plan,
+    )
+
+    artifact_kinds = {artifact.kind for artifact in generated.report.generated_files}
+    assert artifact_kinds >= {
+        "topology-plan",
+        "component-decision-plan",
+        "block-placement-plan",
+    }
+    assert (tmp_path / f"{compiled.design.meta.name}.component_decisions.json").is_file()
+    assert (tmp_path / f"{compiled.design.meta.name}.block_placements.json").is_file()
+    assert generated.report.component_decision_present is True
+    assert generated.report.component_decision_count == len(component_plan.decisions)
+    assert generated.report.block_placement_present is True
+    assert generated.report.block_placement_count == len(placement_plan.placements)
+
+    payload = json.loads(generated.report_path.read_text(encoding="utf-8"))
+    assert payload["component_decision_present"] is True
+    assert payload["block_placement_present"] is True
