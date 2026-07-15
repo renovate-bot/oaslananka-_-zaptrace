@@ -129,3 +129,15 @@ def test_generated_project_evidence_accepts_architecture_artifact(tmp_path) -> N
     assert "architecture-intent-bridge-report" in artifact_kinds
     assert (tmp_path / "architecture/electronics-architecture.json").is_file()
     assert (tmp_path / "architecture/architecture-intent-bridge.json").is_file()
+
+
+def test_generate_project_evidence_bundle_accepts_relative_output_root(tmp_path, monkeypatch) -> None:
+    intent, compiled = _intent_and_compiled()
+    monkeypatch.chdir(tmp_path)
+
+    result = generate_project_evidence_bundle(intent, compiled, ".generated/release-gate")
+
+    assert result.bundle_path.is_file()
+    assert result.bundle.passed is True
+    assert all(not artifact.path.startswith("/") for artifact in result.bundle.artifacts)
+    assert all((tmp_path / ".generated/release-gate" / artifact.path).is_file() for artifact in result.bundle.artifacts)

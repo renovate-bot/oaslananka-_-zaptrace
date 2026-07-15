@@ -74,7 +74,7 @@ def _sha256(path: Path) -> str:
 
 
 def _relative(path: Path, root: Path) -> str:
-    return path.relative_to(root).as_posix()
+    return path.resolve().relative_to(root.resolve()).as_posix()
 
 
 def _stabilize_kicad_uuids(path: Path, *, seed: str) -> None:
@@ -114,7 +114,7 @@ def generate_kicad_pcb_project(
     This emits `.kicad_pcb` plus a machine-readable evidence report. It does not
     claim the generated PCB is routed, DRC-clean, or fabrication-ready.
     """
-    out = Path(output_dir)
+    out = Path(output_dir).resolve()
     files = export_kicad_pcb(compiled.design, out)
     pcb_path = files["pcb"]
     _stabilize_kicad_uuids(pcb_path, seed=compiled.design.meta.name)

@@ -84,7 +84,7 @@ def _sha256(path: Path) -> str:
 
 
 def _relative(path: Path, root: Path) -> str:
-    return path.relative_to(root).as_posix()
+    return path.resolve().relative_to(root.resolve()).as_posix()
 
 
 def _artifact(kind: SchematicArtifactKind, path: Path, root: Path) -> GeneratedSchematicArtifact:
@@ -130,7 +130,7 @@ def generate_kicad_schematic_project(
     This emits `.kicad_pro`, `.kicad_sch`, and a machine-readable evidence report.
     It does not claim the generated project is fabrication-ready.
     """
-    out = Path(output_dir)
+    out = Path(output_dir).resolve()
     files = export_kicad_schematic(compiled.design, out)
     project_path = files["project"]
     schematic_path = files["schematic"]

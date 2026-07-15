@@ -48,7 +48,7 @@ def _artifact_path(output_dir: Path, design: Design, suffix: str) -> Path:
         resolved.relative_to(root)
     except ValueError as exc:
         raise ValueError(f"KiCad artifact path escapes output directory: {design.meta.name!r}") from exc
-    return candidate
+    return resolved
 
 
 def export_kicad(design: Design, output_dir: Path) -> dict[str, Path]:

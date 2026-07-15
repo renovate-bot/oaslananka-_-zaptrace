@@ -31,7 +31,11 @@ from zaptrace.core.models import (
 
 
 def parse_file(path: Path, *, strict: bool = False) -> Design:
-    """Parse a design.yaml file and return a validated Design object."""
+    """Parse a trusted filesystem path into a validated Design object.
+
+    Agent and network callers must resolve the path through their workspace
+    containment policy before calling this low-level SDK function.
+    """
     try:
         content = path.read_text(encoding="utf-8")
     except OSError as e:

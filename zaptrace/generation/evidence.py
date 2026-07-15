@@ -94,7 +94,7 @@ def _sha256(path: Path) -> str:
 
 
 def _relative(path: Path, root: Path) -> str:
-    return path.relative_to(root).as_posix()
+    return path.resolve().relative_to(root.resolve()).as_posix()
 
 
 def _artifact(
@@ -196,7 +196,7 @@ def generate_project_evidence_bundle(
     architecture: ElectronicsArchitectureArtifact | None = None,
 ) -> GeneratedProjectEvidenceResult:
     """Generate schematic/PCB artifacts and aggregate generated-project evidence."""
-    out = Path(output_dir)
+    out = Path(output_dir).resolve()
     out.mkdir(parents=True, exist_ok=True)
 
     architecture_path: Path | None = None

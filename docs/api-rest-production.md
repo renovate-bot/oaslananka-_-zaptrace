@@ -82,13 +82,13 @@ Examples:
 
 The `/api/v1/artifacts` routes provide deterministic artifact metadata for CI and review workflows:
 
-- `POST /api/v1/artifacts`: store UTF-8 content under a deterministic hash-prefixed artifact ID;
+- `POST /api/v1/artifacts`: store UTF-8 content under an opaque server-generated artifact ID;
 - `GET /api/v1/artifacts`: list artifacts for the active session;
 - `DELETE /api/v1/artifacts/{artifact_id}`: delete one session artifact;
 - `DELETE /api/v1/artifacts/expired`: remove expired artifacts according to retention policy;
 - `GET /api/v1/artifacts/config`: expose storage configuration for clients and smoke tests.
 
-Artifact records include `owner_principal`, `sha256`, `size_bytes`, `created_at`, `retention_seconds`, and a root-relative path. Session selectors that normalize to similar filenames are separated with a deterministic hash suffix, and expiration cleanup is restricted to the authorized session. The API does not claim cloud storage, multi-tenant isolation, or procurement/manufacturing approval.
+Artifact records include `owner_principal`, `sha256`, `size_bytes`, `created_at`, `retention_seconds`, and a root-relative path. Session IDs, client filenames, artifact selectors, and design names are stored only as metadata; filesystem locations use server-generated opaque directories and fixed payload filenames. Expiration cleanup is restricted to the authorized session. The API does not claim cloud storage, multi-tenant isolation, or procurement/manufacturing approval.
 
 ## OpenAPI contract
 

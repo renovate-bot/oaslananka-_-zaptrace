@@ -8,11 +8,15 @@ import re
 import shutil
 from datetime import UTC, datetime
 from pathlib import Path
+from secrets import token_urlsafe
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 _SAFE_SEGMENT_RE = re.compile(r"[^A-Za-z0-9_.-]+")
+_OBJECTS_DIR = "objects"
+_PAYLOAD_FILE = "payload.txt"
+_MANIFEST_FILE = "manifest.json"
 
 
 def _utc_now() -> datetime:
@@ -20,22 +24,13 @@ def _utc_now() -> datetime:
 
 
 def _safe_segment(value: str, *, fallback: str) -> str:
+    """Normalize user-facing metadata; the result is never used as a path selector."""
     cleaned = _SAFE_SEGMENT_RE.sub("-", value.strip()).strip(".-_")
     return cleaned[:128] or fallback
 
 
 def _artifact_root() -> Path:
     return Path(os.environ.get("ZAPTRACE_API_ARTIFACT_ROOT", ".zaptrace/api-artifacts")).resolve()
-
-
-def _safe_session_segment(value: str) -> str:
-    """Map a session selector to a collision-resistant filesystem segment."""
-    raw = value.strip()
-    cleaned = _safe_segment(raw, fallback="session")
-    if raw == cleaned and len(raw) <= 128:
-        return cleaned
-    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
-    return f"{cleaned[:111]}-{digest}"
 
 
 def _retention_seconds() -> int:
@@ -55,7 +50,7 @@ def _max_artifact_bytes() -> int:
 
 
 class ArtifactRecord(BaseModel):
-    """Stored REST artifact metadata with deterministic naming and provenance."""
+    """Stored REST artifact metadata with opaque filesystem identity."""
 
     model_config = ConfigDict(strict=False)
 
@@ -80,17 +75,45 @@ class ArtifactCreateRequest(BaseModel):
 
 
 class ArtifactStore:
-    """Small filesystem-backed artifact store for REST/API lifecycle control."""
+    """Filesystem-backed artifact store that never derives paths from request values."""
 
     def __init__(
         self, *, root: Path | None = None, retention_seconds: int | None = None, max_bytes: int | None = None
     ) -> None:
-        self.root = root or _artifact_root()
+        self.root = (root or _artifact_root()).resolve()
+        self.objects_root = self.root / _OBJECTS_DIR
         self.retention_seconds = _retention_seconds() if retention_seconds is None else retention_seconds
         self.max_bytes = _max_artifact_bytes() if max_bytes is None else max_bytes
 
-    def _session_dir(self, session_id: str) -> Path:
-        return self.root / _safe_session_segment(session_id)
+    def _new_artifact_dir(self) -> tuple[str, Path]:
+        """Allocate an opaque server-generated artifact directory."""
+        self.objects_root.mkdir(parents=True, exist_ok=True)
+        for _attempt in range(8):
+            artifact_id = f"artifact-{token_urlsafe(24)}"
+            artifact_dir = self.objects_root / artifact_id
+            try:
+                artifact_dir.mkdir(exist_ok=False)
+            except FileExistsError:
+                continue
+            return artifact_id, artifact_dir
+        raise RuntimeError("could not allocate a unique artifact identifier")
+
+    def _iter_manifests(self) -> list[Path]:
+        """Return canonical manifests from current and legacy fixed-root layouts."""
+        if not self.root.is_dir():
+            return []
+        canonical_root = self.root.resolve()
+        manifests: list[Path] = []
+        for candidate in sorted(self.root.glob(f"*/*/{_MANIFEST_FILE}")):
+            try:
+                resolved = candidate.resolve(strict=True)
+                relative = resolved.relative_to(canonical_root)
+            except (FileNotFoundError, RuntimeError, ValueError):
+                continue
+            if len(relative.parts) != 3 or relative.name != _MANIFEST_FILE:
+                continue
+            manifests.append(resolved)
+        return manifests
 
     def store_text(
         self,
@@ -107,10 +130,8 @@ class ArtifactStore:
         safe_filename = _safe_segment(filename, fallback="artifact.txt")
         safe_kind = _safe_segment(kind, fallback="generic")
         digest = hashlib.sha256(payload).hexdigest()
-        artifact_id = f"{digest[:16]}-{safe_filename}"
-        artifact_dir = self._session_dir(session_id) / artifact_id
-        artifact_dir.mkdir(parents=True, exist_ok=True)
-        artifact_path = artifact_dir / safe_filename
+        artifact_id, artifact_dir = self._new_artifact_dir()
+        artifact_path = artifact_dir / _PAYLOAD_FILE
         artifact_path.write_bytes(payload)
         record = ArtifactRecord(
             session_id=session_id,
@@ -124,7 +145,7 @@ class ArtifactStore:
             created_at=_utc_now().isoformat(),
             retention_seconds=self.retention_seconds,
         )
-        (artifact_dir / "manifest.json").write_text(record.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        (artifact_dir / _MANIFEST_FILE).write_text(record.model_dump_json(indent=2) + "\n", encoding="utf-8")
         return record
 
     def _read_manifest(self, manifest_path: Path) -> ArtifactRecord | None:
@@ -134,31 +155,26 @@ class ArtifactStore:
             return None
 
     def list_artifacts(self, session_id: str) -> list[ArtifactRecord]:
-        session_dir = self._session_dir(session_id)
         records: list[ArtifactRecord] = []
-        for manifest_path in sorted(session_dir.glob("*/manifest.json")):
+        for manifest_path in self._iter_manifests():
             record = self._read_manifest(manifest_path)
             if record is not None and record.session_id == session_id:
                 records.append(record)
         return records
 
     def delete_artifact(self, session_id: str, artifact_id: str) -> ArtifactRecord | None:
-        safe_id = _safe_segment(artifact_id, fallback="artifact")
-        artifact_dir = self._session_dir(session_id) / safe_id
-        record = self._read_manifest(artifact_dir / "manifest.json")
-        if record is None or record.session_id != session_id:
-            return None
-        if artifact_dir.exists():
-            shutil.rmtree(artifact_dir)
-        return record
+        for manifest_path in self._iter_manifests():
+            record = self._read_manifest(manifest_path)
+            if record is None or record.session_id != session_id or record.artifact_id != artifact_id:
+                continue
+            shutil.rmtree(manifest_path.parent)
+            return record
+        return None
 
     def cleanup_expired(self, *, session_id: str | None = None, now: datetime | None = None) -> list[ArtifactRecord]:
         current = now or _utc_now()
         deleted: list[ArtifactRecord] = []
-        expected_session_segment = _safe_session_segment(session_id) if session_id is not None else None
-        for manifest_path in sorted(self.root.glob("*/*/manifest.json")):
-            if expected_session_segment is not None and manifest_path.parent.parent.name != expected_session_segment:
-                continue
+        for manifest_path in self._iter_manifests():
             record = self._read_manifest(manifest_path)
             if record is None or (session_id is not None and record.session_id != session_id):
                 continue
@@ -168,8 +184,7 @@ class ArtifactStore:
                 created = current
             age = (current - created).total_seconds()
             if age >= record.retention_seconds:
-                artifact_dir = manifest_path.parent
-                shutil.rmtree(artifact_dir, ignore_errors=True)
+                shutil.rmtree(manifest_path.parent, ignore_errors=True)
                 deleted.append(record)
         return deleted
 
