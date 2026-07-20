@@ -36,6 +36,12 @@ def test_accepts_workspace_path(tmp_path: Path) -> None:
     assert p == f.resolve()
 
 
+def test_relative_path_resolves_from_configured_workspace(tmp_path: Path) -> None:
+    _set_workspace(tmp_path)
+    resolved = _tool_impls._validate_path("reports/output.md")
+    assert resolved == (tmp_path / "reports" / "output.md").resolve()
+
+
 def test_accepts_subdirectory(tmp_path: Path) -> None:
     _set_workspace(tmp_path)
     sub = tmp_path / "sub"

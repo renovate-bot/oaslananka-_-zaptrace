@@ -29,7 +29,11 @@ from zaptrace.export.spice import export_spice_netlist
 from zaptrace.export.svg import render_schematic_svg
 from zaptrace.library.loader import LibraryLoader
 from zaptrace.pipeline.autopilot import Autopilot, PipelineContext, PipelineStage
-from zaptrace.security.policy import required_tool_capability
+from zaptrace.security.policy import (
+    TOOL_PATH_POLICIES,
+    required_tool_capability,
+    validate_tool_capability_inventory,
+)
 from zaptrace.synthesis.calculators import (
     buck_inductor_capacitor,
     decoupling_plan,
@@ -70,24 +74,28 @@ def _validate_path(path: str | Path, must_exist: bool = False) -> Path:
     Raises ``ValueError`` (user-facing) on:
       - Absolute paths outside the workspace root.
       - Relative paths that escape the workspace via ``..`` segments.
-      - Symlinks that resolve outside the workspace (when *must_exist*).
+      - Symlinks that resolve outside the workspace.
       - Non-existent files (when *must_exist*).
 
-    Returns the resolved absolute ``Path``.
+    Returns the normalized absolute ``Path``.
     """
-    p = Path(path)
-    workspace = _get_workspace()
+    workspace = os.path.realpath(os.fspath(_get_workspace()))
+    raw_path = os.fspath(path)
+    candidate = raw_path if os.path.isabs(raw_path) else os.path.join(workspace, raw_path)
     try:
-        resolved = p.resolve(strict=must_exist)
-    except (FileNotFoundError, RuntimeError):
+        normalized = os.path.realpath(candidate, strict=must_exist)
+    except OSError:
         if must_exist:
             raise ValueError(f"Path not found: {path}") from None
-        resolved = p.resolve()
+        normalized = os.path.realpath(candidate)
+
     try:
-        resolved.relative_to(workspace)
+        inside_workspace = os.path.commonpath((workspace, normalized)) == workspace
     except ValueError:
-        raise ValueError(f"Path outside workspace: {path}") from None
-    return resolved
+        inside_workspace = False
+    if not inside_workspace:
+        raise ValueError(f"Path outside workspace: {path}")
+    return Path(normalized)
 
 
 def _get_autopilot() -> Autopilot:
@@ -1487,19 +1495,43 @@ def tool_synthesize_board_score(intent: str, session_id: str = "default") -> dic
     }
 
 
-def tool_synthesize_board_manufacture(intent: str, output_dir: str, session_id: str = "default") -> dict[str, Any]:
-    """Synthesize a board from intent and emit a full manufacturing bundle + evidence.
+def tool_synthesize_board_manufacture(
+    intent: str,
+    output_dir: str,
+    approval_id: str | None = None,
+    session_id: str = "default",
+) -> dict[str, Any]:
+    """Synthesize, validate, approve, and emit a manufacturing bundle.
 
-    Runs the whole chain — block composition, functional core, peripherals, repair,
-    footprint geometry, place, route, and manufacturing export (Gerber, drill, BOM,
-    pick-and-place, ZIP) — then returns the completeness score, DC bias, the artifact
-    list, and an explicit human-review checklist of what is NOT finished. The bundle
-    is never fabrication-ready; the checklist is the honest hand-off.
+    The exact routed design is stored in the session, checked with ERC and DRC,
+    bound to the standard release gate, and only then written to the workspace.
     """
-    from zaptrace.synthesis.fab import synthesize_to_manufacturing
+    from zaptrace.synthesis.fab import build_manufacturing_result, route_synthesized_design
 
-    _get_session(session_id)  # validate/scope the session
-    return synthesize_to_manufacturing(intent, output_dir).to_dict()
+    if not approval_id or not approval_id.strip():
+        raise ValueError("approval_id is required for release-export operations")
+    out_path = _validate_path(output_dir)
+
+    design, synthesis_output = route_synthesized_design(intent)
+    session = _get_session(session_id)
+    design_name = design.meta.name
+    session["designs"][design_name] = design
+    _persist_design(session, design_name)
+
+    tool_erc_validate(design_name=design_name, session_id=session_id)
+    tool_drc_run(design_name=design_name, session_id=session_id)
+    release_gate = _require_release_gate(session, design_name, approval_id)
+    drc_result = session["drc_results"][design_name]
+
+    result = build_manufacturing_result(
+        intent,
+        design,
+        synthesis_output,
+        out_path,
+        drc_result=drc_result,
+    ).to_dict()
+    result["release_gate"] = release_gate
+    return result
 
 
 def tool_compliance_checklist(intent: str) -> dict[str, Any]:
@@ -2949,6 +2981,7 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "params": {
             "intent": {"type": "string", "description": "Design intent description"},
             "output_dir": {"type": "string", "description": "Directory to write manufacturing artifacts"},
+            "approval_id": {"type": "string", "description": "External approval identifier bound to current evidence"},
             "session_id": {"type": "string", "description": "Session identifier"},
         },
     },
@@ -3418,10 +3451,47 @@ TOOL_REGISTRY: dict[str, dict[str, Any]] = {
 }
 
 
+def _validated_path_policy(tool_name: str, parameter_name: str, path_policy: dict[str, Any]) -> dict[str, Any]:
+    """Return validated path-policy metadata for one public tool parameter."""
+    policy_name = f"{tool_name}.{parameter_name}"
+    if path_policy.get("root") != "workspace":
+        raise RuntimeError(f"Unsupported path-policy root for {policy_name}")
+    if path_policy.get("access") not in {"input", "output"}:
+        raise RuntimeError(f"Unsupported path-policy access for {policy_name}")
+    if not isinstance(path_policy.get("must_exist"), bool):
+        raise RuntimeError(f"Invalid must_exist policy for {policy_name}")
+
+    suffixes = path_policy.get("path_suffixes")
+    valid_suffixes = (
+        isinstance(suffixes, list)
+        and bool(suffixes)
+        and all(isinstance(suffix, str) and suffix.startswith(".") for suffix in suffixes)
+    )
+    if suffixes is not None and not valid_suffixes:
+        raise RuntimeError(f"Invalid path_suffixes policy for {policy_name}")
+    return dict(path_policy)
+
+
+def _attach_tool_path_policies() -> None:
+    """Attach validated filesystem policy metadata to registered tool parameters."""
+    for tool_name, parameter_policies in TOOL_PATH_POLICIES.items():
+        tool_def = TOOL_REGISTRY.get(tool_name)
+        if tool_def is None:
+            raise RuntimeError(f"Path policy references unknown tool: {tool_name}")
+        params = tool_def.get("params", {})
+        for parameter_name, path_policy in parameter_policies.items():
+            param_spec = params.get(parameter_name)
+            if param_spec is None:
+                raise RuntimeError(f"Path policy references unknown parameter: {tool_name}.{parameter_name}")
+            param_spec["path_policy"] = _validated_path_policy(tool_name, parameter_name, path_policy)
+
+
 def _apply_tool_capabilities() -> None:
-    """Ensure every public tool declares its required runtime capability."""
+    """Validate and attach explicit capability and path policy metadata."""
+    validate_tool_capability_inventory(TOOL_REGISTRY)
     for tool_name, tool_def in TOOL_REGISTRY.items():
-        tool_def.setdefault("capability", required_tool_capability(tool_name))
+        tool_def["capability"] = required_tool_capability(tool_name)
+    _attach_tool_path_policies()
 
 
 _apply_tool_capabilities()
@@ -3441,7 +3511,7 @@ def list_tools() -> list[dict[str, Any]]:
             "name": t["name"],
             "description": t["description"],
             "params": t["params"],
-            "capability": t.get("capability", "read"),
+            "capability": t["capability"],
         }
         for t in TOOL_REGISTRY.values()
     ]

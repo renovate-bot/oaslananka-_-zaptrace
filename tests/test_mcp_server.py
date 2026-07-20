@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from zaptrace.agent._tool_impls import _sessions
+from zaptrace.agent._tool_impls import TOOL_REGISTRY, _sessions
 from zaptrace.mcp.server import (
     SERVER_NAME,
     SERVER_VERSION,
@@ -10,6 +10,7 @@ from zaptrace.mcp.server import (
     _is_path_safe,
     _make_sandboxed_tool,
     _ok,
+    _validate_tool_params,
     server,
 )
 
@@ -164,6 +165,63 @@ def test_path_sandbox_escape_unix() -> None:
     assert "escapes" in reason or "Cannot resolve" in reason
 
 
+def test_registry_output_dir_policy_rejects_sandbox_escape() -> None:
+    errors = _validate_tool_params(
+        "export_manufacturing",
+        TOOL_REGISTRY["export_manufacturing"],
+        {"output_dir": "../../../outside-workspace"},
+    )
+    assert any("escapes allowed sandbox" in error for error in errors)
+
+
+def test_non_path_profile_parameter_is_not_path_validated() -> None:
+    errors = _validate_tool_params(
+        "drc_run",
+        TOOL_REGISTRY["drc_run"],
+        {"fab_profile": "../../../named-manufacturer-profile"},
+    )
+    assert errors == []
+
+
+def test_custom_profile_path_policy_rejects_sandbox_escape() -> None:
+    errors = _validate_tool_params(
+        "drc_run",
+        TOOL_REGISTRY["drc_run"],
+        {"fab_profile": "../../../untrusted-profile.yaml"},
+    )
+    assert any("escapes allowed sandbox" in error for error in errors)
+
+
+def test_filesystem_parameters_expose_explicit_path_policy() -> None:
+    expected = {
+        ("design_parse_file", "path"),
+        ("export_report", "output_path"),
+        ("export_svg", "output_path"),
+        ("export_kicad", "output_dir"),
+        ("kicad_import_project", "project_path"),
+        ("kicad_to_easyeda_pro", "project_path"),
+        ("kicad_to_easyeda_pro", "output_path"),
+        ("pipeline_run", "source"),
+        ("pipeline_run", "output_dir"),
+        ("pipeline_run_stage", "source"),
+        ("pipeline_run_stage", "output_dir"),
+        ("export_gerber", "output_dir"),
+        ("export_excellon", "output_dir"),
+        ("drc_run", "fab_profile"),
+        ("synthesize_board_manufacture", "output_dir"),
+        ("export_manufacturing", "output_dir"),
+        ("proof_run", "path"),
+        ("proof_list_checks", "path"),
+    }
+    actual = {
+        (tool_name, param_name)
+        for tool_name, tool in TOOL_REGISTRY.items()
+        for param_name, param in tool["params"].items()
+        if "path_policy" in param
+    }
+    assert actual == expected
+
+
 # ---------------------------------------------------------------------------
 # Session management integration
 # ---------------------------------------------------------------------------
@@ -293,3 +351,58 @@ async def test_mcp_cannot_claim_preexisting_unowned_session() -> None:
     assert result["error"]["code"] == "OBJECT_NOT_AUTHORIZED"
     reset_object_authorization_state()
     _sessions.pop(session_id, None)
+
+
+async def test_mcp_read_only_principal_cannot_create_manufacturing_artifacts(tmp_path, monkeypatch) -> None:
+    from zaptrace.mcp.server import session_create
+
+    monkeypatch.setenv("ZAPTRACE_WORKSPACE", str(tmp_path))
+    created = session_create()
+    session_id = created["data"]["session_id"]
+    wrapped = _make_sandboxed_tool(
+        "synthesize_board_manufacture",
+        TOOL_REGISTRY["synthesize_board_manufacture"],
+    )
+    output_dir = tmp_path / "forbidden-bundle"
+
+    result = await wrapped(
+        session_id=session_id,
+        intent="minimal board",
+        output_dir=str(output_dir),
+        approval_id="approval-read-only",
+    )
+
+    assert result["ok"] is False
+    assert result["error"]["code"] == "OPERATION_NOT_AUTHORIZED"
+    assert result["error"]["details"]["required_capability"] == "release-export"
+    assert not output_dir.exists()
+    events = _sessions[session_id]["audit_events"]
+    assert events[-1]["tool"] == "synthesize_board_manufacture"
+    assert events[-1]["decision"] == "deny"
+
+
+async def test_mcp_records_allowed_release_export_audit_event() -> None:
+    from zaptrace.mcp.server import session_create
+
+    created = session_create()
+    session_id = created["data"]["session_id"]
+    _sessions[session_id]["capabilities"] = {"release-export"}
+
+    def release_probe(session_id: str) -> dict[str, str]:
+        return {"session_id": session_id, "status": "authorized"}
+
+    wrapped = _make_sandboxed_tool(
+        "release_probe",
+        {
+            "fn": release_probe,
+            "params": {"session_id": {"type": "string"}},
+            "capability": "release-export",
+        },
+    )
+    result = await wrapped(session_id=session_id)
+
+    assert result["ok"] is True
+    event = _sessions[session_id]["audit_events"][-1]
+    assert event["tool"] == "release_probe"
+    assert event["capability"] == "release-export"
+    assert event["decision"] == "allow"

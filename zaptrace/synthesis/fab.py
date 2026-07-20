@@ -130,28 +130,39 @@ def route_synthesized_design(intent: str, *, name: str = "SynthesizedBoard") -> 
     return design, out
 
 
-def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: str = "SynthesizedBoard") -> FabResult:
-    """Synthesize a board from intent and emit a manufacturing bundle plus evidence."""
+def build_manufacturing_result(
+    intent: str,
+    design: Design,
+    synthesis_output: dict[str, Any],
+    output_dir: str | Path,
+    *,
+    drc_result: Any | None = None,
+) -> FabResult:
+    """Emit a manufacturing bundle for an already routed design plus evidence."""
     from zaptrace.analysis.dc_bias import resolve_dc_bias
     from zaptrace.ee.drc.engine import DRCEngine
     from zaptrace.export.manufacturing import generate_manufacturing_bundle
     from zaptrace.synthesis.scorecard import score_board
 
-    design, out = route_synthesized_design(intent, name=name)
-    drc = DRCEngine().run(design)
-
+    drc = drc_result if drc_result is not None else DRCEngine().run(design)
     out_path = Path(output_dir)
     generate_manufacturing_bundle(design, out_path)
     artifacts = sorted(p.name for p in out_path.iterdir() if p.is_file())
 
     bias = resolve_dc_bias(design)
-    card = score_board(design, out["plan"], out["repair"], out["footprints"], bias)
+    card = score_board(
+        design,
+        synthesis_output["plan"],
+        synthesis_output["repair"],
+        synthesis_output["footprints"],
+        bias,
+    )
     checklist = _review_checklist(
         design,
-        out["repair"],
-        out["footprints"],
+        synthesis_output["repair"],
+        synthesis_output["footprints"],
         bias,
-        [b.block_id for b in out["plan"].unrealized_blocks],
+        [block.block_id for block in synthesis_output["plan"].unrealized_blocks],
         drc.errors,
     )
 
@@ -162,8 +173,19 @@ def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: st
         net_count=len(design.nets),
         scorecard=card.to_dict(),
         dc_bias=bias.to_dict(),
-        drc={"passed": drc.passed, "errors": drc.errors, "warnings": drc.warnings, "violations": drc.total_violations},
+        drc={
+            "passed": drc.passed,
+            "errors": drc.errors,
+            "warnings": drc.warnings,
+            "violations": drc.total_violations,
+        },
         artifacts=artifacts,
         review_checklist=checklist,
         output_dir=str(out_path),
     )
+
+
+def synthesize_to_manufacturing(intent: str, output_dir: str | Path, *, name: str = "SynthesizedBoard") -> FabResult:
+    """Synthesize a board from intent and emit a manufacturing bundle plus evidence."""
+    design, synthesis_output = route_synthesized_design(intent, name=name)
+    return build_manufacturing_result(intent, design, synthesis_output, output_dir)

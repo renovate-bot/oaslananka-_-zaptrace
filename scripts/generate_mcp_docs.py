@@ -28,6 +28,17 @@ HEADER = """# MCP Tools Reference
 """
 
 
+def _format_path_policy(info: dict) -> str:
+    policy = info.get("path_policy")
+    if not policy:
+        return "—"
+    existence = "must-exist" if policy["must_exist"] else "may-create"
+    parts = [policy["root"], policy["access"], existence]
+    if path_suffixes := policy.get("path_suffixes"):
+        parts.append(f"suffixes={','.join(path_suffixes)}")
+    return " / ".join(parts)
+
+
 def _param_table(params: dict) -> str:
     if not params:
         return "*No parameters*"
@@ -35,8 +46,8 @@ def _param_table(params: dict) -> str:
     for name, info in params.items():
         ptype = info.get("type", "any")
         desc = info.get("description", "")
-        rows.append(f"| `{name}` | `{ptype}` | {desc} |")
-    header = "| Parameter | Type | Description |\n|-----------|------|-------------|\n"
+        rows.append(f"| `{name}` | `{ptype}` | {desc} | {_format_path_policy(info)} |")
+    header = "| Parameter | Type | Description | Path policy |\n|-----------|------|-------------|-------------|\n"
     return header + "\n".join(rows)
 
 
@@ -83,6 +94,7 @@ def generate() -> str:
         for t in cat_tools:
             lines.append(f"### `{t['name']}`\n")
             lines.append(f"{t['description']}\n")
+            lines.append(f"**Required capability:** `{t['capability']}`\n")
             lines.append("**Parameters:**\n")
             lines.append(_param_table(t.get("params", {})))
             lines.append("")

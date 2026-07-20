@@ -2,14 +2,23 @@
 
 from __future__ import annotations
 
+import pytest
+
 from zaptrace.agent._tool_impls import (
     TOOL_REGISTRY,
     call_tool,
     list_tools,
     tool_design_parse_str,
     tool_erc_validate,
+    tool_synthesize_board_manufacture,
 )
-from zaptrace.security.policy import authorize_capability, granted_capabilities_from_header, required_tool_capability
+from zaptrace.security.policy import (
+    TOOL_CAPABILITIES,
+    authorize_capability,
+    granted_capabilities_from_header,
+    required_tool_capability,
+    validate_tool_capability_inventory,
+)
 
 
 def test_capability_header_parser() -> None:
@@ -41,6 +50,32 @@ def test_read_capability_is_public_by_policy() -> None:
 def test_every_tool_declares_a_capability() -> None:
     assert all("capability" in tool for tool in TOOL_REGISTRY.values())
     assert all(item["capability"] for item in list_tools())
+
+
+def test_tool_capability_inventory_matches_registry_exactly() -> None:
+    assert set(TOOL_CAPABILITIES) == set(TOOL_REGISTRY)
+
+
+def test_unknown_tool_capability_fails_closed() -> None:
+    with pytest.raises(KeyError, match="No explicit capability policy"):
+        required_tool_capability("unclassified_future_tool")
+
+
+def test_startup_rejects_public_tool_without_capability_policy() -> None:
+    with pytest.raises(RuntimeError, match="missing=.*unclassified_future_tool"):
+        validate_tool_capability_inventory([*TOOL_REGISTRY, "unclassified_future_tool"])
+
+
+def test_startup_rejects_capability_policy_without_public_tool() -> None:
+    registry_without_library_search = set(TOOL_REGISTRY) - {"library_search"}
+    with pytest.raises(RuntimeError, match="extra=.*library_search"):
+        validate_tool_capability_inventory(registry_without_library_search)
+
+
+def test_startup_rejects_unknown_capability_level(monkeypatch) -> None:
+    monkeypatch.setitem(TOOL_CAPABILITIES, "library_search", "typo-capability")
+    with pytest.raises(RuntimeError, match="invalid=.*library_search"):
+        validate_tool_capability_inventory(TOOL_REGISTRY)
 
 
 def test_write_capable_tools_have_expected_capabilities() -> None:
@@ -154,3 +189,89 @@ nets:
         assert result["release_gate"]["approval_id"] == approval_id
         assert result["release_gate"]["validation"]["erc"]["passed"] is True
         assert result["release_gate"]["validation"]["drc"] is not None
+
+
+def test_synthesize_board_manufacture_rejects_missing_approval_before_synthesis(tmp_path, monkeypatch) -> None:
+    import zaptrace.agent._tool_impls as tool_impls
+    import zaptrace.synthesis.fab as fab
+
+    monkeypatch.setenv("ZAPTRACE_WORKSPACE", str(tmp_path))
+    monkeypatch.setattr(tool_impls, "_WORKSPACE", None)
+
+    def unexpected_synthesis(*args, **kwargs):
+        raise AssertionError("synthesis must not start without approval")
+
+    monkeypatch.setattr(fab, "route_synthesized_design", unexpected_synthesis)
+    output_dir = str(tmp_path / "bundle")
+    with pytest.raises(ValueError, match="approval_id is required"):
+        tool_synthesize_board_manufacture(
+            intent="minimal board",
+            output_dir=output_dir,
+            session_id="manufacture-missing-approval",
+        )
+
+
+def test_synthesize_board_manufacture_rejects_workspace_escape_before_synthesis(tmp_path, monkeypatch) -> None:
+    import zaptrace.agent._tool_impls as tool_impls
+    import zaptrace.synthesis.fab as fab
+
+    monkeypatch.setenv("ZAPTRACE_WORKSPACE", str(tmp_path))
+    monkeypatch.setattr(tool_impls, "_WORKSPACE", None)
+
+    def unexpected_synthesis(*args, **kwargs):
+        raise AssertionError("synthesis must not start for an unsafe output path")
+
+    monkeypatch.setattr(fab, "route_synthesized_design", unexpected_synthesis)
+    output_dir = str(tmp_path.parent / "escape-bundle")
+    with pytest.raises(ValueError, match="outside workspace"):
+        tool_synthesize_board_manufacture(
+            intent="minimal board",
+            output_dir=output_dir,
+            approval_id="approval-path-test",
+            session_id="manufacture-path-escape",
+        )
+
+
+def test_synthesize_board_manufacture_uses_standard_release_gate(tmp_path, monkeypatch) -> None:
+    import zaptrace.agent._tool_impls as tool_impls
+    import zaptrace.synthesis.fab as fab
+
+    monkeypatch.setenv("ZAPTRACE_WORKSPACE", str(tmp_path))
+    monkeypatch.setattr(tool_impls, "_WORKSPACE", None)
+    session_id = "manufacture-standard-gate"
+    yaml = """meta: {name: SynthesizedBoard}
+components:
+  r1: {ref: R1, type: resistor, value: 10k, footprint: '0603', position: [10.0, 20.0]}
+nets: {}
+"""
+    tool_design_parse_str(session_id=session_id, yaml_content=yaml)
+    design = tool_impls._get_session(session_id)["designs"]["SynthesizedBoard"]
+
+    class FakeFabResult:
+        def to_dict(self) -> dict:
+            return {
+                "design_name": "SynthesizedBoard",
+                "artifacts": ["bundle.zip"],
+                "output_dir": str(tmp_path / "bundle"),
+            }
+
+    monkeypatch.setattr(fab, "route_synthesized_design", lambda intent: (design, {}))
+    monkeypatch.setattr(fab, "build_manufacturing_result", lambda *args, **kwargs: FakeFabResult(), raising=False)
+
+    def unexpected_resynthesis(*args, **kwargs):
+        raise AssertionError("must export the already validated design")
+
+    monkeypatch.setattr(fab, "synthesize_to_manufacturing", unexpected_resynthesis)
+
+    result = tool_synthesize_board_manufacture(
+        intent="minimal board",
+        output_dir=str(tmp_path / "bundle"),
+        approval_id="approval-standard-gate",
+        session_id=session_id,
+    )
+
+    assert result["release_gate"]["approval_id"] == "approval-standard-gate"
+    assert result["release_gate"]["validation"]["erc"]["passed"] is True
+    assert result["release_gate"]["validation"]["drc"]["passed"] is True
+    assert result["artifacts"] == ["bundle.zip"]
+    assert "approval_id" in TOOL_REGISTRY["synthesize_board_manufacture"]["params"]

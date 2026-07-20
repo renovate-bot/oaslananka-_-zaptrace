@@ -75,27 +75,36 @@ def _err(message: str, code: str = "TOOL_ERROR", details: dict | None = None) ->
     }
 
 
-def _is_path_safe(path: str) -> tuple[bool, str]:
-    """Validate that a path is within the allowed sandbox.
+def _allowed_path_root() -> Path:
+    """Return the configured workspace root used by MCP path policies."""
+    raw = os.environ.get("ZAPTRACE_WORKSPACE", "").strip()
+    return Path(raw).resolve() if raw else _ALLOWED_EXPORT_ROOT.resolve()
 
-    Returns (safe, reason_if_unsafe).
-    """
+
+def _resolve_safe_path(path: str) -> tuple[Path | None, str]:
+    """Resolve a user path inside the configured workspace sandbox."""
     if not path or not path.strip():
-        return False, "Path is empty"
+        return None, "Path is empty"
     if len(path) > _MAX_PATH_LENGTH:
-        return False, f"Path exceeds max length ({_MAX_PATH_LENGTH})"
+        return None, f"Path exceeds max length ({_MAX_PATH_LENGTH})"
     normalized_path = path.replace("\\", "/")
-    p = Path(normalized_path)
+    candidate = Path(normalized_path)
+    root = _allowed_path_root()
     try:
-        resolved = p.resolve()
+        resolved = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
     except (OSError, RuntimeError):
-        return False, f"Cannot resolve path: {path}"
-    cwd = _ALLOWED_EXPORT_ROOT.resolve()
+        return None, f"Cannot resolve path: {path}"
     try:
-        resolved.relative_to(cwd)
+        resolved.relative_to(root)
     except ValueError:
-        return False, f"Path escapes allowed sandbox: {resolved}"
-    return True, ""
+        return None, f"Path escapes allowed sandbox: {resolved}"
+    return resolved, ""
+
+
+def _is_path_safe(path: str) -> tuple[bool, str]:
+    """Validate that a path is within the allowed sandbox."""
+    resolved, reason = _resolve_safe_path(path)
+    return resolved is not None, reason
 
 
 def _validate_tool_params(tool_name: str, tool_def: dict, kwargs: dict) -> list[str]:
@@ -118,11 +127,16 @@ def _validate_tool_params(tool_name: str, tool_def: dict, kwargs: dict) -> list[
             errors.append(f"Parameter '{pname}' expected number, got {type(pval).__name__}")
         elif ptype == "boolean" and not isinstance(pval, bool):
             errors.append(f"Parameter '{pname}' expected boolean, got {type(pval).__name__}")
-        # Path safety check for path/file parameters
-        if ("path" in pname.lower() or "file" in pname.lower()) and isinstance(pval, str):
-            safe, reason = _is_path_safe(pval)
-            if not safe:
+        path_policy = spec.get("path_policy")
+        if path_policy is not None and isinstance(pval, str):
+            path_suffixes = path_policy.get("path_suffixes")
+            if path_suffixes and Path(pval).suffix.lower() not in path_suffixes:
+                continue
+            resolved, reason = _resolve_safe_path(pval)
+            if resolved is None:
                 errors.append(f"Parameter '{pname}': {reason}")
+            elif path_policy.get("must_exist") and not resolved.exists():
+                errors.append(f"Parameter '{pname}': Path not found: {pval}")
     return errors
 
 
@@ -270,7 +284,7 @@ def _make_sandboxed_tool(tool_name: str, tool_def: dict) -> Callable:
                 code="OBJECT_NOT_AUTHORIZED",
                 details={"tool": tool_name, "session_id": session_id},
             )
-        required_capability = str(tool_def.get("capability", "read"))
+        required_capability = str(tool_def["capability"])
         granted_capabilities = _session_capabilities(session_id)
         allowed, reason = authorize_capability(required_capability, granted_capabilities)
         if required_capability != "read":

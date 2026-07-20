@@ -21,7 +21,7 @@ from zaptrace.security.policy import (
     authorize_capability,
     granted_capabilities_from_header,
     record_audit_event,
-    required_tool_capability,
+    required_operation_capability,
 )
 
 
@@ -213,7 +213,7 @@ def _authorize_capability_for_session(
         action=tool_name,
         allow_claim=allow_claim,
     )
-    required = required_capability or required_tool_capability(tool_name)
+    required = required_capability or required_operation_capability(tool_name)
     granted, auth_source = _effective_capabilities(request, raw_capabilities)
     allowed, reason = authorize_capability(required, granted)
     principal = current_request_principal(request)
@@ -269,7 +269,7 @@ def authorize_request_capability(
             capability_header=x_zaptrace_capabilities,
             request_id_header=x_request_id,
         )
-        required = required_capability or required_tool_capability(tool_name)
+        required = required_capability or required_operation_capability(tool_name)
         granted, _auth_source = _effective_capabilities(request, x_zaptrace_capabilities)
         allowed, reason = authorize_capability(required, granted)
         if not allowed:
